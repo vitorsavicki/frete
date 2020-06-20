@@ -1,16 +1,4 @@
 <?php
-		/*
-		$st_host = 'diogoromeo.com.br';
-		$st_banco = 'BD_FRETE_IMEDIATO';
-		$st_usuario = 'techresult';
-		$st_senha = 'Tech@123'; 
-		*/
-		/*
-		$st_host = 'localhost';
-		$st_banco = 'freteimediato';
-		$st_usuario = 'teste';
-		$st_senha = '123456'; 
-		*/
 		
 		$st_host = 'localhost';
 		$st_banco = 'frete_imediato';

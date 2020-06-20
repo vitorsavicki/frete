@@ -35,13 +35,13 @@ class SendEmail{
 		$mail->SMTPAuth = true; // Usa autenticação SMTP? (opcional)
 		$mail->SMTPSecure = 'ssl';  // SSL REQUERIDO pelo GMail
 //		$mail->Host = $this->configHost; // Endereço do servidor SMTP
-		$mail->Host = "a2plcpnl0847.prod.iad2.secureserver.net";
+		$mail->Host = "";
 //		$mail->Port = $this->configPort;
 		$mail->Port = 465; // Porta usada pelo seu servidor. Padrão 25
 //		$mail->Username = $this->configUsuario; // Usuário do servidor SMTP
 //		$mail->Password = $this->configSenha; // Senha do servidor SMTP
 		$mail->Username = "contato@savicki.com.br"; // Login do email que ira utilizar
-		$mail->Password = "BgKQ6T[Sm}(E"; // Senha do email
+		$mail->Password = ""; // Senha do email
 
 		// Define o remetente
 		// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
