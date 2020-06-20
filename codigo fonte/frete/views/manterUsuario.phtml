@@ -1,0 +1,55 @@
+<?php
+$v_params = $this->getParams();
+$o_usuario = $v_params['o_usuario']
+?>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>
+			Usuario
+		</title>
+		<link rel="stylesheet" type="text/css" href="template/css/default.css" />
+	</head>
+<body>
+	<div align="center">
+		<form method='post'>
+		<table class='table_list' width="300">
+			<tr>
+				<th>
+					E-mail 
+				</th>
+				<th>
+					Password
+				</th>
+					<th>
+					Permissão
+				</th>
+				<th colspan="2">
+					A&ccedil;&otilde;es
+				</th>
+			</tr>
+			<tr>
+				<td>
+					<input type='text' name='emailUsu' value='<?php echo $o_usuario->getEmailUsu()?>'> 
+				</td>
+				<td>
+					<input type='text' name='passwordUsu' value='<?php echo $o_usuario->getPasswordUsu()?>'>
+				</td>
+				<td>
+					<input type='text' name='permissaoUsu' value='<?php echo $o_usuario->getPermissaoUsu()?>'>
+				</td>				
+				<td align="center">
+					<a href='?controle=Usuario&acao=listarUsuario' class='bt_red'>Cancelar</a>
+				</td>
+				<td align="center">
+					<input type='hidden' name='controle' value='Usuario'>
+					<input type='hidden' name='acao' value='manterUsuario'>
+					<input type='hidden' name='idUsu' value='<?php echo $o_usuario->getIdUsu()?>'>
+					<button type='submit' class='bt_green'>Salvar</button>
+				</td>
+			</tr>			
+		</table>
+		</form>
+	</div>
+</body>
+</html>

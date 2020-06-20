@@ -1,0 +1,942 @@
+<?php
+if(!isset($_SESSION)) session_start();
+header('Content-Type: text/html; charset=utf-8');
+?>
+
+<html>
+    
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap Core CSS - Uses
+        Bootswatch Flatly Theme: http://bootswatch.com/flatly/ -->
+        <link href="template/css/bootstrap.min.css" rel="stylesheet">
+        <!-- Custom CSS -->
+        <link href="template/css/freelancer.css" rel="stylesheet">
+        <!-- Custom Fonts -->
+        <link href="template/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href="http://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
+        <link href="http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media
+        queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file://
+        -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+		<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+        <script type="text/javascript" src="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+        <link href="template/css/fileinput.css" media="all" rel="stylesheet" type="text/css" />
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <script src="template/js/fileinput.min.js" type="text/javascript"></script>
+        <script src="template/js/fileinput_locale_pt-BR.js" type="text/javascript"></script>
+        <script src="template/js/jquery.validate.min.js"></script>
+        <script type="text/javascript" src="template/js/jquery.mask.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="template/AdminLTE.min.css" />
+        
+        <script type="text/javascript">
+        function check_email(val){
+		    if(!val.match(/\S+@\S+\.\S+/)){ // Jaymon's / Squirtle's solution
+		        // Do something
+		        return false;
+		    }
+		    if( val.indexOf(' ')!=-1 || val.indexOf('..')!=-1){
+		        // Do something
+		        return false;
+		    }
+		    return true;
+		}
+        $(document).ready(function(){
+		   $(function(){
+	        $("input[name='emailPes']").blur(function(){
+
+	 			fncJson();
+	 	
+	    	});
+	    	 $("input[name='codigoVou']").blur(function(){
+                
+                if($('#codigoVou').val()){
+                    fncJsonCodigo();
+                }
+                
+        
+            });
+	    	});
+		});
+          
+        function fncJson() {
+			//alert($('#emailPes').val());	
+			var request = $.ajax({
+				url: "./views/verificarEmail.php",
+				type: "POST",			
+				dataType: "json",
+				data: {"emailPes":$('#emailPes').val()}
+			});
+			request.done(function(data) {
+				
+			    var result = check_email($('#emailPes').val());
+			    //alert(result);
+				
+                if(data == true && result) {
+                    $("input[name='emailPes']").val('').focus();
+                    $(document).ready(function() {
+						msg('invalido', 'Email já possui cadastro.');
+					});
+                }
+                else if(data == false && result ){
+                	$(document).ready(function() {
+						msg('valido', 'Email válido.');
+					});
+                }
+			});
+
+			request.fail(function(jqXHR, textStatus) {
+				alert( "Erro (Ajax - listar transporte): " + textStatus );
+			});
+		};
+		
+			function fncSelecionarEstado(estado) {
+			$('#tb_Cidade_idCid').load('views/listarCidade.php?estado='+estado.value);
+			};
+			
+	       function fncJsonCodigo() {
+            //alert($('#codigoVou').val());  
+            var request = $.ajax({
+                url: "./views/verificarCodigo.php",
+                type: "POST",           
+                dataType: "json",
+                data: {"codigoVou":$('#codigoVou').val()}
+            });
+            request.done(function(data) {
+                //alert(result);
+                if(data == true) {
+                    $(document).ready(function() {
+                        msg2('sucesso', 'Código Valido.');
+                    });
+                }
+                else if(data == false){
+                    $(document).ready(function() {
+                        $("input[name='codigoVou']").val('').focus();
+                        msg2('erro', 'Código Inválido.');
+                    });
+                }
+            });
+
+            request.fail(function(jqXHR, textStatus) {
+                alert( "Erro (Ajax - listar transporte): " + textStatus );
+            });
+        };
+        
+		</script>
+	 <style>
+			   	.colorgraph {
+				  height: 5px;
+				  border-top: 0;
+				  background: #c4e17f;
+				  border-radius: 5px;
+				  background-image: -webkit-linear-gradient(left, #c4e17f, #c4e17f 12.5%, #f7fdca 12.5%, #f7fdca 25%, #fecf71 25%, #fecf71 37.5%, #f0776c 37.5%, #f0776c 50%, #db9dbe 50%, #db9dbe 62.5%, #c49cde 62.5%, #c49cde 75%, #669ae1 75%, #669ae1 87.5%, #62c2e4 87.5%, #62c2e4);
+				  background-image: -moz-linear-gradient(left, #c4e17f, #c4e17f 12.5%, #f7fdca 12.5%, #f7fdca 25%, #fecf71 25%, #fecf71 37.5%, #f0776c 37.5%, #f0776c 50%, #db9dbe 50%, #db9dbe 62.5%, #c49cde 62.5%, #c49cde 75%, #669ae1 75%, #669ae1 87.5%, #62c2e4 87.5%, #62c2e4);
+				  background-image: -o-linear-gradient(left, #c4e17f, #c4e17f 12.5%, #f7fdca 12.5%, #f7fdca 25%, #fecf71 25%, #fecf71 37.5%, #f0776c 37.5%, #f0776c 50%, #db9dbe 50%, #db9dbe 62.5%, #c49cde 62.5%, #c49cde 75%, #669ae1 75%, #669ae1 87.5%, #62c2e4 87.5%, #62c2e4);
+				  background-image: linear-gradient(to right, #c4e17f, #c4e17f 12.5%, #f7fdca 12.5%, #f7fdca 25%, #fecf71 25%, #fecf71 37.5%, #f0776c 37.5%, #f0776c 50%, #db9dbe 50%, #db9dbe 62.5%, #c49cde 62.5%, #c49cde 75%, #669ae1 75%, #669ae1 87.5%, #62c2e4 87.5%, #62c2e4);
+				}
+
+        	@media (min-width: 768px) {
+			    .omb_row-sm-offset-3 div:first-child[class*="col-"] {
+			        margin-left: 25%;
+			    }
+			}
+			
+			.omb_login .omb_authTitle {
+			    text-align: center;
+				line-height: 300%;
+			}
+				
+			.omb_login .omb_socialButtons a {
+				color: white; // In yourUse @body-bg 
+				opacity:0.9;
+			}
+			.omb_login .omb_socialButtons a:hover {
+			    color: white;
+				opacity:1;    	
+			}
+			.omb_login .omb_socialButtons .omb_btn-facebook {background: #3b5998;}
+			.omb_login .omb_socialButtons .omb_btn-twitter {background: #00aced;}
+			.omb_login .omb_socialButtons .omb_btn-google {background: #c32f10;}
+			
+			
+			.omb_login .omb_loginOr {
+				position: relative;
+				font-size: 1.5em;
+				color: #aaa;
+				margin-top: 1em;
+				margin-bottom: 1em;
+				padding-top: 0.5em;
+				padding-bottom: 0.5em;
+			}
+			.omb_login .omb_loginOr .omb_hrOr {
+				background-color: #cdcdcd;
+				height: 1px;
+				margin-top: 0px !important;
+				margin-bottom: 0px !important;
+			}
+			.omb_login .omb_loginOr .omb_spanOr {
+				display: block;
+				position: absolute;
+				left: 50%;
+				top: -0.6em;
+				margin-left: -1.5em;
+				background-color: white;
+				width: 3em;
+				text-align: center;
+			}			
+			
+			.omb_login .omb_loginForm .input-group.i {
+				width: 2em;
+			}
+			.omb_login .omb_loginForm  .help-block {
+			    color: red;
+			}
+			
+				
+			@media (min-width: 768px) {
+			    .omb_login .omb_forgotPwd {
+			        text-align: right;
+					margin-top:10px;
+			 	}		
+			}
+		
+    .bs-example{
+    	margin: 20px;
+    }
+
+        </style>
+       <style>
+            body { padding-top: 120px; }
+        </style>
+    </head>
+    <?php require 'template/header.php'; ?>
+ <body id="page-top">
+  <div class="container">
+	<div class="row">
+    <div class="col-xs-12 col-sm-8 col-md-6 col-sm-offset-2 col-md-offset-3">
+		<form role="form" method="post" id="form" name="form" enctype="multipart/form-data">
+			<h2>Cadastre- se.</h2>
+			<hr class="colorgraph">
+			<div class="row">
+				<div class="col-xs-12 col-sm-6 col-md-6">
+					<div class="form-group">
+						<label class="control-label">Nome</label>
+                        <input type="text" class="form-control input-lg" placeholder="Nome"
+                         id="primeiroNomePes"  name="primeiroNomePes" required="" tabindex="1" 
+                         data-validation-required-message="Por favor coloque seu Nome.">
+                         <p class="help-block text-danger"></p>
+					</div>
+				</div>
+				<div class="col-xs-12 col-sm-6 col-md-6">
+					<div class="form-group">
+						<label class="control-label">Sobrenome</label>
+						<input type="text" class="form-control input-lg" placeholder="Sobrenome"
+                        id="sobreNomePes"  name="sobreNomePes" required="" tabindex="2"
+                        data-validation-required-message="Por favor coloque seu Sobrenome.">
+                        <p class="help-block text-danger"></p>
+					</div>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="control-label">CPF ou CNPJ</label>
+                <input type="text" class="form-control input-lg" placeholder="CPF ou CNPJ" onkeydown="javascript:return aplica_mascara_cpfcnpj(this,18,event)" onkeyup="javascript:return aplica_mascara_cpfcnpj(this,18,event)" maxlength="18"
+                id="cpfCnpjPes"  name="cpfCnpjPes" required="" tabindex="3"
+                data-validation-required-message="Por favor coloque seu CPF ou CNPJ.">
+                <p class="help-block text-danger"></p>
+			</div>
+			<div class="row">
+				<div class="col-xs-12 col-sm-6 col-md-6">
+					<div class="form-group">
+						<label class="control-label">Telefone Fixo</label>
+                         <input type="text" class="form-control input-lg" placeholder="Telefone Fixo" pattern="\([0-9]{2}\)[\s][0-9]{4}-[0-9]{4,5}" 
+                         id="telefoneFixoPes"  name="telefoneFixoPes" required="" tabindex="4"
+                         data-validation-required-message="Por favor coloque seu telefone fixo.">
+                         <p class="help-block text-danger"></p>
+					</div>
+				</div>
+				<div class="col-xs-12 col-sm-6 col-md-6">
+					<div class="form-group">
+						<label class="control-label">Telefone Celular</label>
+						 <input type="text" class="form-control input-lg" placeholder="Telefone Celular" pattern="\([0-9]{2}\)[\s][0-9]{4}-[0-9]{4,5}"
+                         id="telefoneCelularPes"  name="telefoneCelularPes" required="" tabindex="5"
+                         data-validation-required-message="Por favor coloque seu telefone celular.">
+                         <p class="help-block text-danger"></p>
+					</div>
+				</div>
+			</div>	                     
+            <div class="form-group">
+            	<label class="control-label">CEP</label>
+				<input type="text" class="form-control input-lg" placeholder="CEP"
+                id="cepEnd"  name="cepEnd" required="" tabindex="6"
+                 data-validation-required-message="Por favor coloque o cep do seu endereço.">
+                <p class="help-block text-danger"></p>
+			</div>
+			<div class="form-group">
+				<label class="control-label">Logradouro</label>
+				<input type="text" class="form-control input-lg" placeholder="Logradouro"
+                id="ruaEnd"  name="ruaEnd" required="" tabindex="7"
+                data-validation-required-message="Por favor coloque o nome da rua e número .">
+                <p class="help-block text-danger"></p>
+			</div>
+			<div class="form-group">
+				<label class="control-label">Bairro</label>
+				<input type="text" class="form-control input-lg" placeholder="Bairro" 
+                id="bairroEnd"  name="bairroEnd" required="" tabindex="8"
+                data-validation-required-message="Por favor coloque o nome do seu bairro">
+                <p class="help-block text-danger"></p>
+			</div>	
+			<div class="form-group">
+				<label class="control-label">Complemento</label>
+				 <input type="text" class="form-control input-lg" placeholder="Complemento" 
+                 id="complementoEnd"  name="complementoEnd"  tabindex="9"
+                 data-validation-required-message="Por favor coloque algum complemento do seu endereço.">
+                 <p class="help-block text-danger"></p>
+			</div>				
+			<div class="row">
+				<div class="col-xs-12 col-sm-6 col-md-6">
+					<div class="form-group">
+						<label class="control-label">Estado</label>
+						<select class="form-control input-lg" placeholder="Estado" 
+                        id="tb_Estado_idEst"  required="" data-validation-required-message="Por favor coloque seu estado." 
+                        name="tb_Estado_idEst" onChange="fncSelecionarEstado(this)" tabindex="10">
+                        	<option value="">Selecione um Estado</option>
+							<?php			
+								$estado = 18;
+								$o_estado = new EstadoModel();
+								$v_estados = $o_estado->_list();
+								foreach($v_estados AS $o_estado){
+								?>
+									<option value="<?php echo $o_estado->getIdEst()?>"><?php echo $o_estado->getUfEst()?></option>
+								<?php
+								}
+								?>
+						 </select>     
+                         <p class="help-block text-danger"></p>
+					</div>
+				</div>
+				<div class="col-xs-12 col-sm-6 col-md-6">
+					<div class="form-group">
+						<label class="control-label">Cidade</label>
+						  <select class="form-control input-lg" placeholder="Cidade" 
+                          required="" data-validation-required-message="Por favor coloque o numero da sua casa" 
+                          name="tb_Cidade_idCid" id="tb_Cidade_idCid" tabindex="11">
+                          <option value="">Selecione uma Cidade</option>
+						  </select>
+                          <p class="help-block text-danger"></p>
+					</div>
+					<div id="resposta2"></div>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="control-label">Email</label>
+				<input type="email" class="form-control input-lg" placeholder="Email"
+                id="emailPes"  name="emailPes" required="" data-validation-required-message="Por favor coloque seu Email." tabindex="12">
+                <p class="help-block text-danger"></p>
+			</div>
+			<div id="resposta3" name="resposta3"></div>
+			<div class="row">
+				<div class="col-xs-12 col-sm-6 col-md-6">
+					<div class="form-group">
+						<label class="control-label">Senha</label>
+						<input type="password" class="form-control input-lg" placeholder="Senha" tabindex="13"
+                         id="senhaPes"  name="senhaPes" required="" data-validation-required-message="Por favor coloque sua senha.">
+                         <p class="help-block text-danger"></p>
+					</div>
+				</div>
+				<div class="col-xs-12 col-sm-6 col-md-6">
+					<div class="form-group">
+						<label class="control-label">Confirmar Senha</label>
+						  <input type="password" class="form-control input-lg" placeholder="Confirmar Senha"
+                          id="senhaPesCon"  name="senhaPesCon" required="" tabindex="14"
+                          data-validation-required-message="Por favor coloque sua senha.">
+                          <p class="help-block text-danger"></p>
+					</div>
+				</div>
+			</div>
+			<label> Escolha uma foto do seu veículo</label>
+			<div class="form-group">
+				<input id="fotoPes" name="fotoPes" type="file" multiple=false class="file-loading" class="form-control input-lg" tabindex="15">
+                <p class="help-block text-danger"></p>
+			</div>
+			
+			<div class="form-group">
+                <label class="control-label">Código Promocional</label>
+                <input type="text" class="form-control input-lg" placeholder="Código Promocional" 
+                id="codigoVou"  name="codigoVou"  tabindex="16"
+                data-validation-required-message="Por favor coloque seu Código Promocional.">
+                <p class="help-block text-danger"></p>
+            </div>
+            <div id="resposta4" name="resposta4"></div>
+			
+			    <div class="form-group">
+                        <label class="control-label">Como conheceu a Savicki?</label>
+                             <select class="form-control input-lg" name='tb_pergunta_pesquisa_idPqa' id='tb_pergunta_pesquisa_idPqa' required=""
+                             data-validation-required-message="Por favor selecione uma resposta." 
+                             placeholder="Pergunta" tabindex="17">
+                             <option value="">Selecione uma Resposta</option>
+                                <?php
+                                $o_pergunta = new PerguntaPesquisaModel();
+                                $v_perguntas = $o_pergunta->_list();
+                                foreach($v_perguntas AS $o_pergunta)
+                                {
+                                ?>
+                                    <option value="<?php echo $o_pergunta->getIdPqa()?>" ><?php echo utf8_encode($o_pergunta->getNomePqa())?></option>
+                                <?php
+                                }
+                                ?>
+                                </select>
+                        </div> 
+			
+			<div class="form-group">
+               <div class="checkbox">
+                 <label><input type="checkbox" class="form-group-lg" type="checkbox" id="termosC" name="termosC" autocomplete="off" required="">Eu concordo com os com os <a href="#" data-toggle="modal" data-target="#t_and_c_m" tabindex="18">Termos e Condições</a> estabelecidos por este site.</label>
+               </div>  
+            </div>              
+
+                
+			<hr class="colorgraph">
+			<div class="row">
+				<input type="hidden" name="controle" value="Pessoa">
+	            <input type="hidden" name="acao" value="cadastroTransportador">
+				<div class="col-xs-12 col-md-6"><button type="submit" id="confirmar" name="confirmar" class="btn btn-primary btn-block btn-lg" tabindex="19">Confirmar</button></div>
+				<div class="col-xs-12 col-md-6"><a href="?controle=Index&acao=Index" class="btn btn-danger btn-block btn-lg">Cancelar</a></div>
+			</div>
+		</form>
+	</div>
+</div>
+<!-- Modal -->
+<div class="modal fade" id="t_and_c_m" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+				<h4 class="modal-title" id="myModalLabel">Termos & Condições</h4>
+			</div>
+			<div class="modal-body">
+				<p align="center">
+    TERMOS &amp; CONDIÇÕES
+</p>
+<p align="center">
+    <u>DISPOSIÇÕES DO USUÁRIO REGISTRADO</u>
+</p>
+<p>
+    <strong>1. DO REGISTRO</strong>
+</p>
+<p>
+    1.1 DAS CONDIÇÕES PARA REGISTRO DE TRANSPORTADOR:
+</p>
+<p>
+    1.1.1 Possuir, pelo menos, 18 anos de idade e estar de posse da CNH (Carteira Nacional de Habilitação) profissional sem nenhuma restrição;
+</p>
+<p>
+    1.1.2 Possuir e fornecer informações de contato válido e completo além do endereço de e-mail válido.
+</p>
+<p>
+    1.2 Após a efetivação do REGISTRO, fica proibido, ALTERAR ou modificar, em todo ou em parte, suas identidades.
+</p>
+<p>
+    1.3 Reservamo-nos o direito de rejeitar a sua inscrição a qualquer momento e por qualquer motivo sem aviso prévio.
+</p>
+<p>
+    1.4 Se o TRANSPORTADOR está registrado em nome de uma empresa (pessoa jurídica), o ato de se registrar em nossa empresa, confirma, de forma expressa, que
+    possui a devida autorização para tal propósito. Nesta hipótese a autorização ou procuração, com firma reconhecida em cartório, deverá ser fornecida pelo
+    USUÁRIO.
+</p>
+<p>
+    <strong>2. DA PRESTAÇÃO DE SERVIÇO – ASPECTOS FUNCIONAIS</strong>
+</p>
+<p>
+    2.1 ESCLARECIMENTO AO USUÁRIO: A empresa Savicki, doravante denominado apenas SITE, não presta serviços de transporte. O papel da Contratada é
+    fornecer um ambiente eletrônico onde potenciais clientes ( usuários de serviços de transporte e/ou prestadores de serviços de transporte (fornecedores)
+    podem interagir comercialmente e combinar o serviço a ser prestado. Fica entendido, que a função do SITE é apenas o de propiciar ao prestador de serviços e
+    o consumidor um ambiente eletrônico para que possam interagir, facilitando e abrindo novos horizontes, para a viabilização de negócios no ramo de prestação
+    de serviços de frete.
+</p>
+<p>
+    2.2 As partes interessadas fazem a seleção dos profissionais cadastrados tendo como base os serviços que necessitam bem como as condições do frete, tipo de
+    veículo, perfil do motorista ou da empresa, prazos de entrega e taxas contratuais oferecidas por cada uma delas. O SITE não interfere diretamente na
+    negociação bem como não fornece nenhuma garantia quanto à capacidade das partes cumprirem suas obrigações contratuais.
+</p>
+<p>
+    2.3 Assim, o Contrato de Prestação de Serviços entre as partes (fornecedores e compradores), ficará sujeito, única e tão somente, aos termos e condições
+    acordados entre si.
+</p>
+<p>
+    <strong>3. DO USO DO SITE</strong>
+    .
+</p>
+<p>
+    3.1O site funciona conforme os termos abaixo:
+</p>
+<p>
+    3.1.1 Os clientes postarão as características específicas de seus bens no SITE, efetivamente disponível para os serviços de transporte de carga (Lista de
+    Bens e Móveis utilizados no transporte - LBM);
+</p>
+<p>
+    3.1.2 Os provedores de transporte oferecerão os seus serviços em seus próprios termos em resposta a qualquer LBM através de um leilão organizado pelo site,
+    com detalhamentos sobre a carga, peso, distância, seguro, valor, destino, etc,. que dará origem ao CONTRATO DE PRESTAÇÃO DE SERVIÇOS, uma vez aceitas
+    mutuamente as condições e características do frete.
+</p>
+<p>
+    3.2A LBM do comprador e o resultado do leilão estarão sujeitas a análise para verificar se estão de acordo com o padrão de conteúdo para que o site
+    autorize a transação.
+</p>
+<p>
+    3.3 O SITE Não garante a agilidade com o processamento das inscrições postadas.
+</p>
+<p>
+    3.4 O SITE não tem obrigação com qualquer uma das partes para supervisionar, controlar ou moderar qualquer outro serviço disponibilizado no mesmo ambiente
+    eletrônico. Desta forma reserva-se no direito de remover ou bloquear o acesso a, qualquer candidatura que viole os padrões de conteúdo.
+</p>
+<p>
+    <strong>4. DAS INSCRIÇÕES.</strong>
+</p>
+<p>
+    4.1 As inscrições não podem estar relacionadas com o transporte de quaisquer bens cujos itens sejam proibidos por lei. O SITE se exime INTEGRALMENTE de
+    qualquer responsabilidade, tanto cível como criminal, caso este parágrafo seja burlado.
+</p>
+<p>
+    4.2 As inscrições para o transporte de mercadorias perigosas e outros bens, incluindo animais, produtos farmacêuticos e perecíveis, só poderão ser feitas
+    desde mediante licença específica dos órgãos governamentais que regulam este tipo de transporte e obedecendo as normas técnicas quanto a embalagem,
+    condições térmicas e tipo de transporte.
+</p>
+<p>
+    4.3 A responsabilidade pelo cumprimento das leis e regulamentos em relação ao transporte de mercadorias perigosas ou restritas far-se-á em acordo único e
+    tão somente entre as partes contratantes. As partes envolvidas em infração penal, ficarão sujeitas a sanções pertinentes, eximindo de toda e qualquer forma
+    a empresa Savicki ME LTDA.
+</p>
+<p>
+    <strong>5. DAS REGRAS PARA FORNECEDORES.</strong>
+</p>
+<p>
+    5.1 Os fornecedores devem prestar os serviços estipulados em contrato.
+</p>
+<p>
+    5.2 Os fornecedores não devem:
+</p>
+<p>
+    5.2.1 Dar lance contra o seu próprio lance, ou através de sócios;
+</p>
+<p>
+    5.2.1Deturpar significativamente os seus serviços DESCUMPRINDO a descrição de termos e serviços do edital;
+</p>
+<p>
+    5.2.2Recusar-se a aceitar o pagamento por um serviço, se a sua proposta for aceita.
+</p>
+<p>
+    <strong>6. DAS QUALIFICAÇÕES.</strong>
+</p>
+<p>
+    6.1 Para cada transação, os compradores e fornecedores podem optar por avaliar-se mutuamente deixando comentários em seus respectivos perfis. Compradores e
+    Fornecedores pode deixar uma avaliação positiva, negativa ou neutra, além de um breve comentário.
+</p>
+<p>
+    6.2 Essas classificações são usadas para determinar o feedback. Na maioria dos casos, os usuários recebem:
+</p>
+<p>
+    6.2.1Um ponto para cada avaliação positiva.
+</p>
+<p>
+    6.2.2 Não há pontos para cada classificação neutra.
+</p>
+<p>
+    6.2.3 -1 (menos um) ponto por cada avaliação negativa.
+</p>
+<p>
+    6.3 Os fornecedores não estão autorizados a incluir nas suas ofertas ou condições de venda ações que limitem ou restrinjam o comprador de deixar o
+    feedback.
+</p>
+<p>
+    6.4 Os compradores não estão autorizados a ameaçar fornecedores com feedback negativo ou feedback neutro, a fim de obter bens ou serviços no intuito de se
+    favorecerem.
+</p>
+<p>
+    6.5 Os fornecedores não podem exigir que compradores deixem um feedback específico.
+</p>
+<p>
+    6.6 Estas proibições aplicam-se a todas as atividades de comentários, seja antes, durante ou após a entrega dos serviços descritos na LBM.
+</p>
+<p>
+    6.7 Comentários de feedback devem respeitar as regras sobre o feedback listados no site. savicki.com.br reserva o direito de remover ou modificar os
+    comentários deixados por compradores ou fornecedores sem o consentimento prévio de qualquer das partes.
+</p>
+<p>
+    <strong>7. DOS HONORÁRIOS.</strong>
+</p>
+<p>
+    7.1 O site é de uso livre para os compradores. A taxa de depósito será paga pelo comprador quando a sua proposta for aceita. O depósito a pagar é deduzido
+    do valor total da proposta apresentada para o Comprador após a aceitação. O saldo devedor será pago pelo comprador diretamente ao fornecedor, em
+    conformidade com os termos e de maneira como for acordada entre ambas as partes.
+</p>
+<p>
+    7.2 O depósito será de 50% (cinquenta por cento) dos custos acordadas entre as partes em conta bancária fornecida pelo fornecedor.
+</p>
+<p>
+    7.2.1 Após feita a entrega e assim encerrando a relação entre fornecedor e comprador, será exigido o pagamento do restante dos 50% (cinquenta por cento)
+    previamente estipulados entre ambos.
+</p>
+<p>
+    7.2.2 A forma de pagamento depende de acordo entre as partes. O savicki.com.br não se responsabiliza por falta de pagamento ou de qualquer outro
+    entrave que uma ou ambas as partes venha sofrer.
+</p>
+<p>
+    7.3 Cabe ao fornecedor pagar o valor de R$ 99,00 (noventa e nove reais) mensais ao site savicki.com.br a título de honorários para a empresa.
+</p>
+<p>
+    7.4 Cabe também ao fornecedor o pagamento de uma anuidade de R$ 99,00 (noventa e nove reais) a fim de ativar e consequentemente reativar sua assinatura com
+    savicki.com.br.
+</p>
+<p>
+    <strong>8. DO CANCELAMENTO.</strong>
+</p>
+<p>
+    8.1 Os contratos de transporte são PACTUADOS entre compradores e fornecedores APÓS negociação. Assim sendo, fica entendido que o cancelamento e as suas
+    consequências serão exclusivas das partes.
+</p>
+<p>
+    <strong>9. DA EMBALAGEM.</strong>
+</p>
+<p>
+    9.1 Fica a critério do comprador o uso de sua própria embalagem ou se caso optar em contratar o fornecedor para este serviço. A FRETEIMDIATO.COM.BR não se
+    responsabiliza por bens que venham ser avariados tanto na embalagem como também em seu transporte.
+</p>
+<p>
+    <strong>10. DA ENTREGA.</strong>
+</p>
+<p>
+    10.1 Salvo disposição em contrário e previamente acordado por escrito (em cada ocasião) entre o fornecedor e o comprador, a aceitação ou não por parte do
+    primeiro de mercadorias que tenham sido encomendados deverá ocorrer no momento da entrega, ou tentativas de entrega, para o segundo.
+</p>
+<p>
+    10.2 Se o comprador não aceitar a entrega durante o tempo especificado, o fornecedor tem o direito de considerar o pedido cancelado e cobrar uma taxa de
+    re-estoque (armazenamento ou estocagem), ou em caso de acordo, por escrito, o fornecedor pode entregar novamente, mas tem o direito de cobrar uma taxa de
+    re-entrega.
+</p>
+<p>
+    10.3 Qualquer data de entrega dada pelo vendedor para o comprador deve ser apenas uma data de estimativa e, enquanto o vendedor fará o possível para
+    respeitar essa data, o fornecedor não será responsável por atraso na entrega.
+</p>
+<p>
+    10.4 Sem prejuízo da generalidade do acima exposto o fornecedor não será responsável pela entrega ou não entrega quando se tratar de causa que foge à sua
+    responsabilidade. Ex. negativa de recebimento da mercadoria.
+</p>
+<p>
+    <strong>11.DAS RECLAMAÇÕES.</strong>
+</p>
+<p>
+    11.1 Qualquer alegação de que a embalagem foi entregue danificada, ou que a quantidade de itens não é a correta ou não está em conformidade com a sua
+    designação, pode gerar uma reclamação por parte do comprador e remetida ao SITE em 48 hrs, contadas da entrega da mercadoria, para tomada das devidas
+    providências.
+</p>
+<p>
+    11.2 Qualquer defeito alegado deverá ser informado pelo comprador ao SITE no prazo de 07 (sete) dias úteis, contados a partir do dia seguinte da entrega.
+</p>
+<p>
+    11.3 Qualquer reclamação sob esta condição deve ser por escrito e deve conter todos os detalhes do pedido, incluindo o número de referência de quaisquer
+    bens alegadamente defeituosos.
+</p>
+<p>
+    11.4 Este processo de reclamação servirá apenas para fins de protocolo e possível punição com suspensão ou expulsão da parte sucumbente do site, uma vez
+    que questões de direito em si, deverão ser dirimidas em foro competente da comarca do comprador, tendo em vista que a savicki.com.br não se
+    responsabiliza por qualquer questão que envolva lide processual, nos precisos termos deste informe.
+</p>
+<p>
+    <strong>12. DA RESPONSABILIDADE.</strong>
+</p>
+<p>
+    12.1 Sob nenhuma circunstância temos qualquer responsabilidade em relação à:
+</p>
+<p>
+    12.1.1 Defeitos decorrentes de uso e desgaste, acidente, uso indevido por parte do comprador ou o fabricante de quaisquer bens ou serviços ou negligência
+    ou de quaisquer instruções ou materiais fornecidos pelo comprador.
+</p>
+<p>
+    12.1.2 Quaisquer bens ou serviços que foram ajustadas, modificados ou reparados.
+</p>
+<p>
+    12.1.3 A adequação de quaisquer bens ou serviços para qualquer finalidade particular ou utilizar em condições específicas.
+</p>
+<p>
+    12.1.4 Quaisquer descrições, ilustrações, especificações, desenhos e informações sobre pesos e dimensões apresentadas não nos representam responsabilidade
+    ativa e tampouco passiva.
+</p>
+<p>
+    12.1.5 Em nenhuma hipótese existe a responsabilidade da empresa Savicki ME LTDA para com as partes contratantes, uma vez que esta existe somente para
+    aproximar as pessoas que executam serviços de frete e transporte junto ao público em geral.
+</p>
+<p>
+    12.1.6 Savicki somente disponibiliza um espaço virtual que lhes permite comunicar-se através da Internet para conectar o cliente que necessita fazer
+    a sua mudança para realizá-la. Savicki não é o proprietário dos serviços nem tem relação laboral vinculante com os profissionais que os oferecem.
+    Savicki não intervêm no aperfeiçoamento das operações realizadas entre os fornecedores nem nas condições por eles estipuladas para as mesma, por isso
+    não será responsável no que se refere à existência, qualidade, quantidade, estado, integridade ou legitimidade dos serviços oferecidos, adquiridos ou
+    outorgados pelos usuários, assim como da capacidade para contratar dos fornecedores ou da veracidade dos dados pessoais por eles ingressados. Cada
+    fornecedor conhece e aceita ser o exclusivo responsável pelos serviços que publica e pelas ofertas que realiza.
+</p>
+<p>
+    12.1.7 Pelo fato de o Savicki não ter nenhuma participação durante o período em que a solicitação de trabalho está publicada para a execução, nem na
+    posterior negociação a aperfeiçoamento do contrato definitivo entre as partes, não será responsável pelo efetivo cumprimento das obrigações assumidas pelos
+    fornecedores ou no aperfeiçoamento da operação. O comprador conhece e aceita que ao realizar operações com os fornecedores o faz mediante responsabilidade
+    própria. Em nenhum caso a Savicki será responsável por lucro cessante, ou por qualquer outro dano e/ou prejuízo que possa ter sofrido o comprador
+    devido as operações realizadas ou não realizadas através do SITE.
+</p>
+<p>
+    12.1.8 A Savicki recomenda aos compradores uma atuação prudente e bom senso no momento de realizar operações com os transportadores. Os usuários
+    devem prestar atenção, e sempre evitar quando evidente, os riscos de contratar menores de idade ou pessoas que utilizam identidade falsa.
+</p>
+<p>
+    12.1.9 No caso de um ou mais usuários ou algum terceiro iniciarem qualquer tipo de reclamações ou ações legais contra uns e outros, todos e cada um dos
+    usuários envolvidos nas reclamações ou ações eximem de toda responsabilidade a Savicki, seus funcionários e direção.
+</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" id="termosT" name="termosT"  class="btn btn-primary" data-dismiss="modal">OK</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+</div>
+	
+		
+         <script type="text/javascript">
+         function msg(alerta, texto) {
+			     var resposta = '';
+			     var resposta2 = '';
+			     var resposta3 = '';
+			     $("#resposta").empty();
+			     $("#resposta2").empty();
+			     $("#resposta3").empty();
+			     if (alerta === 'sucesso') {
+			       resposta = "<div class='alert btn-success text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     } else if (alerta === 'atencao') {
+			       resposta = "<div class='alert btn-warning text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     } else if (alerta === 'erro') {
+			       resposta = "<div class='alert btn-danger text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			     else if (alerta === 'login') {
+			       resposta = "<div class='alert btn-danger text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			     else if (alerta === 'campoEmail') {
+			       resposta = "<div class='alert btn-warning text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			     else if (alerta === 'senhaEnviada') {
+			       resposta = "<div class='alert btn-success text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			     else if (alerta === 'numeroEnd') {
+			       resposta = "<div class='alert btn-warning text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			     else if (alerta === 'estadoVazio') {
+			       resposta2 = "<div class='alert btn-warning text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			      else if (alerta === 'invalido') {
+			       resposta3 = "<div class='alert btn-danger text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			        }
+			       else if (alerta === 'valido') {
+			       resposta3 = "<div class='alert btn-success text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			     $("#resposta").append(resposta);
+			     $("#resposta2").append(resposta2);
+			     $("#resposta3").append(resposta3);
+			
+			     $(".alert").click(function() {
+			       $(".alert").hide();
+			     });
+			   }
+			
+			   $("#numeroEnd").focus(function() {
+			     msg('numeroEnd', 'Por questões de segurança coloque um numero aproximado!');
+			   });
+			   
+			   $("#tb_Cidade_idCid").focus(function() {
+			   	var tb_Estado_idEst = document.getElementById('tb_Estado_idEst');
+			   	if(tb_Estado_idEst.value == ''){
+			     msg('estadoVazio', 'Selecione um Estado antes de escolher a Cidade!');
+			    }
+			   });
+			   
+			   
+			   function msg2(alerta, texto) {
+                 var resposta4 = '';
+                 $("#resposta4").empty();
+                 if (alerta === 'sucesso') {
+                   resposta4 = "<div class='alert btn-success text-center' role='alert'>" +
+                     "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+                     texto + "</div>";
+                 } else if (alerta === 'atencao') {
+                   resposta4 = "<div class='alert btn-warning text-center' role='alert'>" +
+                     "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+                     texto + "</div>";
+                 } else if (alerta === 'erro') {
+                   resposta4 = "<div class='alert btn-danger text-center' role='alert'>" +
+                     "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+                     texto + "</div>";
+                 }
+                 $("#resposta4").append(resposta4);
+            
+                 $(".alert").click(function() {
+                   $(".alert").hide();
+                 });
+               }
+               
+			$("#telefoneFixoPes").mask("(00) 0000-00009");
+        	$("#telefoneCelularPes").mask("(00) 0000-00009");
+        	$("#cepEnd").mask("00000-009");
+        
+        	
+			jQuery.validator.addMethod("verificaTamanho", function(value, element) {
+			   return value.length == 14 || value.length == 18;
+			}, jQuery.format("Informe 11 ou 14 digitos"));
+			
+			//Retira a máscara do valor de cpf_cnpj
+			function retira_mascara(cpf_cnpj) {
+				return cpf_cnpj.replace(/\./g,'').replace(/-/g,'').replace(/\//g,'')
+			}
+			
+           $('form').validate({
+	          rules: {
+		     	telefoneFixoPes: {
+		     		minlength: 14
+		     	},
+		     	telefoneCelularPes: {
+		     		minlength: 14
+		     	},
+			     	cpfCnpjPes: {
+					required:true,
+					verificaTamanho:true,
+					cpf:function(element) {
+						if($("#cpfCnpjPes").val().length==14){ return true; }
+					},
+					cnpj:function(element) {
+						if($("#cpfCnpjPes").val().length==18){ return true; }
+					}
+				},
+				senhaPes: {
+		            required: true
+		        	},
+		            senhaPesCon: {
+		            required: true,
+		            equalTo: "#senhaPes"
+		        	}
+		      },
+		     
+		      messages: {
+		         titulo: { required:'Informe o título' },
+		         cpfCnpjPes: {
+		            required: 'Informe o número do documento',
+		            verificaTamanho:'O documento precisa ter 11 ou 14 digitos',
+		            cpf:'Informe um CPF válido',
+		            cnpj:'Informe um CNPJ válido'
+		         },
+		      
+		      },
+				      
+		    
+	        highlight: function(element) {
+	            $(element).closest('.form-group').addClass('has-error');
+	        },
+	        unhighlight: function(element) {
+	            $(element).closest('.form-group').removeClass('has-error');
+	        },
+	        errorElement: 'span',
+	        errorClass: 'help-block',
+	        errorPlacement: function(error, element) {
+	            if(element.parent('.input-group').length) {
+	                error.insertAfter(element.parent());
+	            } else {
+	                error.insertAfter(element);
+	            }
+	        }
+	    });
+			
+			$(document).on('ready', function() {
+		    $("#fotoPes").fileinput({
+		        showUpload: false,
+		        language: 'pt-BR',
+		        layoutTemplates: {
+		            main1: "{preview}\n" +
+		            "<div class=\'input-group {class}\'>\n" +
+		            "   <div class=\'input-group-btn\'>\n" +
+		            "       {browse}\n" +
+		            "       {upload}\n" +
+		            "       {remove}\n" +
+		            "   </div>\n" +
+		            "   {caption}\n" +
+		            "</div>"
+		        }
+		    });
+		});
+			
+ 
+           		  	 	 	
+            function SomenteNumero(e){
+			    var tecla=(window.event)?event.keyCode:e.which;   
+			    if((tecla>47 && tecla<58)) return true;
+			    else{
+			    	if (tecla==8 || tecla==0) return true;
+				else  return false;
+			    }
+			}
+			
+			//Aplica a máscara no campo
+			//Função para ser utilizada nos eventos do input para formatação dinâmica
+			function aplica_mascara_cpfcnpj(campo,tammax,teclapres) {
+				var tecla = teclapres.keyCode;
+			
+				if ((tecla < 48 || tecla > 57) && (tecla < 96 || tecla > 105) && tecla != 46 && tecla != 8 && tecla != 9) {
+					return false;
+				}
+			
+				var vr = campo.value;
+				vr = vr.replace( /\//g, "" );
+				vr = vr.replace( /-/g, "" );
+				vr = vr.replace( /\./g, "" );
+				var tam = vr.length;
+			
+				if ( tam <= 2 ) {
+					campo.value = vr;
+				}
+				if ( (tam > 2) && (tam <= 5) ) {
+					campo.value = vr.substr( 0, tam - 2 ) + '-' + vr.substr( tam - 2, tam );
+				}
+				if ( (tam >= 6) && (tam <= 8) ) {
+					campo.value = vr.substr( 0, tam - 5 ) + '.' + vr.substr( tam - 5, 3 ) + '-' + vr.substr( tam - 2, tam );
+				}
+				if ( (tam >= 9) && (tam <= 11) ) {
+					campo.value = vr.substr( 0, tam - 8 ) + '.' + vr.substr( tam - 8, 3 ) + '.' + vr.substr( tam - 5, 3 ) + '-' + vr.substr( tam - 2, tam );
+				}
+				if ( (tam == 12) ) {
+					campo.value = vr.substr( tam - 12, 3 ) + '.' + vr.substr( tam - 9, 3 ) + '/' + vr.substr( tam - 6, 4 ) + '-' + vr.substr( tam - 2, tam );
+				}
+				if ( (tam > 12) && (tam <= 14) ) {
+					campo.value = vr.substr( 0, tam - 12 ) + '.' + vr.substr( tam - 12, 3 ) + '.' + vr.substr( tam - 9, 3 ) + '/' + vr.substr( tam - 6, 4 ) + '-' + vr.substr( tam - 2, tam );
+				}
+			}
+	
+			</script>
+    </body>
+    <?php require 'template/footer.php'; ?>
+</html>

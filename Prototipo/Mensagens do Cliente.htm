@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <title>Bootstrap, from Twitter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link href="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"
+    rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script type="text/javascript" src="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+  </head>
+  
+  <body class="">
+    <div class="navbar navbar-default navbar-static-top">
+      <style>
+        .body{padding-top:70px}
+      </style>
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <img src="IMG-20150223-WA0002.jpg" class="img-responsive">
+        </div>
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+          <ul class="nav navbar-nav navbar-right">
+            <li>
+              <a href="Home.htm">Home</a>
+            </li>
+            <li>
+              <div class="btn-group" style="">
+                <a class="btn btn-lg btn-link dropdown-toggle" data-toggle="dropdown"> Menu <span class="caret"></span></a>
+                <ul class="dropdown-menu" role="menu">
+                  <li>
+                    <a href="Consultar Transporte.htm">Consultar Transporte</a>
+                  </li>
+                  <li>
+                    <a href="Cadastro de Transporte.htm">Solicitar Transporte</a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li>
+              <a href="Escolha de Cadastro.htm">Cadastre-se</a>
+            </li>
+            <li>
+              <a href="Area do Administrador.htm" contenteditable="true">Administrador</a>
+            </li>
+            <li class="active">
+              <a href="Area do Cliente.htm">Cliente</a>
+            </li>
+            <li>
+              <a href="Area do Transportador.htm">Transportador</a>
+            </li>
+            <li>
+              <a href="Login.htm">Entrar</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <ul class="breadcrumb">
+            <li>
+              <a href="Home.htm">Home</a>
+            </li>
+            <li>
+              <a href="Area do Cliente.htm">Area do Cliente</a>
+            </li>
+            <li class="active" draggable="true">Mensagens</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="col-md-12 text-justify" size="auto">
+        <ul class="nav nav-justified nav-pills" draggable="true" style="">
+          <li>
+            <a href="Transportes Ativos.htm">Transportes Ativos</a>
+          </li>
+          <li>
+            <a href="Transportes Inativos.htm">Transportes Inativos</a>
+          </li>
+          <li class="active">
+            <a href="Mensagens do Cliente.htm">Mensagens</a>
+          </li>
+        </ul>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Descrição</th>
+              <th>Rementente</th>
+              <th>Data de Recebimento</th>
+              <th>Lance</th>
+              <th draggable="true"></th>
+              <th>
+                <a class="btn btn-danger">Excluir</a>
+              </th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Uma cama de Casal</td>
+              <td>Santos&nbsp;</td>
+              <td>20/02/2015</td>
+              <td>R$ 100.00</td>
+              <td>
+                <a class="btn btn-primary" href="Ver Mensagens.htm">Ver mensagem</a>
+                <br>
+              </td>
+              <td>
+                <input type="checkbox" name="vehicle" value="Bike">
+                <br>
+              </td>
+            </tr>
+            <tr>
+              <td>Uma mesa de escritorio</td>
+              <td>Silvia</td>
+              <td>13/05/2015</td>
+              <td>R$ 100.00</td>
+              <td>
+                <a class="btn btn-primary" href="Ver Mensagens.htm">Ver Mensagem</a>
+                <br>
+              </td>
+              <td>
+                <input type="checkbox" name="vehicle" value="Bike">
+                <br>
+              </td>
+            </tr>
+            <tr>
+              <td>2 armários</td>
+              <td>Alessandro</td>
+              <td>14/05/2015</td>
+              <td>R$ 100.00</td>
+              <td>
+                <a class="btn btn-primary" href="Ver Mensagens.htm">Ver Mensagem</a>
+                <br>
+              </td>
+              <td>
+                <input type="checkbox" name="vehicle" value="Bike">
+                <br>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="row">
+        <div class="col-md-12 text-right">
+          <ul class="pagination pagination-lg">
+            <li>
+              <a href="#">Anterior</a>
+            </li>
+            <li>
+              <a href="#">1</a>
+            </li>
+            <li>
+              <a href="#">2</a>
+            </li>
+            <li>
+              <a href="#">3</a>
+            </li>
+            <li>
+              <a href="#">4</a>
+            </li>
+            <li>
+              <a href="#">5</a>
+            </li>
+            <li>
+              <a href="#">Proximo</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </body>
+
+</html>

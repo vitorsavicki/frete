@@ -1,0 +1,128 @@
+<?php
+$v_params = $this->getParams();
+$o_endereco = $v_params['o_endereco'];
+?>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="template/css/fileinput.css" media="all" rel="stylesheet" type="text/css" />
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <script src="template/js/fileinput.min.js" type="text/javascript"></script>
+        <script src="template/js/fileinput_locale_pt-BR.js" type="text/javascript"></script>
+        <script>
+        		function fncSelecionarEstado(estado) {
+			$('#tb_Cidade_idCid').load('views/listarCidade.php?estado='+estado.value);
+			};
+		</script>
+    </head>
+    
+    <?php require 'template/header.php'; ?>
+
+    <body id="page-top">
+        <div class="section">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h1 class="text-center">Editar endereço</h1>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 col-md-offset-3">
+                        <form role="form" method="post">
+                          <div class="form-group">
+                                <label class="control-label" for="cepEnd">CEP</label>
+                                <input class="form-control"  type="text"
+                                name="cepEnd" value='<?php echo $o_endereco->getCepEnd()?>'>
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label" for="ruaEnd">Rua</label>
+                                <input class="form-control"  type="text"
+                                name="ruaEnd" value='<?php echo $o_endereco->getRuaEnd()?>'>
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label" for="numeroEnd">Número</label>
+                                <input class="form-control"  type="text"
+                                name="numeroEnd" value='<?php echo $o_endereco->getNumeroEnd()?>'>
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label" for="bairroEnd">Bairro</label>
+                                <input class="form-control"  type="text"
+                                name="bairroEnd" value='<?php echo $o_endereco->getBairroEnd()?>'>
+                            </div>
+                            <div class="form-group">
+                                <label class="control-label" for="complementoEnd">Complemento</label>
+                                <input class="form-control"  type="text"
+                                name="complementoEnd" value='<?php echo $o_endereco->getComplementoEnd()?>'>
+                            </div>
+							
+                      		 <div class="form-group">
+                      		 
+                      		 <?php 
+								$o_cidade = new CidadeModel();
+								if ($o_endereco->getTb_Cidade_idCid() !== NULL)
+									$o_cidade->loadById($o_endereco->getTb_Cidade_idCid());
+								?>
+						      <label for="tb_Estado_idEstLbl" class="control-label">Estado</label>
+						        <select class="form-control" name="tb_Estado_idEst" onChange="fncSelecionarEstado(this)">
+						        <?php
+									
+									if ($o_cidade->getTb_Estado_idEst() !== NULL)
+										$estado = $o_cidade->getTb_Estado_idEst();
+									else
+										$estado = 18;
+									$o_estado = new EstadoModel();
+									$v_estados = $o_estado->_list();
+									foreach($v_estados AS $o_estado)
+									{
+									?>
+										<option value="<?php echo $o_estado->getIdEst()?>" <?php echo $o_estado->getIdEst() == $estado ? 'selected' : '' ?>><?php echo $o_estado->getUfEst()?></option>
+								<?php
+									}
+									?>
+						        </select>
+						   </div>
+						    
+						    <div class="form-group"> 
+						      <label for="tb_Cidade_idCidLbl" class="control-label">Cidade</label>
+						        <select class="form-control" name="tb_Cidade_idCid" id="tb_Cidade_idCid" >
+						       		<?php
+						       		echo $estado;
+										if ($o_cidade->getIdCid() !== NULL)
+											$cidade = $o_cidade->getIdCid();
+										else
+											$cidade = 2878;
+										$o_cidade = new CidadeModel();
+										echo $estado;
+										echo $v_cidades = $o_cidade->_list($estado);
+										foreach($v_cidades AS $o_cidade)
+										{
+										?>
+											<option value="<?php echo $o_cidade->getIdCid()?>" <?php echo $o_cidade->getIdCid() == $cidade ? 'selected' : '' ?>><?php echo $o_cidade->getNomeCid()?></option>
+									<?php
+										}
+										?>
+						        </select>
+						  	</div>
+                            <div class="row">
+                                <div class="col-md-12 text-center">
+                                    <input type="hidden" name="controle" value="Endereco">
+                                    <input type="hidden" name="acao" value="manterEndereco">
+                                    <button type="submit" class="btn btn-primary btn-lg">Confirmar</button> 
+                                    &nbsp;
+                                    &nbsp;
+                                    &nbsp;
+                                    &nbsp;
+                                    &nbsp;
+                                    &nbsp;
+                                    &nbsp;
+                                    &nbsp;
+                                    <button type="submit" class="btn btn-danger btn-lg">Cancelar</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <?php require 'template/footer.php'; ?>
+    </body>
+</html>

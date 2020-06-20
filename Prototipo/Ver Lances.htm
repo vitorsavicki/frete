@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <title>Bootstrap, from Twitter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link href="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"
+    rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script type="text/javascript" src="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+  </head>
+  
+  <body class="" draggable="true">
+    <div class="navbar navbar-default navbar-static-top">
+      <style>
+        .body{padding-top:70px}
+      </style>
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <img src="IMG-20150223-WA0002.jpg" class="img-responsive">
+        </div>
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+          <ul class="nav navbar-nav navbar-right">
+            <li>
+              <a href="Home.htm">Home</a>
+            </li>
+            <li>
+              <div class="btn-group" style="">
+                <a class="btn btn-lg btn-link dropdown-toggle" data-toggle="dropdown"> Menu <span class="caret"></span></a>
+                <ul class="dropdown-menu" role="menu">
+                  <li>
+                    <a href="Consultar Transporte.htm">Consultar Transporte</a>
+                  </li>
+                  <li>
+                    <a href="Cadastro de Transporte.htm">Solicitar Transporte</a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li>
+              <a href="Escolha de Cadastro.htm">Cadastre-se</a>
+            </li>
+            <li>
+              <a href="Area do Administrador.htm">Administrador</a>
+            </li>
+            <li class="active">
+              <a href="Area do Cliente.htm">Cliente</a>
+            </li>
+            <li>
+              <a href="Area do Transportador.htm">Transportador</a>
+            </li>
+            <li>
+              <a href="Login.htm">Entrar</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <ul class="breadcrumb">
+            <li>
+              <a href="Home.htm">Home</a>
+            </li>
+            <li>
+              <a href="Area do Cliente.htm">Area do Cliente</a>
+            </li>
+            <li class="active" draggable="true">Lances</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="col-md-12 text-justify" size="auto">
+        <ul class="nav nav-justified nav-pills" draggable="true" style=""></ul>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Foto</th>
+              <th draggable="true">Nome do Transportador</th>
+              <th>Transportes Efetuados</th>
+              <th>Reputação</th>
+              <th>Lance</th>
+              <th draggable="true"></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="info">
+                <img src="Caminha1.jpg" class="img-responsive">
+              </td>
+              <td class="info">João do Frete</td>
+              <td class="info">50</td>
+              <td class="info">90%&nbsp;</td>
+              <td class="info">R$ 100.00</td>
+              <td class="info">
+                <a class="btn btn-success" href="Ver Mensagens.htm" a="">Ver Mensagem</a>
+              </td>
+              <td class="info">
+                <a class="btn btn-warning" href="Ver Perfil.htm" a="" onclick="window.open('file:///C:/Users/Vitor/Desktop/Frete_Imediato/Prototipo/Ver Perfil.htm', 'Pagina', 'STATUS=NO, TOOLBAR=NO, LOCATION=NO, DIRECTORIES=NO, RESISABLE=NO, SCROLLBARS=YES, TOP=10, LEFT=10, WIDTH=770, HEIGHT=400');">Ver Perfil</a>
+              </td>
+              <td class="info">
+                <a class="btn btn-primary" a="" href="#">Aceitar&nbsp;</a>
+              </td>
+              <td class="info">
+                <a class="btn btn-danger" a="" href="#">Recusar</a>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <img src="Caminhao2.jpg" class="img-responsive">
+              </td>
+              <td>Chico do Caminhao</td>
+              <td>10</td>
+              <td>80%</td>
+              <td>R$ 50.00</td>
+              <td>
+                <a class="btn btn-success" href="Ver Mensagens.htm" a="">Ver Mensagem</a>
+              </td>
+              <td>
+                <a class="btn btn-warning" href="Ver Perfil.htm" a="" draggable="true">Ver Perfil</a>
+              </td>
+              <td>
+                <a class="btn btn-primary" a="" href="#">Aceitar</a>
+              </td>
+              <td>
+                <a class="btn btn-danger" a="" href="#" draggable="true">Recusar</a>
+              </td>
+            </tr>
+            <tr>
+              <td class="info">
+                <img src="caminhao3.jpg" class="img-responsive">
+              </td>
+              <td class="info">Ricardo da Estrada</td>
+              <td class="info">100</td>
+              <td class="info">87%</td>
+              <td class="info">R$ 90.00</td>
+              <td class="info">
+                <a class="btn btn-success" href="Ver Mensagens.htm" a="">Precisa de Ajuda ?</a>
+              </td>
+              <td class="info">
+                <a class="btn btn-warning" href="Ver Perfil.htm" a="">Ver Perfil</a>
+              </td>
+              <td class="info">
+                <a class="btn btn-primary" a="" href="#">Aceitar</a>
+              </td>
+              <td class="info">
+                <a class="btn btn-danger" a="" href="#" draggable="true">Recusar</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="row">
+        <div class="col-md-12 text-right">
+          <ul class="pagination pagination-lg">
+            <li>
+              <a href="#">Anterior</a>
+            </li>
+            <li>
+              <a href="#">1</a>
+            </li>
+            <li>
+              <a href="#">2</a>
+            </li>
+            <li>
+              <a href="#">3</a>
+            </li>
+            <li>
+              <a href="#">4</a>
+            </li>
+            <li>
+              <a href="#">5</a>
+            </li>
+            <li>
+              <a href="#">Proximo</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </body>
+
+</html>

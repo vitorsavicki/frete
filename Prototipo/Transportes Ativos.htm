@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <title>Bootstrap, from Twitter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link href="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"
+    rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script type="text/javascript" src="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+  </head>
+  
+  <body class="">
+    <div class="navbar navbar-default navbar-static-top">
+      <style>
+        .body{padding-top:70px}
+      </style>
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <img src="IMG-20150223-WA0002.jpg" class="img-responsive">
+        </div>
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+          <ul class="nav navbar-nav navbar-right">
+            <li>
+              <a href="Home.htm">Home</a>
+            </li>
+            <li>
+              <div class="btn-group" style="">
+                <a class="btn btn-lg btn-link dropdown-toggle" data-toggle="dropdown"> Menu <span class="caret"></span></a>
+                <ul class="dropdown-menu" role="menu">
+                  <li>
+                    <a href="Consultar Transporte.htm">Consultar Transporte</a>
+                  </li>
+                  <li>
+                    <a href="Cadastro de Transporte.htm">Solicitar Transporte</a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li>
+              <a href="Escolha de Cadastro.htm">Cadastre-se</a>
+            </li>
+            <li>
+              <a href="Area do Administrador.htm">Administrador</a>
+            </li>
+            <li class="active">
+              <a href="Area do Cliente.htm">Cliente</a>
+            </li>
+            <li>
+              <a href="Area do Transportador.htm">Reansportador</a>
+            </li>
+            <li>
+              <a href="Login.htm">Entrar</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <ul class="breadcrumb">
+            <li>
+              <a href="Home.htm">Home</a>
+            </li>
+            <li>
+              <a href="Area do Cliente.htm">Area do Cliente</a>
+            </li>
+            <li class="active" draggable="true">Transportes Ativos</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="col-md-12 text-justify" size="auto">
+        <ul class="nav nav-justified nav-pills" draggable="true" style="">
+          <li class="active">
+            <a href="Transportes Ativos.htm">Transportes Ativos</a>
+          </li>
+          <li>
+            <a href="Transportes Inativos.htm">Transportes Inativos</a>
+          </li>
+          <li>
+            <a href="Mensagens do Cliente.htm">Mensagens</a>
+          </li>
+        </ul>
+        <hr>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Foto</th>
+              <th>Descrição</th>
+              <th>Origem</th>
+              <th>Destino</th>
+              <th>Distância</th>
+              <th>Numero de Lances</th>
+              <th>Menor Lance</th>
+              <th></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <img src="Movel1.jpg" class="img-responsive" draggable="true">
+              </td>
+              <td>Uma cama de Casal</td>
+              <td>Rua das Camelitas - CIC - Curitiba - Paraná</td>
+              <td>Rua H.Spencer Lewis - Bacacheri - Curitiba - Paraná</td>
+              <td>20 km</td>
+              <td>5</td>
+              <td>R$ 100.00</td>
+              <td>
+                <a class="btn btn-primary" href="Cadastro de Transporte.htm">Editar</a>
+              </td>
+              <td>
+                <a class="btn btn-danger">Cancelar</a>
+              </td>
+              <td draggable="true">
+                <a class="btn btn-success" href="Ver Lances.htm">Ver lances</a>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <img src="Movel2.jpg" class="img-responsive" draggable="true">
+              </td>
+              <td>Uma mesa de escritorio</td>
+              <td>Rua das Camelitas - CIC - Curitiba - Paraná</td>
+              <td draggable="true">Rua H.Spencer Lewis - Bacacheri - Curitiba - Paraná</td>
+              <td>20 km</td>
+              <td>10</td>
+              <td>R$ 100.00</td>
+              <td>
+                <a class="btn btn-primary" href="Cadastro de Transporte.htm">Editar</a>
+              </td>
+              <td>
+                <a class="btn btn-danger">Cancelar</a>
+              </td>
+              <td>
+                <a class="btn btn-success" href="Ver Lances.htm">Ver lances</a>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <img src="Movel3.jpg" class="img-responsive" draggable="true">
+              </td>
+              <td>2 armários</td>
+              <td>Rua das Camelitas - CIC - Curitiba - Paraná</td>
+              <td draggable="true">Rua H.Spencer Lewis - Bacacheri - Curitiba - Paraná</td>
+              <td>20 km</td>
+              <td>1</td>
+              <td>R$ 100.00</td>
+              <td draggable="true">
+                <a class="btn btn-primary" href="Cadastro Tranportador.htm">Editar</a>
+              </td>
+              <td>
+                <a class="btn btn-danger">Cancelar</a>
+              </td>
+              <td draggable="true">
+                <a class="btn btn-success" href="Ver Lances.htm">Ver lances</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="row">
+        <div class="col-md-12 text-right">
+          <ul class="pagination pagination-lg">
+            <li>
+              <a href="#">Anterior</a>
+            </li>
+            <li>
+              <a href="#">1</a>
+            </li>
+            <li>
+              <a href="#">2</a>
+            </li>
+            <li>
+              <a href="#">3</a>
+            </li>
+            <li>
+              <a href="#">4</a>
+            </li>
+            <li>
+              <a href="#">5</a>
+            </li>
+            <li>
+              <a href="#">Proximo</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </body>
+
+</html>

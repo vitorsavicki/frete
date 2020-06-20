@@ -1,0 +1,90 @@
+<?php
+$v_params = $this->getParams();
+$v_conteudos = $v_params['v_conteudos'];
+?>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>
+			Conteudo do Transporte
+		</title>
+		<link rel="stylesheet" type="text/css" href="template/css/default.css" />
+	</head>
+<body>
+	<div align="center">
+		<table class='table_list' width="80%">
+			<tr>
+				<th>
+					ID
+				</th>
+				<th>
+					Descrição
+				</th>
+				<th>
+					Altura 
+				</th>
+				<th>
+					Largura
+				</th>
+				<th>
+					Comprimento
+				</th>
+				<th>
+					Peso
+				</th>
+				<th>
+					Item
+				</th>
+				<th>
+					Transporte
+				</th>
+		
+				<th colspan="3">
+					A&ccedil;&otilde;es
+				</th>
+			</tr>
+			<?php
+			foreach($v_conteudos AS $o_conteudo)
+			{
+				?>
+				<tr>
+					<td>
+						<?php echo $o_conteudo->getIdConTran()?>
+					</td>
+					<td>
+						<?php echo $o_conteudo->getDescricaoItemConTran()?>
+					</td>
+					<td>
+						<?php echo $o_conteudo->getAlturaConTran()?>
+					</td>
+					<td>
+						<?php echo $o_conteudo->getLarguraConTran()?>
+					</td>
+					<td>
+						<?php echo $o_conteudo->getComprimentoConTran()?>
+					</td>
+					<td>
+						<?php echo $o_conteudo->getPesoConTran()?>
+					</td>
+					<td>
+						<?php echo$o_conteudo->getTb_item_idItem()?>
+					</td>
+					<td>
+						<?php echo$o_conteudo->getTb_transporte_id()?>
+					</td>
+					<td align="center">
+						<a href='?controle=ConteudoTransporte&acao=manterConteudoTransporte&idConTran=<?php echo $o_conteudo->getIdConTran()?>' class='bt_blue'>Editar</a>
+					</td>
+					<td align="center">
+						<a href='?controle=ConteudoTransporte&acao=apagarConteudoTransporte&idConTran=<?php echo $o_conteudo->getIdConTran()?>' class='bt_red'>Apagar</a>
+					</td>
+				</tr>
+				<?php
+			}
+			?>
+		</table>
+		<br />
+		<a href='?controle=ConteudoTransporte&acao=manterConteudoTransporte' class='bt_green'>Novo</a>
+	</div>
+</body>
+</html>

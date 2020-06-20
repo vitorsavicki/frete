@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <title>Bootstrap, from Twitter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link href="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"
+    rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script type="text/javascript" src="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+  </head>
+  
+  <body class="">
+    <div class="navbar navbar-default navbar-static-top">
+      <style>
+        .body{padding-top:70px}
+      </style>
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <img src="IMG-20150223-WA0002.jpg" class="img-responsive">
+        </div>
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+          <ul class="nav navbar-nav navbar-right">
+            <li>
+              <a href="Home.htm">Home</a>
+            </li>
+            <li>
+              <div class="btn-group" style="">
+                <a class="btn btn-lg btn-link dropdown-toggle" data-toggle="dropdown"> Menu <span class="caret"></span></a>
+                <ul class="dropdown-menu" role="menu">
+                  <li>
+                    <a href="Consultar Transporte.htm">Consultar Transporte</a>
+                  </li>
+                  <li>
+                    <a href="Cadastro de Transporte.htm">Solicitar Transporte</a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li>
+              <a href="Escolha de Cadastro.htm">Cadastre-se</a>
+            </li>
+            <li>
+              <a href="Area do Administrador.htm">Administrador</a>
+            </li>
+            <li>
+              <a href="Area do Cliente.htm">Cliente</a>
+            </li>
+            <li class="active">
+              <a href="Area do Transportador.htm">Transportador</a>
+            </li>
+            <li>
+              <a href="Login.htm">Entrar</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <ul class="breadcrumb">
+            <li>
+              <a href="Home.htm">Home</a>
+            </li>
+            <li>
+              <a href="Area do Transportador.htm">Area do Transportador</a>
+            </li>
+            <li>
+              <a href="Meus Transportes.htm">Meus Transportes</a>
+            </li>
+            <li class="active">Transportes Ganhos</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="col-md-12">
+        <ul class="nav nav-justified nav-pills">
+          <li class="active">
+            <a href="Meus Transportes.htm">Meus Transportes</a>
+          </li>
+          <li>
+            <a href="Minhas Mensagens.htm">Menhas Mensagens</a>
+          </li>
+          <li>
+            <a href="Meus Dados.htm">Meus Dados</a>
+          </li>
+        </ul>
+      </div>
+      <div class="col-md-12">
+        <hr>
+      </div>
+      <div class="col-md-12">
+        <ul class="nav nav-justified nav-pills">
+          <li>
+            <a href="Meus Lances.htm">Lances</a>
+          </li>
+          <li class="active">
+            <a href="Transportes Ganhos.htm">Tranportes Ganhos</a>
+          </li>
+          <li>
+            <a href="Alertas de Transportes.htm">Alertas de Transportes</a>
+          </li>
+        </ul>
+        <hr>
+      </div>
+      <div class="row" style="">
+        <div class="col-md-12">
+          <table class="table" draggable="true">
+            <thead>
+              <tr>
+                <th draggable="true">Ver Detalhes</th>
+                <th>Descrição</th>
+                <th draggable="true">Origem</th>
+                <th draggable="true">Destino</th>
+                <th>Distância</th>
+                <th>Data do Transporte</th>
+                <th>Seu Lance Vencedor</th>
+                <th>Status do Transporte</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="success">
+                  <a class="btn btn-primary" href="Detalhes Tranporte.htm"><span class="glyphicon glyphicon-star" a="" href="#"></span></a>
+                </td>
+                <td class="success">
+                  <a class="text-center">Mudança de uma Cama de Casal</a>
+                </td>
+                <td class="success" draggable="true">Rua das Orquideas - Xaxim - Curitiba</td>
+                <td class="success">Rua dos Frates - Bacaccheri - Curitiba</td>
+                <td class="success">&nbsp;6 km</td>
+                <td class="success">12/03/2014</td>
+                <td class="success">R$ 80.00</td>
+                <td class="success">Concluido</td>
+              </tr>
+              <tr>
+                <td class="warning">
+                  <a class="btn btn-primary" href="Detalhes Tranporte.htm"><span class="glyphicon glyphicon-star" a="" href="#"></span></a>
+                </td>
+                <td class="warning">
+                  <a class="text-center" draggable="true">Mudança de uma Cama de Casal</a>
+                </td>
+                <td class="warning">Rua das Orquideas - Xaxim - Curitiba</td>
+                <td class="warning">Rua dos Frates - Bacaccheri - Curitiba</td>
+                <td class="warning">15 km</td>
+                <td class="warning">15/03/2014</td>
+                <td class="warning">R$ 90.00</td>
+                <td class="warning">Em Andamento</td>
+              </tr>
+              <tr>
+                <td class="danger">
+                  <a class="btn btn-primary" href="Detalhes Tranporte.htm"><span class="glyphicon glyphicon-star" a="" href="#"></span></a>
+                </td>
+                <td class="danger">
+                  <a class="text-center" draggable="true">Mudança de uma Cama de Casal</a>
+                </td>
+                <td class="danger">Rua das Orquideas - Xaxim - Curitiba</td>
+                <td class="danger">Rua dos Frates - Bacaccheri - Curitiba</td>
+                <td class="danger">20 km</td>
+                <td class="danger">20/03/2014</td>
+                <td class="danger">R$ 100.00</td>
+                <td class="danger">Cancelado pelo Cliente</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12 text-right">
+          <ul class="pagination pagination-lg">
+            <li>
+              <a href="#">Anterior</a>
+            </li>
+            <li>
+              <a href="#">1</a>
+            </li>
+            <li>
+              <a href="#">2</a>
+            </li>
+            <li>
+              <a href="#">3</a>
+            </li>
+            <li>
+              <a href="#">4</a>
+            </li>
+            <li>
+              <a href="#">5</a>
+            </li>
+            <li>
+              <a href="#">Prôximo</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </body>
+
+</html>

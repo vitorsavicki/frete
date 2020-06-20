@@ -1,0 +1,250 @@
+ <?php
+header('Content-Type: text/html; charset=utf-8');
+  // A sessão precisa ser iniciada em cada página diferente
+if (!isset($_SESSION)) session_start();
+
+
+// Verifica se não há a variável da sessão que identifica o usuário
+if ($_SESSION['codigoPer'] <> 'A') {
+	// Destrói a sessão por segurança
+	session_destroy();
+	// Redireciona o visitante de volta pro login
+	header("Location: index.php"); exit;
+}
+  $v_params = $this->getParams();
+  $o_mensalidade = $v_params['o_mensalidade'];
+  ?>
+ <html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap Core CSS - Uses
+        Bootswatch Flatly Theme: http://bootswatch.com/flatly/ -->
+        <link href="template/css/bootstrap.min.css" rel="stylesheet">
+        <!-- Custom CSS -->
+        <link href="template/css/freelancer.css" rel="stylesheet">
+        <!-- Custom Fonts -->
+        <link href="template/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href="http://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
+        <link href="http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media
+        queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file://
+        -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+        <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+        <script type="text/javascript" src="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+        <link href="template/css/fileinput.css" media="all" rel="stylesheet" type="text/css" />
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <script src="template/js/fileinput.min.js" type="text/javascript"></script>
+        <script src="template/js/fileinput_locale_pt-BR.js" type="text/javascript"></script>
+        <script src="template/js/jquery.validate.min.js"></script>
+        <script type="text/javascript" src="template/js/jquery.mask.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="template/AdminLTE.min.css" />
+        <link href="template/bootstrap-datepicker/css/bootstrap-datepicker3.css" rel="stylesheet">
+		<script src="template/bootstrap-datepicker/js/bootstrap-datepicker.js"></script>
+        <script type="text/javascript" src="template/bootstrap-datepicker/locales/bootstrap-datepicker.pt-BR.min.js"></script>
+        <script src="template/js/jquery.maskMoney.js" type="text/javascript"></script>
+        <script>
+       
+        
+        function fncJsonCodigo() {
+                var request = $.ajax({
+                    url: "./views/verificarTransportadorVoucher.php",
+                    type: "POST",           
+                    dataType: "json",
+                    data: {"idPes":$('#tb_pessoa_idPes').val()}
+                });
+                request.done(function(data) {
+                    //alert(result);
+                    if(data == true) {
+                        $(document).ready(function() {
+                            msg('erro', 'A mesalidade não pode ser gerada para esse transportador pois ele possui um voucher de desconto ainda válido .');
+                            
+                            $('#tb_pessoa_idPes').val(0);
+                        });
+                    }
+                });
+    
+                request.fail(function(jqXHR, textStatus) {
+                    alert( "Erro (Ajax - Voucher Transportador): " + textStatus );
+                });
+            };
+            
+        </script>
+        <style>
+            body { padding-top: 120px; }
+        </style>
+    </head>
+    
+    <?php require 'template/header.php'; ?>
+
+   <body id="page-top">
+   	<div class="section">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <ul class="breadcrumb">
+              <li>
+                <a href="?controle=Index&acao=Index">Home</a>
+              </li>
+              <li>
+                <a href="?controle=Pessoa&acao=areaAdministrador">Área do Administrador</a> 
+              </li>
+               <li class="active">
+               		Gerar Mensalidade
+               </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+        <div class="section">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h1 class="text-center">Gerar Mensalidade</h1>
+                    </div>
+                </div>
+                <div class="row">
+     
+	  <div class="row">
+           <div class="col-md-6 col-md-offset-3">
+               <form  role="form" method="post" id="form" name="form" enctype="multipart/form-data">
+                   
+                   <div class="form-group">
+                          <label class="control-label" for="tb_pessoa_idPes">Transportador</label>
+                            <select class="form-control" name='tb_pessoa_idPes' id='tb_pessoa_idPes' onChange="fncJsonCodigo(this)"required="">
+                            <option value="">Selecione um Transportador</option>
+                            <?php
+                                $o_pessoa = new PessoaModel();
+                                $v_pessoas = $o_pessoa->_list(null,'T');
+                                foreach($v_pessoas AS $o_pessoa)
+                                {
+                                ?>
+                                    <option value="<?php echo $o_pessoa->getIdPes() ?>" <?php if ($o_mensalidade->getTb_pessoa_idPes() == $o_pessoa->getIdPes() ) echo 'selected' ?>><?php echo $o_pessoa->getPrimeiroNomePes() .' '. $o_pessoa->getSobreNomePes() ?></option>
+                                <?php
+                                }
+                                ?>
+                        </select>
+                     </div>
+                     <div id="resposta" name="resposta"></div>
+                   
+               <div class="input-group">
+               	<label class="control-label">Data de vencimento</label></label>
+               		<div class="form-group col-xs-12  controls">
+   							<div class="input-group date">
+	   						 
+	            				<input type="text" class="form-control" id='dataVencimentoMensa' name='dataVencimentoMensa' 
+								value='<?php if($o_mensalidade->getDataVencimentoMensa())echo date('d-m-Y', strtotime($o_mensalidade->getDataVencimentoMensa()))?>' 
+								data-validation-required-message="Por favor selecione uma data de vencimento."
+			                    placeholder="Data de vencimento" readonly="" required=""><span class="input-group-addon">
+			                    <i class="glyphicon glyphicon-th"></i></span>
+							
+							<p class="help-block text-danger"></p>
+        					</div>
+        			</div>
+        	</div>
+					 <script>
+					$('.input-group.date').datepicker({
+				        format: "dd-mm-yyyy",
+				        todayBtn: "linked",
+				        autoclose: true,
+				        todayHighlight: true,
+				        language: "pt-BR",
+				        startDate: 'today'
+				       
+			    	});
+					 </script> 
+					 
+					  <div class="form-group">
+						  <label class="control-label" for="lblValor">Valor</label>
+							  <input type='text' class="form-control" name='valorMensa' id="valorMensa"
+							  value="<?php if($o_mensalidade->getValorMensa()) echo 'R$ ' . number_format($o_mensalidade->getValorMensa(), 2, ',', '.')?>"
+							  required data-thousands="." data-decimal="," data-prefix="R$ " 
+							  placeholder="Informe o valor da mensalidade"> 
+					  </div>
+					   <script type="text/javascript">$("#valorMensa").maskMoney();</script>
+					    <div class="form-group">
+			              <label class="control-label" for="lblSituacao">Situação</label>
+							<select class="form-control" name='tb_situacaoMensalidade_idSit' id='tb_situacaoMensalidade_idSit' required="">
+							<option value="">Selecione uma Situação</option>
+							<?php
+								  
+								$o_situacaomensalidade = new SituacaoMensalidadeModel();
+								$v_situacaomensalidades = $o_situacaomensalidade->_list();
+								foreach($v_situacaomensalidades AS $o_situacaomensalidade)
+								{
+								?>
+									<option value="<?php echo $o_situacaomensalidade->getIdSit() ?>" <?php if ($o_situacaomensalidade->getIdSit() == $o_mensalidade->getTb_situacaoMensalidade_idSit() ) echo 'selected' ?>><?php echo $o_situacaomensalidade->getDescricaoSit() ?></option>
+								<?php
+								}
+								?>
+						</select>
+			            </div>
+					  <div class="form-group">
+					  	<div class="col-md-12 text-center">
+							  <input type='hidden' name='controle' value='Mensalidade'>
+							  <input type='hidden' name='acao' value='gerarMensalidade'>
+							  <input type='hidden' name='idMensa' value='<?php echo $o_mensalidade->getIdMensa()?>'>
+							  <button type='submit' class='btn btn-primary'>Confirmar</button>
+							  <a href='?controle=Pessoa&acao=areaAdministrador' class='btn btn-danger'>Cancelar</a>
+						</div>
+					  </div>
+					  </form>
+				 </div>
+			  </div>
+		  </div>
+  		</div>
+  		</div>
+      	  <script>
+      	  	$('form').validate({    
+		    
+	        highlight: function(element) {
+	            $(element).closest('.form-group').addClass('has-error');
+	        },
+	        unhighlight: function(element) {
+	            $(element).closest('.form-group').removeClass('has-error');
+	        },
+	        errorElement: 'span',
+	        errorClass: 'help-block',
+	        errorPlacement: function(error, element) {
+	            if(element.parent('.input-group').length) {
+	                error.insertAfter(element.parent());
+	            } else {
+	                error.insertAfter(element);
+	            }
+	        }
+	    });
+      	</script>
+      	
+      	<script>
+      	        function msg(alerta, texto) {
+                 var resposta = '';
+                 $("#resposta").empty();
+                 if (alerta === 'sucesso') {
+                   resposta = "<div class='alert btn-success text-center' role='alert'>" +
+                     "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+                     texto + "</div>";
+                 } else if (alerta === 'atencao') {
+                   resposta = "<div class='alert btn-warning text-center' role='alert'>" +
+                     "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+                     texto + "</div>";
+                 } else if (alerta === 'erro') {
+                   resposta = "<div class='alert btn-danger text-center' role='alert'>" +
+                     "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+                     texto + "</div>";
+                 }
+                 $("#resposta").append(resposta);
+            
+                 $(".alert").click(function() {
+                   $(".alert").hide();
+                 });
+               }
+      	</script>
+      	
+</body>
+ <?php require 'template/footer.php'; ?>
+</html>

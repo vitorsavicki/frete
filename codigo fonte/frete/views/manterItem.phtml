@@ -1,0 +1,169 @@
+<?php
+ header("Content-Type: text/html; charset=UTF-8",true);
+// A sessão precisa ser iniciada em cada página diferente
+if (!isset($_SESSION))
+	session_start();
+
+// Verifica se não há a variável da sessão que identifica o usuário
+if ($_SESSION['codigoPer'] <> 'A') {
+	// Destrói a sessão por segurança
+	session_destroy();
+	// Redireciona o visitante de volta pro login
+	header("Location: index.php");
+	exit ;
+}
+$v_params = $this -> getParams();
+$o_item = $v_params['o_item'];
+?>
+<html> 
+ <head>
+         <!-- Bootstrap Core CSS - Uses
+        Bootswatch Flatly Theme: http://bootswatch.com/flatly/ -->
+        <link href="template/css/bootstrap.min.css" rel="stylesheet">
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <!-- Custom CSS -->
+        <link href="template/css/freelancer.css" rel="stylesheet">
+        <!-- Custom Fonts -->
+        <link href="template/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href="http://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
+        <link href="http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media
+        queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file://
+        -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+        <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+        <script type="text/javascript" src="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+        <script src="template/js/jquery.validate.min.js"></script>
+        <script type="text/javascript" src="template/js/jquery.mask.min.js"/></script>
+        <script src="template/js/jquery.maskMoney.js" type="text/javascript"></script>
+        <link rel="stylesheet" type="text/css" href="template/AdminLTE.min.css" />
+        <link rel="stylesheet" type="text/css" href="template/css/datepicker.css">
+        <script src="template/js/bootstrap-datepicker.js"></script>
+        <script type="text/javascript" src="template/js/locales/bootstrap-datepicker.pt-BR.js"></script>
+         <style>
+			body {
+				padding-top: 120px;
+			}
+        </style>
+    </head>
+    <?php
+	require 'template/header.php';
+ ?>
+
+    <body id="page-top">
+    	 <div class="section">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <ul class="breadcrumb">
+              <li>
+                <a href="?controle=Index&acao=Index">Home</a>
+              </li>
+              <li>
+                <a href="?controle=Pessoa&acao=areaAdministrador">Área do Administrador</a> 
+              </li>
+               <li class="active">
+                <a href="?controle=Item&acao=listarItem">Lista de Itens</a> 
+              </li>
+              <li>
+              	<?php if(isset($_GET['idItem'])){ ?>
+              		Editar Item
+              		<?php
+					}
+					else{
+				?>
+				Novo Item
+				
+				<?php
+				}
+				?>
+				
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+        <div class="section">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h1 class="text-center"><?php if(isset($_GET['idItem'])){ ?>
+              		Editar Item
+              		<?php
+					}
+					else{
+				?>
+				Novo Item
+				
+				<?php
+				}
+				?></h1>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 col-md-offset-3">
+                        <form role="form" method="post">
+                   <div class="form-group">
+						<label class="control-label" for="lblNome">Nome</label>
+						<input type='text' class="form-control" name='nomeItem' required="" value='<?php echo $o_item->getNomeItem()?>'> 
+					</div>
+					<div class="form-group">
+						<label class="control-label" for="lblCategoria">Categoria</label>
+						<select class="form-control" name='tb_categoria_idCat' required="">
+						<option value="">Selecione uma Categoria</option>
+						<?php
+							$o_categoria = new CategoriaModel();
+							$v_categorias = $o_categoria->_list();
+							foreach($v_categorias AS $o_categoria)
+							{
+							?>
+								<option  value="<?php echo $o_categoria->getIdCat()?>" <?php if ($o_categoria->getIdCat() == $o_item->getTb_categoria_idCat()) echo 'selected' ?>><?php echo $o_categoria->getNomeCat()?></option>
+						<?php
+						}
+							?>
+						</select>
+					</div>
+                            
+                            <div class="row">
+                                <div class="col-md-12 text-center">
+                                    <input type="hidden" name="controle" value="Item">
+                                    <input type="hidden" name="acao" value="manterItem">
+                                    <button type="submit" class="btn btn-primary">Confirmar</button>
+                                    <a href="?controle=Item&acao=listarItem" type="button" class="btn btn-danger">Cancelar</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+			$('form').validate({
+				highlight : function(element) {
+					$(element).closest('.form-group').addClass('has-error');
+				},
+				unhighlight : function(element) {
+					$(element).closest('.form-group').removeClass('has-error');
+				},
+				errorElement : 'span',
+				errorClass : 'help-block',
+				errorPlacement : function(error, element) {
+					if (element.parent('.input-group').length) {
+						error.insertAfter(element.parent());
+					} else {
+						error.insertAfter(element);
+					}
+				}
+			});
+        </script>
+        
+    </body>
+    <?php
+	require 'template/footer.php';
+ ?>
+</html>

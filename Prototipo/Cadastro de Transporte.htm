@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <title>Bootstrap, from Twitter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link href="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"
+    rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script type="text/javascript" src="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+  </head>
+  
+  <body class="">
+    <div class="navbar navbar-default navbar-static-top">
+      <style>
+        .body{padding-top:70px}
+      </style>
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <img src="IMG-20150223-WA0002.jpg" class="img-responsive">
+        </div>
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+          <ul class="nav navbar-nav navbar-right">
+            <li>
+              <a href="Home.htm">Home</a>
+            </li>
+            <li>
+              <div class="btn-group" style="">
+                <a class="btn btn-lg btn-link dropdown-toggle" data-toggle="dropdown"> Menu <span class="caret"></span></a>
+                <ul class="dropdown-menu" role="menu">
+                  <li>
+                    <a href="Consultar Transporte.htm">Consultar Transporte</a>
+                  </li>
+                  <li>
+                    <a href="Cadastro de Transporte.htm">Solicitar Transporte</a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li>
+              <a href="Escolha de Cadastro.htm">Cadastre-se</a>
+            </li>
+            <li>
+              <a href="Area do Administrador.htm">Administrador</a>
+            </li>
+            <li class="active">
+              <a href="Area do Cliente.htm">Cliente</a>
+            </li>
+            <li>
+              <a href="Area do Transportador.htm">Transportador</a>
+            </li>
+            <li>
+              <a href="Login.htm">Entrar</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <ul class="breadcrumb">
+            <li>
+              <a href="Home.htm">Home</a>
+            </li>
+            <li class="active">Solicitar Transporte</li>
+          </ul>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <h1 class="text-center text-primary" contenteditable="true">Faça sua Solicitação de Transporte</h1>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <form role="form">
+            <div class="form-group">
+              <label class="control-label" for="exampleInputEmail1">Categoria</label>
+              <select class="form-control">
+                <option value="Mov">Movéis e itens gerais</option>
+                <option value="Cas">Mudança de Casa</option>
+                <option value="Cai">Caixas e Pacotes</option>
+                <option value="Ani">Animais</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="control-label" for="exampleInputPassword1">Breve descrição dos que você precisa Mudar</label>
+              <input class="form-control"
+              id="exampleInputPassword1" placeholder="" type="text">
+            </div>
+            <div class="form-group">
+              <label class="control-label" for="exampleInputPassword1">CEP ou endereço de origem</label>
+              <input class="form-control" id="exampleInputPassword1"
+              placeholder="" type="text">
+            </div>
+            <div class="form-group">
+              <label class="control-label" for="exampleInputPassword1">CEP ou enderço de destino</label>
+              <input class="form-control" id="exampleInputPassword1"
+              placeholder="" type="text">
+            </div>
+            <div class="form-group">
+              <label class="control-label" for="exampleInputPassword1">Data que precisa do Transporte</label>
+              <input class="form-control" id="exampleInputPassword1"
+              placeholder="" type="text">
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <h1 class="text-center text-primary">Informações Opcionais</h1>
+        </div>
+        <div class="col-md-12">
+          <h3 contenteditable="true">Número de Itens</h3>
+        </div>
+        <div class="col-md-12">
+          <form role="form">
+            <div class="form-group">
+              <label class="control-label" for="exampleInputEmail1">itens</label>
+              <select class="form-control">
+                <option value="Mov">Colchão</option>
+                <option value="Cas">Cadeiras</option>
+                <option value="Cai">Mesas</option>
+                <option value="Ani">Sofas/option&gt;</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="control-label" for="exampleInputPassword1">Quantidade</label>
+              <input class="form-control" id="exampleInputPassword1"
+              placeholder="" type="text">
+            </div>
+          </form>
+          <div class="row">
+            <div class="col-md-12 text-center">
+              <a class="btn btn-primary">Adicionar</a>
+            </div>
+          </div>
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Quantidade</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="info">Mark</td>
+                <td class="info">1</td>
+                <td class="info">
+                  <a class="btn btn-danger">Excluir</a>
+                </td>
+              </tr>
+              <tr>
+                <td>Jacob</td>
+                <td>2</td>
+                <td>
+                  <a class="btn btn-danger">Excluir</a>
+                </td>
+              </tr>
+              <tr>
+                <td class="info">Larry</td>
+                <td class="info">3</td>
+                <td class="info">
+                  <a class="btn btn-danger">Excluir</a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="row">
+            <div class="col-md-12 text-right">
+              <ul class="pagination pagination-lg">
+                <li>
+                  <a href="#">Anterior</a>
+                </li>
+                <li>
+                  <a href="#">1</a>
+                </li>
+                <li>
+                  <a href="#">2</a>
+                </li>
+                <li>
+                  <a href="#">3</a>
+                </li>
+                <li>
+                  <a href="#">4</a>
+                </li>
+                <li>
+                  <a href="#">5</a>
+                </li>
+                <li draggable="true">
+                  <a href="#">Proximo</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-12">
+          <h3 contenteditable="true" style="">Necessita de ajudante para carregar ?</h3>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-3">
+          <blockquote>
+            <p>
+              <input type="checkbox" name="vehicle" value="Car">Sim</p>
+          </blockquote>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <h3>Fotos dos itens</h3>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
+          <img src="Movel1.jpg" class="img-responsive">
+        </div>
+        <div class="col-md-6">
+          <img src="Movel2.jpg" class="img-responsive">
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12 text-center">
+          <a class="btn btn-lg btn-primary">Upload Imagem</a>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <h3>Coloque um preço a pagar pelo trasporte</h3>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <form role="form">
+            <div class="form-group" draggable="true">
+              <label class="control-label" for="exampleInputEmail1">Preço Maximo</label>
+              <input class="form-control" id="exampleInputEmail1"
+              placeholder="" type="email">
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
+          <h3>Coloque comentarios ou informações Adicionais</h3>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <form role="form">
+            <div class="form-group" draggable="true">
+              <input class="form-control" id="exampleInputEmail1" placeholder=" " type="text">
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12 text-center">
+          <a class="btn btn-primary" href="Meus Transportes.htm">Confirmar</a>
+          <a class="btn btn-danger">Cancelar</a>
+        </div>
+      </div>
+    </div>
+  </body>
+
+</html>

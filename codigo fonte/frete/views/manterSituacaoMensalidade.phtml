@@ -1,0 +1,39 @@
+<?php
+$v_params = $this->getParams();
+$o_situacaomensalidade = $v_params['o_situacaomensalidade'];
+?>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>
+			Situação de Mensalidade
+		</title>
+		<link rel="stylesheet" type="text/css" href="template/css/default.css" />
+		<script language="javascript" src="template/js/jquery-2.1.4.min.js"></script>
+	</head>
+<body>
+	<div align="center">
+		<form method='post'>
+		<table class='table_list' width="400">
+			<tr height="25">
+				<td>
+					Descricao:
+				</td>
+				<td>
+					<input type='text' name='descricaoSit' value='<?php echo $o_situacaomensalidade->getDescricaoSit()?>'>
+				</td>	
+			</tr>
+			<tr height="25">			
+				<td align="center" colspan ="2">
+					<input type='hidden' name='controle' value='SituacaoMensalidade'>
+					<input type='hidden' name='acao' value='manterSituacaoMensalidade'>
+					<input type='hidden' name='idSit' value='<?php echo $o_situacaomensalidade->getIdSit()?>'>
+					<button type='submit' class='bt_green'>Salvar</button>
+					<a href='?controle=SituacaoMensalidade&acao=listarSituacaoMensalidade' class='bt_red'>Cancelar</a>
+				</td>
+			</tr>			
+		</table>
+		</form>
+	</div>
+</body>
+</html>

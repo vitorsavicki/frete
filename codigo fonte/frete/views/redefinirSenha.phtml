@@ -1,0 +1,364 @@
+<?php
+require_once ('facebook-php-sdk-v4-5.0-dev/src/Facebook/autoload.php');
+if(!isset($_SESSION)) session_start();
+header('Content-Type: text/html; charset=utf-8');
+?>
+
+<html> 
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap Core CSS - Uses
+        Bootswatch Flatly Theme: http://bootswatch.com/flatly/ -->
+        <link href="template/css/bootstrap.min.css" rel="stylesheet">
+        <!-- Custom CSS -->
+        <link href="template/css/freelancer.css" rel="stylesheet">
+        <!-- Custom Fonts -->
+        <link href="template/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href="http://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
+        <link href="http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media
+        queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file://
+        -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+		<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+        <script type="text/javascript" src="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+        <link href="template/css/fileinput.css" media="all" rel="stylesheet" type="text/css" />
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <script src="template/js/fileinput.min.js" type="text/javascript"></script>
+        <script src="template/js/fileinput_locale_pt-BR.js" type="text/javascript"></script>
+        <script src="template/js/jquery.validate.min.js"></script>
+        <script type="text/javascript" src="template/js/jquery.mask.min.js"></script>
+        <script type="text/javascript">
+        function check_email(val){
+		    if(!val.match(/\S+@\S+\.\S+/)){ // Jaymon's / Squirtle's solution
+		        // Do something
+		        return false;
+		    }
+		    if( val.indexOf(' ')!=-1 || val.indexOf('..')!=-1){
+		        // Do something
+		        return false;
+		    }
+		    return true;
+		}
+        $(document).ready(function(){
+		   $(function(){
+	        $("input[name='emailPes']").blur(function(){
+
+	 			fncJson();
+	 	
+	    	});
+	    	});
+		});
+          
+        function fncJson() {
+			//alert($('#emailPes').val());	
+			var request = $.ajax({
+				url: "./views/verificarEmail.php",
+				type: "POST",			
+				dataType: "json",
+				data: {"emailPes":$('#emailPes').val()}
+			});
+			request.done(function(data) {
+				
+			    var result = check_email($('#emailPes').val());
+			    //alert(result);
+				
+                if(data == true && result) {
+                    $("input[name='emailPes']").val('').focus();
+                    $(document).ready(function() {
+						msg1('erro', 'Email já possui cadastro.');
+					});
+                }
+                else if(data == false && result ){
+                	$(document).ready(function() {
+						msg1('sucesso', 'Email válido.');
+					});
+                }
+			});
+
+			request.fail(function(jqXHR, textStatus) {
+				alert( "Erro (Ajax - listar transporte): " + textStatus );
+			});
+		};
+		
+        </script>
+         <style>
+        	@media (min-width: 768px) {
+			    .omb_row-sm-offset-3 div:first-child[class*="col-"] {
+			        margin-left: 25%;
+			    }
+			}
+			
+			.omb_login .omb_authTitle {
+			    text-align: center;
+				line-height: 300%;
+			}
+				
+			.omb_login .omb_socialButtons a {
+				color: white; // In yourUse @body-bg 
+				opacity:0.9;
+			}
+			.omb_login .omb_socialButtons a:hover {
+			    color: white;
+				opacity:1;    	
+			}
+			.omb_login .omb_socialButtons .omb_btn-facebook {background: #3b5998;}
+			.omb_login .omb_socialButtons .omb_btn-twitter {background: #00aced;}
+			.omb_login .omb_socialButtons .omb_btn-google {background: #c32f10;}
+			
+			
+			.omb_login .omb_loginOr {
+				position: relative;
+				font-size: 1.5em;
+				color: #aaa;
+				margin-top: 1em;
+				margin-bottom: 1em;
+				padding-top: 0.5em;
+				padding-bottom: 0.5em;
+			}
+			.omb_login .omb_loginOr .omb_hrOr {
+				background-color: #cdcdcd;
+				height: 1px;
+				margin-top: 0px !important;
+				margin-bottom: 0px !important;
+			}
+			.omb_login .omb_loginOr .omb_spanOr {
+				display: block;
+				position: absolute;
+				left: 50%;
+				top: -0.6em;
+				margin-left: -1.5em;
+				background-color: white;
+				width: 3em;
+				text-align: center;
+			}			
+			
+			.omb_login .omb_loginForm .input-group.i {
+				width: 2em;
+			}
+			.omb_login .omb_loginForm  .help-block {
+			    color: red;
+			}
+			
+				
+			@media (min-width: 768px) {
+			    .omb_login .omb_forgotPwd {
+			        text-align: right;
+					margin-top:10px;
+			 	}		
+			}
+		
+    .bs-example{
+    	margin: 20px;
+    }
+
+        </style>
+       
+        
+          <style>
+            body { padding-top: 210px; }
+        </style>
+    </head>
+    <nav class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a  href="#page-top"><img class="img-rounded" height="150px" width="200px" src="template/images/frete1.png"></a>
+        </div>
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+          <ul class="nav navbar-nav navbar-right">
+            <li class="hidden">
+              <a href="#page-top"></a>
+            </li>
+             <li class="page-scroll">
+              <a href="?controle=Index&acao=Index">HOME</a>
+            </li>
+            <li class="page-scroll">
+              <a href="?controle=Index&acao=Index&#cadastre">CADASTRE-SE</a>
+            </li>
+            <li class="page-scroll">
+              <a href="?controle=Index&acao=Index&#about">SOBRE</a>
+            </li>
+            <li class="page-scroll">
+              <a href="?controle=Index&acao=Index&#contact">FALE CONOSCO</a>
+            </li>
+             <?php
+            
+			if(!isset($_SESSION['primeiroNomePes'])){
+			?>
+             <li class="page-scroll">
+              <a href="?controle=Pessoa&acao=paginaLogin">ENTRAR</a>
+            </li>
+            	<?php
+			}
+			?>
+          	 <?php
+			if(isset($_SESSION['primeiroNomePes'])){
+			?>
+			<li class="page-scroll">
+			<?php require '\template\alertas.php'; ?>
+			</li>
+            <li class="dropdown dropdown-right">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown"> 
+            <?php if(isset($_SESSION['fotoPes']) AND $_SESSION['fotoPes'] <> "")
+			{
+				?>
+			<img class="img-rounded" height="25px" width="25px" src="<?php echo $_SESSION['fotoPes'];?>"> <?php echo $_SESSION['primeiroNomePes']; ?>  <b class="caret"></b></a>
+			<?php
+			}
+			else {
+			?>
+            <img class="img-rounded" height="25px" width="25px" src="http://pingendo.github.io/pingendo-bootstrap/assets/user_placeholder.png"> <?php echo $_SESSION['primeiroNomePes']; ?>  <b class="caret"></b></a>
+            <?php
+			}
+            ?>
+            <ul class="dropdown-menu">
+            	<?php
+               if($_SESSION['codigoPer'] == 'U')
+			   {
+			   ?>
+              <li><a href="?controle=Pessoa&acao=areaCliente">Minha Área</a></li>
+              <?php
+			   }
+			   ?>
+			   <?php
+			   if($_SESSION['codigoPer'] == 'T')
+			   {
+			   ?>
+              <li><a href="?controle=Pessoa&acao=areaTransportador">Minha Área</a></li>
+              <?php
+			   }
+			   ?>
+			   <?php
+			   if($_SESSION['codigoPer'] == 'A')
+			   {
+			   ?>
+              <li><a href="?controle=Pessoa&acao=areaAdministrador">Minha Área</a></li>
+              <?php
+			   }
+			   ?>
+              <li><a href="?controle=Login&acao=logout">Sair</a></li>
+            </ul>
+          	</li>
+          	<?php
+          	}
+			?>		
+          </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+      </div>
+      <!-- /.container-fluid -->
+    </nav>
+
+	<body id="page-top" class="index">	
+		<div class="container">
+		    <div class="row">
+		        <div class="row">
+		            <div class="col-md-4 col-md-offset-4">
+		                <div class="panel panel-default">
+		                    <div class="panel-body">
+		                        <div class="text-center">
+		                          <h3 class="text-center">Esqueceu sua senha <?php echo $_GET['nome'] ?> ?</h3>
+		                          <p>Se você esqueceu sua senha - redefina ela  aqui..</p>
+		                            <div class="panel-body">
+		                              
+		                              <form  role="form" method="post" id="form" name="form" enctype="multipart/form-data"><!--start form--><!--add form action as needed-->
+		                                <fieldset>
+		                                  <div class="form-group">
+		                                    <div class="input-group">
+		                                      <span class="input-group-addon"><i class="glyphicon glyphicon-lock color-blue"></i></span>
+		                                      <input id="senhaPes" name="senhaPes" placeholder="Senha" class="form-control" type="password" required="">
+		                                    </div>
+		                                  </div>
+		                                  <div class="form-group">
+		                                    <div class="input-group">
+		                                      <span class="input-group-addon"><i class="glyphicon glyphicon-lock color-blue"></i></span>
+		                                      <input id="senhaPesCon" name="senhaPesCon" placeholder="Confirme a Senha" class="form-control" type="password" required="">
+		                                    </div>
+		                                  </div>
+		                                  <div class="form-group">
+		                                  	<input type='hidden' name='controle' value='Pessoa'>
+											<input type='hidden' name='acao' value='manterSenha'>
+		                                  	<input type='hidden' name='idPes' value='<?php echo $_GET['idPes'] ?>'>
+		                                    <input class="btn btn-lg btn-primary btn-block" value="Confirmar" type="submit">
+		                                  </div>
+		                                </fieldset>
+		                              </form><!--/end form-->
+		                              
+		                            	</div>
+		                        	</div>
+		                    	</div>
+		                	</div>
+		            	</div>
+		        	</div>
+	   			</div>
+			</div>
+			    <br>
+			    <br>
+			    <br>
+			    <script>
+			     $('form').validate({
+			          rules: {
+						senhaPes: {
+				            required: true,
+				        	},
+				            senhaPesCon: {
+				            required: true,
+				            equalTo: "#senhaPes"
+				        	}
+				      },
+			        highlight: function(element) {
+			            $(element).closest('.form-group').addClass('has-error');
+			        },
+			        unhighlight: function(element) {
+			            $(element).closest('.form-group').removeClass('has-error');
+			        },
+			        errorElement: 'span',
+			        errorClass: 'help-block',
+			        errorPlacement: function(error, element) {
+			            if(element.parent('.input-group').length) {
+			                error.insertAfter(element.parent());
+			            } else {
+			                error.insertAfter(element);
+			            }
+			        }
+			    });
+			    
+			    function msg1(alerta, texto) {
+			     var resposta = '';
+			     $("#resposta").empty();
+			     if (alerta === 'sucesso') {
+			       resposta = "<div class='alert btn-success text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     } else if (alerta === 'atencao') {
+			       resposta = "<div class='alert btn-warning text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     } else if (alerta === 'erro') {
+			       resposta = "<div class='alert btn-danger text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			     $("#resposta").append(resposta);
+			
+			     $(".alert").click(function() {
+			       $(".alert").hide();
+			     });
+			   }
+			    </script>
+		     
+    </body>
+    <?php require 'template/footer.php'; ?>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <title>Bootstrap, from Twitter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link href="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"
+    rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+    <script type="text/javascript" src="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+  </head>
+  
+  <body class="">
+    <div class="navbar navbar-default navbar-static-top">
+      <style>
+        .body{padding-top:70px}
+      </style>
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <img src="IMG-20150223-WA0002.jpg" class="img-responsive">
+        </div>
+        <div class="collapse navbar-collapse navbar-ex1-collapse">
+          <ul class="nav navbar-nav navbar-right">
+            <li>
+              <a href="Home.htm">Home</a>
+            </li>
+            <li>
+              <div class="btn-group" style="">
+                <a class="btn btn-lg btn-link dropdown-toggle" data-toggle="dropdown"> Menu <span class="caret"></span></a>
+                <ul class="dropdown-menu" role="menu">
+                  <li>
+                    <a href="Consultar Transporte.htm">Consultar Transporte</a>
+                  </li>
+                  <li>
+                    <a href="Cadastro de Transporte.htm">Solicitar Transporte</a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+            <li>
+              <a href="Escolha de Cadastro.htm">Cadastre-se</a>
+            </li>
+            <li>
+              <a href="Area do Administrador.htm">Administrador</a>
+            </li>
+            <li>
+              <a href="Area do Cliente.htm">Cliente</a>
+            </li>
+            <li class="active">
+              <a href="Area do Transportador.htm">Transportador</a>
+            </li>
+            <li>
+              <a href="Login.htm">Entrar</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <ul class="breadcrumb">
+            <li>
+              <a href="Home.htm">Home</a>
+            </li>
+            <li class="active">Area doTransportador</li>
+          </ul>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12 text-center">
+          <ul class="nav nav-justified nav-pills">
+            <li>
+              <a href="Meus Transportes.htm">Meus Transportes</a>
+            </li>
+            <li>
+              <a href="Minhas Mensagens.htm">Minhas Mensagens</a>
+            </li>
+            <li>
+              <a href="Meus Dados.htm">Meus Dados</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <hr>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <h2 class="text-center text-primary">Transportes Adicionados Recetemente</h2>
+        </div>
+        <table class="table" draggable="true">
+          <thead>
+            <tr>
+              <th>Ver Detalhes</th>
+              <th>Data do pedido</th>
+              <th>Foto</th>
+              <th>Origem</th>
+              <th>Destino</th>
+              <th>Distancia</th>
+              <th>Data do Transporte</th>
+              <th>Número de Lances</th>
+              <th>Menor Lance</th>
+              <th>Cadastrar Lance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="info">
+                <a class="btn btn-primary" a="" href="Detalhes Tranporte.htm" draggable="true"><span class="glyphicon glyphicon-star"></span></a>
+              </td>
+              <td class="info">3 dias atrás</td>
+              <td contenteditable="true" class="info">
+                <img src="Movel1.jpg" class="img-responsive">
+              </td>
+              <td class="info">Rua das Orquideas - Xaxim - Curitiba</td>
+              <td class="info">Rua dos Frates - Bacaccheri - Curitiba</td>
+              <td class="info">6 km</td>
+              <td class="info">15/03/2015</td>
+              <td class="info">6</td>
+              <td class="info">R$ 100.00</td>
+              <td class="info">
+                <a class="btn btn-primary" a="" href="Cadastrar Lance.htm"><span class="glyphicon glyphicon-briefcase"></span></a>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <a class="btn btn-primary" href="Detalhes Tranporte.htm" a="" draggable="true"><span class="glyphicon glyphicon-star"></span></a>
+              </td>
+              <td>4 dias atrás</td>
+              <td>
+                <img src="Movel2.jpg" class="img-responsive">
+              </td>
+              <td>Rua das Orquideas - Xaxim - Curitiba</td>
+              <td>Rua dos Frates - Bacaccheri - Curitiba</td>
+              <td>10 km</td>
+              <td>15/03/2015</td>
+              <td>6</td>
+              <td>R$ 100.00</td>
+              <td>
+                <a class="btn btn-primary" a="" href="Cadastrar Lance.htm"><span class="glyphicon glyphicon-briefcase" draggable="true"></span></a>
+              </td>
+            </tr>
+            <tr>
+              <td class="info">
+                <a class="btn btn-primary" a="" href="Detalhes Tranporte.htm" draggable="true"><span class="glyphicon glyphicon-star" draggable="true"></span></a>
+              </td>
+              <td class="info">5 dias atrás</td>
+              <td class="info">
+                <img src="Movel3.jpg" class="img-responsive">
+              </td>
+              <td class="info">Rua das Orquideas - Xaxim - Curitiba</td>
+              <td class="info">Rua dos Frates - Bacaccheri - Curitiba</td>
+              <td class="info" draggable="true">15 km</td>
+              <td class="info">15/03/2015</td>
+              <td class="info">6</td>
+              <td class="info">R$ 100.00</td>
+              <td class="info">
+                <a class="btn btn-primary" draggable="true" a="" href="Cadastrar Lance.htm"><span class="glyphicon glyphicon-briefcase" draggable="true"></span></a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="col-md-12 text-right">
+          <ul class="pagination pagination-lg">
+            <li>
+              <a href="#">Anterior</a>
+            </li>
+            <li>
+              <a href="#">1</a>
+            </li>
+            <li>
+              <a href="#">2</a>
+            </li>
+            <li>
+              <a href="#">3</a>
+            </li>
+            <li>
+              <a href="#">4</a>
+            </li>
+            <li>
+              <a href="#">5</a>
+            </li>
+            <li draggable="true">
+              <a href="#">Prôximo</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </body>
+
+</html>

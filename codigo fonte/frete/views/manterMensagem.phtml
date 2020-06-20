@@ -1,0 +1,91 @@
+<?php
+$v_params = $this->getParams();
+$o_mensagem = $v_params['o_mensagem'];
+?>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<title>
+		Mensagem
+	</title>
+	<link rel="stylesheet" type="text/css" href="template/css/default.css" />
+</head>
+<body>
+	<div align="center">
+		<form method='post'>
+		<table class='table_list' width="300">
+			<tr>
+				<th>
+					Remetente
+				</th>
+					<th>
+					Destinatario
+				</th>
+				<th>
+					Data Recebida
+				</th>
+				<th>
+					Data Envio
+				</th>
+				<th>
+					Assunto 
+				</th>
+				<th>
+					Descrição
+				</th>
+				<th>
+					Transportador
+				</th>
+				<th>
+					Cliente
+				</th>
+				<th>
+					Transporte
+				</th>
+				<th colspan="2">
+					A&ccedil;&otilde;es
+				</th>
+			</tr>
+			<tr>
+				<td>
+					<input type='text' name='remententeMen' value='<?php echo $o_mensagem->getRemententeMen()?>'> 
+				</td>
+				<td>
+					<input type='text' name='destinatarioMen' value='<?php echo $o_mensagem->getDestinatarioMen()?>'>
+				</td>	
+						<td>
+					<input type='text' name='dataRecebidaMen' value='<?php echo $o_mensagem->getDataRecebidaMen()?>'> 
+				</td>
+				<td>
+					<input type='text' name='dataEnvioMen' value='<?php echo $o_mensagem->getDataEnvioMen()?>'>
+				</td>	
+						<td>
+					<input type='text' name='assuntoMen' value='<?php echo $o_mensagem->getAssuntoMen()?>'> 
+				</td>
+				<td>
+					<input type='text' name='descricaoMen' value='<?php echo $o_mensagem->getDescricaoMen()?>'>
+				</td>	
+				<td>
+					<input type='text' name='tb_transportador_idTran' value='<?php echo $o_mensagem->getTb_transportador_idTran()?>'> 
+				</td>
+				<td>
+					<input type='text' name='tb_cliente_idCli' value='<?php echo $o_mensagem->getTb_cliente_idCli()?>'>
+				</td>
+				<td>
+					<input type='text' name='tb_transporte_idTransp' value='<?php echo $o_mensagem->getTb_transporte_idTransp()?>'>
+				</td>				
+				<td align="center">
+					<a href='?controle=Mensagem&acao=listarMensagem' class='bt_red'>Cancelar</a>
+				</td>
+				<td align="center">
+					<input type='hidden' name='controle' value='Mensagem'>
+					<input type='hidden' name='acao' value='manterMensagem'>
+					<input type='hidden' name='idMen' value='<?php echo $o_mensagem->getIdMen()?>'>
+					<button type='submit' class='bt_green'>Salvar</button>
+				</td>
+			</tr>			
+		</table>
+		</form>
+	</div>
+</body>
+</html>

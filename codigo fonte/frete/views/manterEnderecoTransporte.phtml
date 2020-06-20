@@ -1,0 +1,103 @@
+<?php
+$v_params = $this->getParams();
+$o_endtransporte = $v_params['o_endtransporte'];
+?>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>
+			Endereço Tranporte
+		</title>
+		<link rel="stylesheet" type="text/css" href="template/css/default.css" />
+	</head>
+<body>
+	<div align="center">
+		<form method='post'>
+		<table class='table_list' width="300">
+			<tr>
+				<th>
+					CEP Origem 
+				</th>
+				<th>
+					CEP Destino
+				</th>
+				<th>
+					Rua Origem
+				</th>
+				<th>
+					Rua Destino
+				</th>
+				<th>
+					Bairro Origem
+				</th>
+				<th>
+					Bairro Destino
+				</th>
+				<th>
+					Cidade Origem
+				</th>
+				<th>
+					Cidade Destino
+				</th>
+				<th>
+					Estado Origem
+				</th>
+				<th>
+					Estado Destino
+				</th>
+				<th>
+					Transporte
+				</th>
+				<th colspan="2">
+					A&ccedil;&otilde;es
+				</th>
+			</tr>
+			<tr>
+				<td>
+					<input type='text' name='cepOrigemEndTran' value='<?php echo $o_endtransporte->getCepOrigemEndTran()?>'> 
+				</td>
+				<td>
+					<input type='text' name='cepDestinoEndTran' value='<?php echo $o_endtransporte->getCepDestinoEndTran()?>'>
+				</td>
+						<td>
+					<input type='text' name='ruaOrigemEndTran' value='<?php echo $o_endtransporte->getRuaOrigemEndTran()?>'> 
+				</td>
+				<td>
+					<input type='text' name='ruaDestinoEndTran' value='<?php echo $o_endtransporte->getRuaDestinoEndTran()?>'>
+				</td>	
+						<td>
+					<input type='text' name='bairroOrigemEndTran' value='<?php echo $o_endtransporte->getBairroOrigemEndTran()?>'> 
+				</td>
+				<td>
+					<input type='text' name='bairroDestinoEndTran' value='<?php echo $o_endtransporte->getBairroDestinoEndTran()?>'>
+				</td>	
+						<td>
+					<input type='text' name='cidadeOrigemEndTran' value='<?php echo $o_endtransporte->getCidadeOrigemEndTran()?>'> 
+				</td>
+				<td>
+					<input type='text' name='cidadeDestinoEndTran' value='<?php echo $o_endtransporte->getCidadeDestinoEndTran()?>'>
+				</td>	
+						<td>
+					<input type='text' name='estadoOrigemEndTran' value='<?php echo $o_endtransporte->getEstadoOrigemEndTran()?>'> 
+				</td>
+				<td>
+					<input type='text' name='estadoDestinoEndTran' value='<?php echo $o_endtransporte->getEstadoDestinoEndTran()?>'>
+				</td>	
+						<td>
+					<input type='text' name='tb_transporte_idTransp' value='<?php echo $o_endtransporte->getTb_transporte_idTransp()?>'> 
+				</td>				
+				<td align="center">
+					<a href='?controle=EnderecoTransporte&acao=listarEnderecoTransporte' class='bt_red'>Cancelar</a>
+				</td>
+				<td align="center">
+					<input type='hidden' name='controle' value='EnderecoTransporte'>
+					<input type='hidden' name='acao' value='manterEnderecoTransporte'>
+					<input type='hidden' name='idEndTran' value='<?php echo $o_endtransporte->getIdEndTran()?>'>
+					<button type='submit' class='bt_green'>Salvar</button>
+				</td>
+			</tr>			
+		</table>
+		</form>
+	</div>
+</body>
+</html>

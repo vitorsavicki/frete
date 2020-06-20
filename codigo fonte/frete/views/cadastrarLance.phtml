@@ -1,0 +1,1384 @@
+<?php
+// A sessão precisa ser iniciada em cada página diferente
+if (!isset($_SESSION)) session_start();
+// Verifica se não há a variável da sessão que identifica o usuário
+if ($_SESSION['codigoPer'] <> 'T') {
+	// Destrói a sessão por segurança
+	session_destroy();
+	// Redireciona o visitante de volta pro login
+	header("Location: index.php"); exit;
+}
+
+header('Content-Type: text/html; charset=utf-8');
+$v_params = $this->getParams();
+$v_transportes = $v_params['v_transportes'];
+$opcao = isset($_GET['opcao']) ? $_GET['opcao'] : '';
+$idPes = isset($_SESSION['idPes']) ? $_SESSION['idPes'] : '0';
+?>
+<html>
+	    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap Core CSS - Uses
+        Bootswatch Flatly Theme: http://bootswatch.com/flatly/ -->
+        <link href="template/css/bootstrap.min.css" rel="stylesheet">
+        <!-- Custom CSS -->
+        <link href="template/css/freelancer.css" rel="stylesheet">
+        <!-- Custom Fonts -->
+        <link href="template/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href="http://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
+        <link href="http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media
+        queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file://
+        -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+        <link href="template/css/fileinput.css" media="all" rel="stylesheet" type="text/css" />
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <script src="template/js/fileinput.min.js" type="text/javascript"></script>
+        <script src="template/js/fileinput_locale_pt-BR.js" type="text/javascript"></script>
+        <script type="text/javascript" src="template/js/ajaxupload.3.5.js" ></script>
+		<link rel="stylesheet" type="text/css" href="template/css/upload.css" />
+	  	<script src="template/js/jquery.validate.min.js"></script>
+        <script type="text/javascript" src="template/js/jquery.mask.min.js"></script>
+        <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+        <script type="text/javascript" src="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+         <link rel="stylesheet" type="text/css" href="template/css/datepicker.css">
+        <link href="template/bootstrap-datepicker/css/bootstrap-datepicker3.css" rel="stylesheet">
+		<script src="template/bootstrap-datepicker/js/bootstrap-datepicker.js"></script>
+        <script type="text/javascript" src="template/bootstrap-datepicker/locales/bootstrap-datepicker.pt-BR.min.js"></script>
+        <script src="template/js/jquery.maskMoney.js" type="text/javascript"></script>
+		<script>
+		function fncSelecionarEstadoOrigem(estado) {
+			 $('#cidadeOrigem').load('views/listarCidade.php?estado='+estado.value);
+		};
+		
+		function fncSelecionarEstadoDestino(estado) {
+			 $('#cidadeDestino').load('views/listarCidade.php?estado='+estado.value);
+		};
+		
+		$(document).ready(function() {
+			$('#btnPesquisar').click(function(){
+				//alert('teste');
+				fncJson(1);
+			});
+			
+			  $('#btnLimpar').click(function(){
+                //alert('teste');
+                $('#dataInicio').val('');
+                $('#dataFim').val('');
+                $('#tb_categoria_idCat').val(0);
+                $('#cidadeOrigem').val(0);
+                $('#cidadeDestino').val(0);
+                $('#estadoOrigem').val(0);
+                $('#estadoDestino').val(0);
+                $('#palavraChave').val('');
+                
+                fncJson(1);
+            });
+		});
+		
+		$(document).ready(function() {
+			fncJson(1);	
+		});
+		
+		function fncJson(pagina) {
+			//alert(pagina);	
+			var request = $.ajax({
+				url: "./views/cadastrarLance.php",
+				beforeSend: function(){
+		              $('#loading').html("<img src='template/img/loading.gif'/>").fadeIn('fast');
+				},
+				type: "POST",			
+				dataType: "json",
+				data: {"opcao":<?php echo '"'.$opcao.'"';?>, "dataini":$('#dataInicio').val(),
+				"datafim":$('#dataFim').val(), "categoria":$('#tb_categoria_idCat').val(),
+				"cidadeOrigem":$('#cidadeOrigem option:selected').val(), "cidadeDestino":$('#cidadeDestino option:selected').val(),
+				"estadoOrigem":$('#estadoOrigem option:selected').val(), "estadoDestino":$('#estadoDestino option:selected').val(),
+				"palavraChave":$('#palavraChave').val(), "pagina":pagina}
+			});
+			request.done(function(data) {
+				//alert('teste');
+			    //$("#tabela").html(data);
+			    $('#loading').fadeOut('fast');
+				for($i=0; $i < data.length; $i++){
+					$("#tabela").html(data[$i]);	
+				}
+			});
+
+			request.fail(function(jqXHR, textStatus) {
+				alert( "Erro (Ajax - listar transporte): " + textStatus );
+			});
+		};	
+	
+		function fncMudarStatus(statusTransp) {
+			var request = $.ajax({
+				url: "./views/alterarTransporte.php",
+				type: "POST",			
+				dataType: "json",
+				data: {"statusTransp":statusTransp, "idTransp":$('#idTransp').val()}
+			});
+			request.done(function(data) {
+				//alert();
+				 $(document).ready(function() {
+						if(statusTransp == 'X')
+						$('#myModal1').modal();
+						else if(statusTransp == 'C')
+						$('#myModal2').modal();
+						else if(statusTransp == 'A')
+						$('#myModal4').modal();
+					});
+				 fncJson(1);
+				 
+				 
+			});
+
+			request.fail(function(jqXHR, textStatus) {
+				alert( "Erro (Ajax - listar transporte): " + textStatus );
+			});
+		};
+
+		function fncCadastrarLance()
+		{
+			//var par = $(linha).parent().parent(); //tr
+			if ($('#valorLan').val() <= 0)
+			{
+				$(document).ready(function() {
+						msg3('lanceZero', 'Você deve colocar um valor maior que zero.');
+					});
+			}
+			else
+			{
+				$('#btnValorLan').attr('disabled', 'disabled');	
+				$('#addBookDialogFechar').attr('disabled', 'disabled');
+				$('#addBookDialogClose').attr('disabled', 'disabled');
+				$(document).ready(function() {
+						msg3('cadastro', 'Cadastrando....');
+				});	
+		   		//alert($('#valorLan').val() + '-' + $('#idTransp').val() + '-' +  $('#idPes').val());
+				//alert('teste' + idTransp + ' - ' + idPes + ' - ' +par.find('input[name="valorLan"]').val());
+				$('#fValorLan').val(String($('#valorLan').val()));
+				$('#fTb_transporte_idTransp').val($('#idTransp').val());
+				$('#fTb_pessoa_idPes').val($('#idPes').val());
+				$('#fconteudoMen').val($('#conteudoMen').val());
+				//alert($('#fValorLan').val() + ' - ' + $('#fTb_transporte_idTransp').val() + ' - ' + $('#fTb_pessoa_idPes').val());
+				$( "#formLance" ).submit();
+				return false;
+			}
+		}
+		
+		$(function() {
+			$("#formLance").on("submit", function(e) {
+				e.preventDefault();
+				$.ajax({
+					url: $(this).attr("action"),
+					type: 'POST',
+					data: $(this).serialize(),
+					success: function(data) {
+						//alert($('#pagina').val());
+						$(document).ready(function() {
+							$('#btnValorLan').removeAttr('disabled');
+							$('#addBookDialogFechar').removeAttr('disabled');
+							$('#addBookDialogClose').removeAttr('disabled');
+							msg3('sucesso', 'Lance cadastrado com sucesso.');
+						});
+						$('#valorLan').val('');
+						$('#conteudoMen').val('');
+						fncJson($('#pagina').val()); // tem que montar um método para remontar só a linha e não chamar tudo de volta
+					}
+				});
+			});
+		});
+		
+		/*function fncCadastrarAvaliacao(idTransp, linha)
+		{
+			var par = $(linha).parent().parent(); 
+			var tituloAva   = par.find('input[name="tituloAva"]').val();
+			var conteudoAva = par.find('textarea[name="conteudoAva"]').val();
+			var valorAva    = par.find('input[name="valorAva"]').val();
+				
+				//alert('teste' + idTransp + ' - ' + par.find('input[name="valorAva"]').val());
+				$('#fTituloAva').val(String(tituloAva));
+				$('#fConteudoAva').val(String(conteudoAva));
+				$('#fValorAva').val(String(valorAva));
+				$('#fTb_transporte_idTransp').val(idTransp);
+				alert($('#fTituloAva').val() + ' - ' + $('#fConteudoAva').val() + ' - ' + $('#fValorAva').val() + ' - ' + $('#fTb_transporte_idTransp').val());
+				$( "#formAvaliacao" ).submit();
+				return false;
+			
+		}
+		$(function() {
+			$("#formAvaliacao").on("submit", function(e) {
+				e.preventDefault();
+				$.ajax({
+					url: $(this).attr("action"),
+					type: 'POST',
+					data: $(this).serialize(),
+					success: function(data) {
+						//alert('teste');
+						fncJson($('#pagina').val()); // tem que montar um método para remontar só a linha e não chamar tudo de volta
+					}
+				});
+			});
+		});*/
+		
+		function fncCadastrarMensagemCancelamento()
+		{
+			//alert($('#motivoCancelamentoTransp').val() + ' - ' + $('#idTransp').val());
+			if ($('#motivoCancelamentoTransp').val() <= 0)
+			{
+				$(document).ready(function() {
+						msg4('lanceZero', 'Você deve preenher uma justificativa para o cancelamento.');
+					});
+			}
+			else
+			{
+				$('#btnCanMen').attr('disabled', 'disabled');	
+				$('#addBookDialog8Fechar').attr('disabled', 'disabled');
+				$('#addBookDialog8Close').attr('disabled', 'disabled');
+				$('#btnMenCan').attr('disabled', 'disabled');
+				$(document).ready(function() {
+					//alert($('#motivoCancelamentoTransp').val() + '-' + $('#idTransp').val());
+					msg4('cadastro', 'Cadastrando....');
+				});	
+		   		//alert($('#motivoCancelamentoTransp').val() + '-' + $('#idTransp').val());
+				//alert('teste' + idTransp + ' - ' + idPes + ' - ' +par.find('input[name="valorLan"]').val());
+				$('#fmotivoCancelamentoTransp').val(String($('#motivoCancelamentoTransp').val()));
+				$('#fidTransp').val($('#idTransp').val());
+				//alert($('#fmotivoCancelamentoTransp').val() + ' - ' + $('#fidTransp').val());
+				$( "#formMensagemCancelamento" ).submit();
+				return false;
+			}
+		}
+		
+		$(function() {
+			$("#formMensagemCancelamento").on("submit", function(e) {
+				e.preventDefault();
+				$.ajax({
+					url: $(this).attr("action"),
+					type: 'POST',
+					data: $(this).serialize(),
+					success: function(data) {
+						//alert($('#pagina').val());
+						//alert(data);
+						$(document).ready(function() {
+							//alert($('#fmotivoCancelamentoTransp').val() + ' - ' + $('#fTb_transporte_idTransp').val());
+							msg4('sucesso', 'Mensagem cadastrada com sucesso.');
+							fncMudarStatus("X");
+							$('#addBookDialog8').modal('hide');
+						});
+						
+						
+					}
+				});
+			});
+		});
+		
+		function fncCadastrarAvaliacao()
+		{
+			//alert($('#idTranspAva').val());
+			var idTranspAva = $('#idTranspAva').val(); 
+			//alert(idTranspAva);
+			window.location.href = "?controle=Avaliacao&acao=avaliacaoTransportador&opcao=transpconcluido&idTransp=" + idTranspAva;
+		}
+		
+		function fncAtivarTransporteSemLance()
+		{
+			//alert($('#idTranspAti').val());
+			var idTranspAti = $('#idTranspAti').val(); 
+			//alert(idTranspAti);
+			window.location.href = "?controle=Transporte&acao=manterTransporte&edicao=S&opcao=clienteinativos&tipo=ativacao&AtivacaoSemLance=true&idTransp=" + idTranspAti;
+		}
+		
+		function fncAtivarTransporteComLance()
+		{
+			//alert($('#idTranspAti').val());
+			var idTranspAti = $('#idTranspAti').val(); 
+			//alert(idTranspAti);
+			window.location.href = "?controle=Transporte&acao=manterTransporte&edicao=S&opcao=clienteinativos&tipo=ativacao&idTransp=" + idTranspAti;
+		}
+		
+		function load(){
+            waitingDialog.show('Carregando Detalhes...Aguarde');
+        }
+		</script>
+	
+      <style>
+            body { padding-top: 120px; }
+        </style>
+    </head>
+<?php require 'template/header.php'; ?>
+<body>
+	<div class="section" >
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <ul class="breadcrumb">
+              <li>
+                <a href="?controle=Index&acao=Index">Home</a>
+              </li>
+              <li>
+              	<?php
+              	if ($_SESSION['codigoPer'] == 'U' )
+				{
+				?>
+                <a href="?controle=Pessoa&acao=areaCliente">Área do Cliente</a> 
+                <?php
+                }
+				?>
+				<?php
+				if ($_SESSION['codigoPer'] == 'T' )
+				{
+				?>
+                <a href="?controle=Pessoa&acao=areaTransportador">Área do Transportador</a> 
+                 <?php
+                }
+				?>
+              </li>
+               <li class="active">
+               <?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "clienteativos"  and $_SESSION['codigoPer'] == 'U')
+				{
+				?>
+				Transportes Ativos
+				<?php 
+				}
+				?>
+			
+				<?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "clienteinativos")
+				{
+				?>
+				Transportes Cancelados
+				<?php 
+				}
+				?>
+					<?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "transpganhos")
+				{
+				?>
+				Transportes Ganhos
+				<?php 
+				}
+				?>
+				<?php 
+				if(isset($_GET['opcao']) and $_GET['opcao'] == "clienteativosTrans" and $_SESSION['codigoPer'] == 'T'){
+					?>
+                Pesquisar Transporte
+               <?php
+				}
+				?>
+				<?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "transpAndamentoTrans")
+				{
+				?>
+				Transportes em Andamento
+				<?php 
+				}
+				?>
+				
+				<?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "transpandamento")
+				{
+				?>
+				Transportes em Andamento
+				<?php 
+				}
+				?>
+				<?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "transpconcluido")
+				{
+				?>
+				Transportes Concluidos
+				<?php 
+				}
+				?>
+				<?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "transpConcluidoTrans")
+				{
+				?>
+				Transportes Concluidos
+				<?php 
+				}
+				?>
+				
+				</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+	 <div class="section">
+      <div class="container">
+      	   		 <div class="row">
+                    <div class="col-md-12">
+                        <h1 class="text-center"> 
+                <?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "clienteativos" and $_SESSION['codigoPer'] == 'U')
+				{
+				?>
+				Transportes Ativos
+				<?php 
+				}
+				?>
+				<?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "clienteinativos")
+				{
+				?>
+				Transportes Cancelados
+				<?php 
+				}
+				?>
+				 <?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "clienteativosTrans"  and $_SESSION['codigoPer'] == 'T')
+				{
+				?>
+				Pesquisar Transportes
+				<?php 
+				}
+				?>
+				<?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "transpganhos")
+				{
+				?>
+				Transportes Ganhos
+				<?php 
+				}
+				?>
+				<?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "transpandamento")
+				{
+				?>
+				Transportes em Andamento
+				<?php 
+				}
+				?>
+				<?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "transpconcluido")
+				{
+				?>
+				Transportes Concluidos
+				<?php 
+				}
+				?>
+				 </h1>
+                    </div>
+                </div>
+            <div class="row">
+            <div class="col-md-6">
+            <div class="form-group">
+              <label class="control-label" for="exampleInputEmail1">Categoria</label>
+                <select class="form-control" name='tb_categoria_idCat' id='tb_categoria_idCat'>
+                <option value="0">Categoria</option>
+                <?php
+                    $o_categoria = new CategoriaModel();
+                    $categoria = isset($_SESSION['categoria']) ? $_SESSION['categoria'] : 'null';
+                    $v_categorias = $o_categoria->_list();
+                    foreach($v_categorias AS $o_categoria)
+                    {
+                    ?>
+                        <option value="<?php echo $o_categoria->getIdCat()?>" <?php if ($o_categoria->getIdCat() ==  $categoria) echo 'selected' ?>><?php echo $o_categoria->getNomeCat()?></option>
+                <?php
+                    }
+                    ?>
+                </select>
+            </div>
+            <script src="http://cdn.jsdelivr.net/webshim/1.12.4/extras/modernizr-custom.js"></script>
+            <!-- polyfiller file to detect and load polyfills -->
+            <script src="http://cdn.jsdelivr.net/webshim/1.12.4/polyfiller.js"></script>
+            <script>
+              webshims.setOptions('waitReady', false);
+              webshims.setOptions('forms-ext', {types: 'date'});
+              webshims.polyfill('forms forms-ext');
+            </script>
+          <label class="control-label" for="lblDataRetirada">Período da data de retirada</label><br>                
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <div class="input-group date ">
+                                                <input type="text" class="form-control" id='dataInicio' name='dataInicio' 
+                                                data-validation-required-message="Por favor selecione uma data da coleta do transporte" value="<?php echo  isset($_SESSION['dataini']) ? $_SESSION['dataini'] : ''; ?>"
+                                                placeholder="Data Inicial" readonly="" required="" tabindex="3"><span class="input-group-addon">
+                                                <i class="glyphicon glyphicon-th"></i></span>
+                                                <p class="help-block text-danger"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                     <div class="col-xs-12 col-sm-6 col-md-6">
+                                        <div class="form-group">
+                                            <div class="input-group date ">
+                                                <input type="text" class="form-control" id='dataFim' name='dataFim' 
+                                                data-validation-required-message="Por favor selecione uma data da coleta do transporte" value="<?php echo  isset($_SESSION['datafim']) ? $_SESSION['datafim'] : ''; ?>"
+                                                placeholder="Data Final" readonly="" required="" tabindex="3"><span class="input-group-addon">
+                                                <i class="glyphicon glyphicon-th"></i></span>
+                                                <p class="help-block text-danger"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+   
+            
+           <div class="form-group">
+              <label class="control-label" for="exampleInputPassword1">Estado origem</label>
+                <select class="form-control" name='estadoOrigem' id='estadoOrigem' onChange="fncSelecionarEstadoOrigem(this)">
+                <option value="0">Estado Origem</option>
+                <?php
+                    $o_estado = new EstadoModel();
+                    $v_estados = $o_estado->_list();
+                    $estadoOrigem = isset($_SESSION['estadoOrigem']) ? $_SESSION['estadoOrigem'] : 'null';
+                    foreach($v_estados AS $o_estado)
+                    {
+                    ?>
+                        <option value="<?php echo $o_estado->getIdEst()?>" <?php echo $o_estado->getIdEst() == $estadoOrigem ? 'selected' : '' ?>><?php echo $o_estado->getUfEst()?></option>
+                <?php
+                    }
+                    ?>
+                </select>
+            </div>
+            <div class="form-group" draggable="true">
+              <label class="control-label" for="exampleInputEmail1">Cidade origem</label>
+                    <select class="form-control" name='cidadeOrigem' id='cidadeOrigem'>
+                    <option value="0">Cidade Origem</option>
+                       <?php
+                                   $cidadeOrigem = isset($_SESSION['cidadeOrigem']) ? $_SESSION['cidadeOrigem'] : 'null';
+                                if ($cidadeOrigem !== NULL)
+                                    $cidadeOrigem = $cidadeOrigem;
+                                else
+                                    $cidadeOrigem = 0;
+                                $o_cidade = new CidadeModel();
+                                $v_cidades = $o_cidade->_list($estadoOrigem);
+                                foreach($v_cidades AS $o_cidade)
+                                {
+                                ?>
+                                    <option value="<?php echo $o_cidade->getIdCid()?>" <?php echo $o_cidade->getIdCid() == $cidadeOrigem ? 'selected' : '' ?>><?php echo utf8_encode($o_cidade->getNomeCid())?></option>
+                            <?php
+                                }
+                                ?>
+                </select>
+            </div>
+            </div>
+          <div class="col-md-6">
+             <div class="form-group">
+              <label class="control-label" for="exampleInputPassword1">Estado destino</label>
+                <select class="form-control" name='estadoDestino' id='estadoDestino' onChange="fncSelecionarEstadoDestino(this)">
+                <option value="0">Estado Destino</option>
+                <?php
+                    $o_estado = new EstadoModel();
+                    $v_estados = $o_estado->_list();
+                    $estadoDestino = isset($_SESSION['estadoDestino']) ? $_SESSION['estadoDestino'] : 'null';
+                    foreach($v_estados AS $o_estado)
+                    {
+                    ?>
+                        <option value="<?php echo $o_estado->getIdEst()?>" <?php echo $o_estado->getIdEst() == $estadoDestino ? 'selected' : '' ?>><?php echo $o_estado->getUfEst()?></option>
+                <?php
+                    }
+                    ?>
+                </select>
+            </div>
+            
+            <div class="form-group" draggable="true">
+              <label class="control-label" for="exampleInputEmail1">Cidade destino</label>
+                <select class="form-control" name='cidadeDestino' id='cidadeDestino'>
+                    <option value="0">Cidade Destino</option>
+                       <?php
+                               $cidadeDestino = isset($_SESSION['cidadeDestino']) ? $_SESSION['cidadeDestino'] : 'null';
+                                   
+                                if ($cidadeDestino !== NULL)
+                                        $cidadeDestino = $cidadeDestino;
+                                    else
+                                        $cidadeDestino = 0;
+                                    $o_cidade = new CidadeModel();
+                                    $v_cidades = $o_cidade->_list($estadoDestino);
+                                    foreach($v_cidades AS $o_cidade)
+                                    {
+                                    ?>
+                                        <option value="<?php echo $o_cidade->getIdCid()?>" <?php echo $o_cidade->getIdCid() == $cidadeDestino ? 'selected' : '' ?>><?php echo utf8_encode($o_cidade->getNomeCid())?></option>
+                                <?php
+                                    }
+                                    ?>
+                </select>
+            </div>
+            
+            <div class="form-group" draggable="true">
+              <label class="control-label" for="exampleInputPassword1">Palavra-chave</label>
+              <input class="form-control" id="palavraChave" placeholder="" value="<?php echo isset($_SESSION['palavraChave']) ? $_SESSION['palavraChave'] : '' ?>">
+            </div>
+            <div id="centro"></div>
+            <div class="form-group" draggable="true">
+                <a class="btn btn-primary" id="btnPesquisar">Pesquisar</a>
+                <a class="btn btn-danger" id="btnLimpar">Limpar</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <br>
+    <br>
+  	<div class="section">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12" id="tabela">
+		  </div>
+			</div>
+      </div>
+    </div>
+			    					<br>
+			                        <br>
+			                        <div class='text-center'>
+                                       <?php
+									   if($_SESSION['codigoPer'] == 'A')
+									   {
+									   ?>
+							      	  <a href="?controle=Pessoa&acao=areaAdministrador" type="button" class="btn btn-danger" >Voltar</a>
+							      	  <?php
+									   }
+									   ?>
+									   	<?php
+									   if($_SESSION['codigoPer'] == 'T')
+									   {
+									   ?>
+							      	  <a href="?controle=Pessoa&acao=areaTransportador" type="button" class="btn btn-danger">Voltar</a>
+							      	  <?php
+									   }
+									   ?>
+									      	<?php
+									   if($_SESSION['codigoPer'] == 'U')
+									   {
+									   ?>
+							      	  <a href="?controle=Pessoa&acao=areaCliente" type="button" class="btn btn-danger">Voltar</a>
+							      	  <?php
+									   }
+									   ?>
+									   </div>
+			                        <br>
+			                        <br>
+	</form>
+	 <form action="./?controle=Lance&acao=cadastrarLance" id="formLance" method="post">
+		<input type="hidden" id="fValorLan" name="fValorLan" value="">
+		<input type="hidden" id="fTb_transporte_idTransp" name="fTb_transporte_idTransp" value="">
+		<input type="hidden" id="fTb_pessoa_idPes" name="fTb_pessoa_idPes" value="">
+		<input type="hidden" id="fconteudoMen" name="fconteudoMen" value="">
+	 </form>
+	 
+	  <form action="./?controle=Transporte&acao=motivoCancelamentoTransporte" id="formMensagemCancelamento" method="post">
+		<input type="hidden" id="fmotivoCancelamentoTransp" name="fmotivoCancelamentoTransp" value="">
+		<input type="hidden" id="fidTransp" name="fidTransp" value="">
+	 </form>
+
+<!-- Modal -->
+<div id="addBookDialog" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" id="addBookDialogClose" name="addBookDialogClose" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body">
+         <div class="text-center">
+		                          <h3 class="text-center">Qual o valor do seu lance, <?php echo $_SESSION['primeiroNomePes'] ?> ?</h3>
+		                          <p>Coloque o valor  aqui..</p>
+		                            <div class="panel-body">
+		                              
+		                              <form  role="form"  id="form" name="form" enctype="multipart/form-data"><!--start form--><!--add form action as needed-->
+		                                <fieldset>
+		                                  <div class="form-group">
+		                                    <div class="input-group">
+		                                      <span class="input-group-addon"><i class="glyphicon glyphicon-usd color-blue"></i></span>
+		                                      <input class="form-control" id="valorLan" name="valorLan" 
+							  				  type="text"  
+							  				  data-thousands="." data-decimal="," data-prefix="R$ " placeholder="Informe o valor do lance">
+		                                    </div>
+		                                  </div>
+		                                   <div class="form-group">
+		                                   	<p>Se quiser, deixe uma mensagem.</p>
+		                                    <div class="input-group">
+		                                      <span class="input-group-addon"><i class="glyphicon glyphicon-text-size color-blue"></i></span>
+		                                        <textarea rows="5" class="form-control" placeholder="Se quiser, deixe uma mensagem."
+                                    			id="conteudoMen" name="conteudoMen" maxlength='255'
+                                    			data-validation-required-message="Deixe sua mensagem aqui."></textarea>
+		                                    </div>
+		                                  </div>
+		                                  <script type="text/javascript">$("#valorLan").maskMoney();</script>
+		                                    <div class="row">
+										  		<div id="resposta3"></div>
+										  	</div>
+		                                  <div class="form-group">
+											<input type='hidden' id="idTransp" name='idTransp' value=''>
+		                                  	<input type='hidden' id="idPes" name='idPes' value='<?php echo $idPes ?>'>
+		                                    <a class="btn btn-primary" id="btnValorLan" name="btnValorLan" onclick=fncCadastrarLance(); >Cadastrar Lance</a>
+		                                  </div>
+		                                </fieldset>
+		                              </form><!--/end form-->
+		                              
+		                            	</div>
+		                        	</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger"  id="addBookDialogFechar" name="addBookDialogFechar" data-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="addBookDialog8" class="modal fade reply-sure" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" id="addBookDialog8Close" name="addBookDialog8Close" data-dismiss="modal">&times;</button>
+      </div>
+      <div class="modal-body">
+         <div class="text-center">
+		                          <h3 class="text-center">Informe um motivo de você cancelar o transporte.</h3>
+		                          <p>Coloque o a mensagem  aqui..</p>
+		                            <div class="panel-body">
+		                              
+		                              <form  role="form"  id="form" name="form" enctype="multipart/form-data"><!--start form--><!--add form action as needed-->
+		                                <fieldset>
+		                                  <div class="form-group">
+		                                    <div class="input-group">
+		                                      <span class="input-group-addon"><i class="glyphicon glyphicon-text-size color-blue"></i></span>
+		                                        <textarea rows="5" class="form-control" placeholder="Descreva brevemente o motivo do cancelamento"
+                                    			id="motivoCancelamentoTransp" name='motivoCancelamentoTransp' maxlength='255'
+                                    			data-validation-required-message="Descreva brevemente o que você precisa transportar." 
+                                    			required></textarea>
+		                                    </div>
+		                                  </div>
+		                                    <div class="row">
+										  		<div id="resposta4"></div>
+										  	</div>
+		                                  <div class="form-group">
+											<input type='hidden' id="idTransp" name='idTransp' value=''>
+		                                    <a class="btn btn-primary" id="btnCanMen" name="btnCanMen" onclick=fncCadastrarMensagemCancelamento();>Confirmar</a>
+		                                    <button type="button" class="btn btn-danger" data-dismiss="modal" id="btnMenCan">Cancelar</button>
+		                                  </div>
+		                                </fieldset>
+		                              </form><!--/end form-->
+		                              
+		                            	</div>
+		                        	</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-danger"  id="addBookDialog8Fechar" name="addBookDialog8Fechar" data-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="addBookDialog2" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title"></h4>
+      </div>
+      <div class="modal-body text-center">
+        <p>Tem certeza que deseja cancelar esse pedido?</p>
+        <div class="form-group">
+	  		<input type='hidden' id="idTransp" name='idTransp' value=''>
+			<a class="btn btn-primary" id="btnSim"  data-dismiss="modal" onclick=fncMudarStatus("X");>Sim</a>
+			<button type="button" class="btn btn-danger" data-dismiss="modal">Não</button>
+	  	</div>
+      </div>
+      <div class="modal-footer">
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="addBookDialog3" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title"></h4>
+      </div>
+      <div class="modal-body text-center">
+        <p>Tem certeza que deseja concluir esse Transporte?</p>
+        <div class="form-group">
+	  		<input type='hidden' id="idTransp" name='idTransp' value=''>
+			<a class="btn btn-primary" id="btnSim"  data-dismiss="modal" onclick=fncMudarStatus("C");>Sim</a>
+			<button type="button" class="btn btn-danger" data-dismiss="modal">Não</button>
+	  	</div>
+      </div>
+      <div class="modal-footer">
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="addBookDialog4" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title"></h4>
+      </div>
+      <div class="modal-body text-center">
+        <p>Tem certeza que deseja concluir esse antes da data de retirada cadastrada?</p>
+        <div class="form-group">
+	  		<input type='hidden' id="idTransp" name='idTransp' value=''>
+			<a class="btn btn-primary" id="btnSim"  data-dismiss="modal" onclick=fncMudarStatus("C");>Sim</a>
+			<button type="button" class="btn btn-danger" data-dismiss="modal">Não</button>
+	  	</div>
+      </div>
+      <div class="modal-footer">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="addBookDialog5" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title"></h4>
+      </div>
+      <div class="modal-body text-center">
+        <p>Tem certeza que deseja avaliar esse transporte?</p>
+	  		<input type='hidden' id="idTranspAva" name='idTranspAva' value=''>
+	  		<a onclick=fncCadastrarAvaliacao(); type="button" class="btn btn-primary" id="btnSim">Sim</a>
+			<button type="button" class="btn btn-danger" data-dismiss="modal">Não</button>
+	  	</div>
+      </div>
+      <div class="modal-footer">
+      </div>
+    </div>
+  </div>
+  
+ <div id="addBookDialog6" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title"></h4>
+      </div>
+      <div class="modal-body text-center">
+        <p>Tem certeza que deseja ativar esse transporte?</p>
+	  		<input type='hidden' id="idTranspAti" name='idTranspAti' value=''>
+	  		<a onclick=fncAtivarTransporteSemLance(); type="button" class="btn btn-primary" id="btnSim" data-dismiss="modal">Sim</a>
+			<button type="button" class="btn btn-danger" data-dismiss="modal">Não</button>
+	  	</div>
+      </div>
+      <div class="modal-footer">
+      </div>
+    </div>
+  </div>
+  
+   <div id="addBookDialog7" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title"></h4>
+      </div>
+      <div class="modal-body text-center">
+        <p>Tem certeza que deseja ativar com os lances esse transporte?</p>
+	  		<input type='hidden' id="idTranspAti" name='idTranspAti' value=''>
+	  		<a onclick=fncAtivarTransporteComLance(); type="button" class="btn btn-primary" id="btnSim" data-dismiss="modal">Sim</a>
+			<button type="button" class="btn btn-danger" data-dismiss="modal">Não</button>
+	  	</div>
+      </div>
+      <div class="modal-footer">
+      </div>
+    </div>
+  </div>
+
+	<div id="myModal1" class="modal fade reply-sure" role="dialog">
+			<div class="modal-dialog">
+							    <!-- Modal content-->	
+				<div class="modal-content">
+					<div class="text-center">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Sucesso</h4>
+					</div>
+					</div>
+					<div class="text-center">
+					<div class="modal-body">
+						<p>O transporte foi cancelado com sucesso.</p>
+					 </div>
+					 </div>
+					<div class="text-center">
+					<div class="modal-footer-center">
+					 	<button type="submit" class="btn btn-primary" data-number="1" data-dismiss="modal" id="btnCanOk" name="btnCanOk">OK</button>
+						<br>
+						<br>
+						<br>		      	
+					</div>
+					</div>
+				</div>			
+			</div>
+		</div>
+		
+		<script>
+	$(document).ready(function() {
+    $('#myModal1 button').on('click', function() {
+		$('body').removeClass('modal-open');
+		$('.modal-backdrop').remove();
+		$('#motivoCancelamentoTransp').val('');
+		location.reload();
+    	});
+	});
+		
+		</script>
+		
+		<div id="myModal2" class="modal fade" role="dialog">
+			<div class="modal-dialog">
+							    <!-- Modal content-->	
+				<div class="modal-content">
+					<div class="text-center">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Sucesso</h4>
+					</div>
+					</div>
+					<div class="text-center">
+					<div class="modal-body">
+						<p>O transporte foi concluido com sucesso.</p>
+					 </div>
+					 </div>
+					<div class="text-center">
+					<div class="modal-footer-center">
+					 	<button type="submit" class="btn btn-primary" data-dismiss="modal">OK</button>
+						<br>
+						<br>
+						<br>		      	
+					</div>
+					</div>
+				</div>			
+			</div>
+		</div>
+		
+		<div id="myModal3" class="modal fade" role="dialog">
+			<div class="modal-dialog">
+							    <!-- Modal content-->	
+				<div class="modal-content">
+					<div class="text-center">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Sucesso</h4>
+					</div>
+					</div>
+					<div class="text-center">
+					<div class="modal-body">
+						<p>O transporte foi avaliado com sucesso.</p>
+					 </div>
+					 </div>
+					<div class="text-center">
+					<div class="modal-footer-center">
+					 	<button type="submit" class="btn btn-primary" data-dismiss="modal">OK</button>
+						<br>
+						<br>
+						<br>		      	
+					</div>
+					</div>
+				</div>			
+			</div>
+		</div>
+		
+		<div id="myModal4" class="modal fade" role="dialog">
+			<div class="modal-dialog">
+							    <!-- Modal content-->	
+				<div class="modal-content">
+					<div class="text-center">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Sucesso</h4>
+					</div>
+					</div>
+					<div class="text-center">
+					<div class="modal-body">
+						<p>O transporte foi ativado com sucesso.</p>
+					 </div>
+					 </div>
+					<div class="text-center">
+					<div class="modal-footer-center">
+					 	<button type="submit" class="btn btn-primary" data-dismiss="modal">OK</button>
+						<br>
+						<br>
+						<br>		      	
+					</div>
+					</div>
+				</div>			
+			</div>
+		</div>
+		
+		<div id="myModal5" class="modal fade" role="dialog">
+			<div class="modal-dialog">
+							    <!-- Modal content-->	
+				<div class="modal-content">
+					<div class="text-center">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Sucesso</h4>
+					</div>
+					</div>
+					<div class="text-center">
+					<div class="modal-body">
+						<p>O transporte foi ativado com sucesso.</p>
+					 </div>
+					 </div>
+					<div class="text-center">
+					<div class="modal-footer-center">
+					 	<button type="submit" class="btn btn-primary" data-dismiss="modal">OK</button>
+						<br>
+						<br>
+						<br>		      	
+					</div>
+					</div>
+				</div>			
+			</div>
+		</div>
+		
+		<div id="myModal6" class="modal fade" role="dialog">
+			<div class="modal-dialog">
+							    <!-- Modal content-->	
+				<div class="modal-content">
+					<div class="text-center">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Sucesso</h4>
+					</div>
+					</div>
+					<div class="text-center">
+					<div class="modal-body">
+						<p>Cadastro de transporte realizado com sucesso</p>
+					 </div>
+					 </div>
+					<div class="text-center">
+					<div class="modal-footer-center">
+					 	<button type="submit" class="btn btn-primary" data-dismiss="modal">OK</button>
+						<br>
+						<br>
+						<br>		      	
+					</div>
+					</div>
+				</div>			
+			</div>
+		</div>
+		
+		    
+    	<div id="myModal7" class="modal fade" role="dialog">
+			<div class="modal-dialog">
+							    <!-- Modal content-->	
+				<div class="modal-content">
+					<div class="text-center">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Sucesso</h4>
+					</div>
+					</div>
+					<div class="text-center">
+					<div class="modal-body">
+						<p>O transporte foi editado com sucesso.</p>
+					 </div>
+					 </div>
+					<div class="text-center">
+					<div class="modal-footer-center">
+					 	<button type="submit" class="btn btn-primary" data-dismiss="modal">OK</button>
+						<br>
+						<br>
+						<br>		      	
+					</div>
+					</div>
+				</div>			
+			</div>
+		</div>
+		
+		<div id="myModal8" class="modal fade" role="dialog">
+			<div class="modal-dialog">
+							    <!-- Modal content-->	
+				<div class="modal-content">
+					<div class="text-center">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Aviso</h4>
+					</div>
+					</div>
+					<div class="text-center">
+					<div class="modal-body">
+						<p>Esse transporte já possui lances e não pode ser editado, caso seja necessario editar ele deve ser cancelado.</p>
+					 </div>
+					 </div>
+					<div class="text-center">
+					<div class="modal-footer-center">
+					 	<button type="submit" class="btn btn-primary" data-dismiss="modal">OK</button>
+						<br>
+						<br>
+						<br>		      	
+					</div>
+					</div>
+				</div>			
+			</div>
+		</div>
+		
+			<div id="myModal9" class="modal fade" role="dialog">
+			<div class="modal-dialog">
+							    <!-- Modal content-->	
+				<div class="modal-content">
+					<div class="text-center">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Sucesso</h4>
+					</div>
+					</div>
+					<div class="text-center">
+					<div class="modal-body">
+						<p>O transportador será informado, e entrará em contato.</p>
+					 </div>
+					 </div>
+					<div class="text-center">
+					<div class="modal-footer-center">
+					 	<button type="submit" class="btn btn-primary" data-dismiss="modal">OK</button>
+						<br>
+						<br>
+						<br>		      	
+					</div>
+					</div>
+				</div>			
+			</div>
+		</div>
+	
+	<script>
+		var targetParam = "<?php  echo isset($_GET['variavel']) ? $_GET['variavel'] : '0'; ?>";
+		if (targetParam == 'transporteAvaliado') {
+			$(document).ready(function() {
+				$('#myModal3').modal();
+			});
+		};
+		
+		if (targetParam == 'transporteAtivado') {
+			$(document).ready(function() {
+				$('#myModal5').modal();
+			});
+		};	
+		
+		if (targetParam == 'transporteCadastrado') {
+			$(document).ready(function() {
+				$('#myModal6').modal();
+			});
+		};
+		
+		if (targetParam == 'transporteEditado') {
+			$(document).ready(function() {
+				$('#myModal7').modal();
+			});
+		};
+		
+		if (targetParam == 'emailEnviado') {
+			$(document).ready(function() {
+				$('#myModal9').modal();
+			});
+		};
+		
+	</script>	
+
+	<script>
+   		 		
+	  function msg3(alerta, texto) {
+			     var resposta3 = '';
+			     $("#resposta3").empty();
+			     if (alerta === 'sucesso') {
+			       resposta3 = "<div class='alert btn-success text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     } else if (alerta === 'lanceZero') {
+			       resposta3 = "<div class='alert btn-warning text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     } else if (alerta === 'cadastro') {
+			       resposta3 = "<div class='alert btn-primary text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			     $("#resposta3").append(resposta3);
+			
+			     $(".alert").click(function() {
+			       $(".alert").hide();
+			     });
+			   }
+			   
+			     function msg4(alerta, texto) {
+			     var resposta4 = '';
+			     $("#resposta4").empty();
+			     if (alerta === 'sucesso') {
+			       resposta4 = "<div class='alert btn-success text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     } else if (alerta === 'lanceZero') {
+			       resposta4 = "<div class='alert btn-warning text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     } else if (alerta === 'cadastro') {
+			       resposta4 = "<div class='alert btn-primary text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			     $("#resposta4").append(resposta4);
+			
+			     $(".alert").click(function() {
+			       $(".alert").hide();
+			     });
+			   }
+	
+		
+	
+	$(document).on("click", ".open-AddBookDialog", function () {
+		 //alert(idTransp);
+	     var idTransp = $(this).data('id');
+	     //alert(idTransp);
+	     $(".modal-body #idTransp").val( idTransp );
+	});
+	
+	$(document).on("click", ".open-AddBookDialog2", function () {
+		 //alert(idTransp);
+	     var idTransp = $(this).data('id');
+	     //alert(idTransp);
+	     $(".modal-body #idTransp").val( idTransp );
+	});
+	
+	$(document).on("click", ".open-AddBookDialog3", function () {
+		 //alert(idTransp);
+	     var idTransp = $(this).data('id');
+	     //alert(idTransp);
+	     $(".modal-body #idTransp").val( idTransp );
+	});
+	
+	$(document).on("click", ".open-AddBookDialog4", function () {
+		 //alert(idTransp);
+	     var idTransp = $(this).data('id');
+	     //alert(idTransp);
+	     $(".modal-body #idTransp").val( idTransp );
+	});
+	
+	$(document).on("click", ".open-AddBookDialog5", function () {
+		 //alert(idTransp);
+	     var idTransp = $(this).data('id');
+	     //alert(idTransp);
+	     $(".modal-body #idTranspAva").val( idTransp );
+	});	
+	
+	$(document).on("click", ".open-AddBookDialog6", function () {
+		 //alert(idTransp);
+	     var idTransp = $(this).data('id');
+	     //alert(idTransp);
+	     $(".modal-body #idTranspAti").val( idTransp );
+	});		 
+	
+	$(document).on("click", ".open-AddBookDialog7", function () {
+		 //alert(idTransp);
+	     var idTransp = $(this).data('id');
+	     //alert(idTransp);
+	     $(".modal-body #idTranspAti").val( idTransp );
+	});	
+	
+	$(document).on("click", ".open-AddBookDialog8", function () {
+		 //alert(idTransp);
+	     var idTransp = $(this).data('id');
+	     //alert(idTransp);
+	     $(".modal-body #idTransp").val( idTransp );
+	});	
+	</script>
+	
+	    <script>
+          $('.input-group.date').datepicker({
+                    format: "dd-mm-yyyy",
+                    todayBtn: "linked",
+                    autoclose: true,
+                    todayHighlight: true,
+                    language: "pt-BR",
+                    showButtonPanel: true,
+                closeText: 'Clear'
+                    });
+                    
+    </script>
+    
+        <script>
+        
+        var waitingDialog = waitingDialog || (function ($) {
+            'use strict';
+        
+            // Creating modal dialog's DOM
+            var $dialog = $(
+                '<div class="modal fade" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-hidden="true" style="padding-top:15%; overflow-y:visible;">' +
+                '<div class="modal-dialog modal-m">' +
+                '<div class="modal-content">' +
+                    '<div class="modal-header"><h3 style="margin:0;"></h3></div>' +
+                    '<div class="modal-body">' +
+                        '<div class="progress progress-striped active" style="margin-bottom:0;"><div class="progress-bar" style="width: 100%"></div></div>' +
+                    '</div>' +
+                '</div></div></div>');
+        
+            return {
+                /**
+                 * Opens our dialog
+                 * @param message Custom message
+                 * @param options Custom options:
+                 *                options.dialogSize - bootstrap postfix for dialog size, e.g. "sm", "m";
+                 *                options.progressType - bootstrap postfix for progress bar type, e.g. "success", "warning".
+                 */
+                show: function (message, options) {
+                    // Assigning defaults
+                    if (typeof options === 'undefined') {
+                        options = {};
+                    }
+                    if (typeof message === 'undefined') {
+                        message = 'Loading';
+                    }
+                    var settings = $.extend({
+                        dialogSize: 'm',
+                        progressType: '',
+                        onHide: null // This callback runs after the dialog was hidden
+                    }, options);
+        
+                    // Configuring dialog
+                    $dialog.find('.modal-dialog').attr('class', 'modal-dialog').addClass('modal-' + settings.dialogSize);
+                    $dialog.find('.progress-bar').attr('class', 'progress-bar');
+                    if (settings.progressType) {
+                        $dialog.find('.progress-bar').addClass('progress-bar-' + settings.progressType);
+                    }
+                    $dialog.find('h3').text(message);
+                    // Adding callbacks
+                    if (typeof settings.onHide === 'function') {
+                        $dialog.off('hidden.bs.modal').on('hidden.bs.modal', function (e) {
+                            settings.onHide.call($dialog);
+                        });
+                    }
+                    // Opening dialog
+                    $dialog.modal();
+                },
+                /**
+                 * Closes dialog
+                 */
+                hide: function () {
+                    $dialog.modal('hide');
+                }
+            };
+        
+        })(jQuery);
+        
+    </script>
+
+</body>
+ <?php require 'template/footer.php'; ?>
+</html>
+

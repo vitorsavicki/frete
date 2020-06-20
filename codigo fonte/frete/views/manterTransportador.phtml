@@ -1,0 +1,721 @@
+<?php
+// A sessão precisa ser iniciada em cada página diferente
+if (!isset($_SESSION)) session_start();
+
+
+// Verifica se não há a variável da sessão que identifica o usuário
+if ($_SESSION['codigoPer'] <> 'A' and $_SESSION['codigoPer'] <> 'T' ) {
+	// Destrói a sessão por segurança
+	session_destroy();
+	// Redireciona o visitante de volta pro login
+	header("Location: index.php"); exit;
+}
+header('Content-Type: text/html; charset=utf-8');
+$v_params = $this->getParams();
+$o_pessoa = $v_params['o_pessoa'];
+ ?>
+<html>  
+    <head>
+         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap Core CSS - Uses
+        Bootswatch Flatly Theme: http://bootswatch.com/flatly/ -->
+        <link href="template/css/bootstrap.min.css" rel="stylesheet">
+        <!-- Custom CSS -->
+        <link href="template/css/freelancer.css" rel="stylesheet">
+        <!-- Custom Fonts -->
+        <link href="template/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href="http://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
+        <link href="http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media
+        queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file://
+        -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+        <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+        <script type="text/javascript" src="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+        <link href="template/css/fileinput.css" media="all" rel="stylesheet" type="text/css" />
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <script src="template/js/fileinput.min.js" type="text/javascript"></script>
+        <script src="template/js/fileinput_locale_pt-BR.js" type="text/javascript"></script>
+        <script src="template/js/jquery.validate.min.js"></script>
+        <script type="text/javascript" src="template/js/jquery.mask.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="template/AdminLTE.min.css" />
+          <script type="text/javascript">
+        function check_email(val){
+		    if(!val.match(/\S+@\S+\.\S+/)){ // Jaymon's / Squirtle's solution
+		        // Do something
+		        return false;
+		    }
+		    if( val.indexOf(' ')!=-1 || val.indexOf('..')!=-1){
+		        // Do something
+		        return false;
+		    }
+		    return true;
+		}
+        $(document).ready(function(){
+		   $(function(){
+	        $("input[name='emailPes']").blur(function(){
+
+	 			fncJson();
+	 	
+	    	});
+	    	});
+		});
+          
+        function fncJson() {
+			//alert($('#emailPes').val());	
+			var request = $.ajax({
+				url: "./views/verificarEmail.php",
+				type: "POST",			
+				dataType: "json",
+				data: {"emailPes":$('#emailPes').val()}
+			});
+			request.done(function(data) {
+				
+			    var result = check_email($('#emailPes').val());
+			    //alert(result);
+				
+                if(data == true && result) {
+                    $("input[name='emailPes']").val('').focus();
+                    $(document).ready(function() {
+						msg('invalido', 'Email já possui cadastro.');
+					});
+                }
+                else if(data == false && result ){
+                	$(document).ready(function() {
+						msg('valido', 'Email válido.');
+					});
+                }
+			});
+
+			request.fail(function(jqXHR, textStatus) {
+				alert( "Erro (Ajax - listar transporte): " + textStatus );
+			});
+		};
+		
+			function fncSelecionarEstado(estado) {
+			$('#tb_Cidade_idCid').load('views/listarCidade.php?estado='+estado.value);
+			};
+		</script>
+	 <style>
+			   	.colorgraph {
+				  height: 5px;
+				  border-top: 0;
+				  background: #c4e17f;
+				  border-radius: 5px;
+				  background-image: -webkit-linear-gradient(left, #c4e17f, #c4e17f 12.5%, #f7fdca 12.5%, #f7fdca 25%, #fecf71 25%, #fecf71 37.5%, #f0776c 37.5%, #f0776c 50%, #db9dbe 50%, #db9dbe 62.5%, #c49cde 62.5%, #c49cde 75%, #669ae1 75%, #669ae1 87.5%, #62c2e4 87.5%, #62c2e4);
+				  background-image: -moz-linear-gradient(left, #c4e17f, #c4e17f 12.5%, #f7fdca 12.5%, #f7fdca 25%, #fecf71 25%, #fecf71 37.5%, #f0776c 37.5%, #f0776c 50%, #db9dbe 50%, #db9dbe 62.5%, #c49cde 62.5%, #c49cde 75%, #669ae1 75%, #669ae1 87.5%, #62c2e4 87.5%, #62c2e4);
+				  background-image: -o-linear-gradient(left, #c4e17f, #c4e17f 12.5%, #f7fdca 12.5%, #f7fdca 25%, #fecf71 25%, #fecf71 37.5%, #f0776c 37.5%, #f0776c 50%, #db9dbe 50%, #db9dbe 62.5%, #c49cde 62.5%, #c49cde 75%, #669ae1 75%, #669ae1 87.5%, #62c2e4 87.5%, #62c2e4);
+				  background-image: linear-gradient(to right, #c4e17f, #c4e17f 12.5%, #f7fdca 12.5%, #f7fdca 25%, #fecf71 25%, #fecf71 37.5%, #f0776c 37.5%, #f0776c 50%, #db9dbe 50%, #db9dbe 62.5%, #c49cde 62.5%, #c49cde 75%, #669ae1 75%, #669ae1 87.5%, #62c2e4 87.5%, #62c2e4);
+				}
+
+        	@media (min-width: 768px) {
+			    .omb_row-sm-offset-3 div:first-child[class*="col-"] {
+			        margin-left: 25%;
+			    }
+			}
+			
+			.omb_login .omb_authTitle {
+			    text-align: center;
+				line-height: 300%;
+			}
+				
+			.omb_login .omb_socialButtons a {
+				color: white; // In yourUse @body-bg 
+				opacity:0.9;
+			}
+			.omb_login .omb_socialButtons a:hover {
+			    color: white;
+				opacity:1;    	
+			}
+			.omb_login .omb_socialButtons .omb_btn-facebook {background: #3b5998;}
+			.omb_login .omb_socialButtons .omb_btn-twitter {background: #00aced;}
+			.omb_login .omb_socialButtons .omb_btn-google {background: #c32f10;}
+			
+			
+			.omb_login .omb_loginOr {
+				position: relative;
+				font-size: 1.5em;
+				color: #aaa;
+				margin-top: 1em;
+				margin-bottom: 1em;
+				padding-top: 0.5em;
+				padding-bottom: 0.5em;
+			}
+			.omb_login .omb_loginOr .omb_hrOr {
+				background-color: #cdcdcd;
+				height: 1px;
+				margin-top: 0px !important;
+				margin-bottom: 0px !important;
+			}
+			.omb_login .omb_loginOr .omb_spanOr {
+				display: block;
+				position: absolute;
+				left: 50%;
+				top: -0.6em;
+				margin-left: -1.5em;
+				background-color: white;
+				width: 3em;
+				text-align: center;
+			}			
+			
+			.omb_login .omb_loginForm .input-group.i {
+				width: 2em;
+			}
+			.omb_login .omb_loginForm  .help-block {
+			    color: red;
+			}
+			
+				
+			@media (min-width: 768px) {
+			    .omb_login .omb_forgotPwd {
+			        text-align: right;
+					margin-top:10px;
+			 	}		
+			}
+		
+    .bs-example{
+    	margin: 20px;
+    }
+
+        </style>
+       
+         <style>
+            body { padding-top: 120px; }
+        </style>
+    </head>
+    <?php require 'template/header.php'; ?>
+    
+                   
+  <body id="page-top">
+  <div class="section">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <ul class="breadcrumb">
+              <li>
+                <a href="?controle=Index&acao=Index">Home</a>
+              </li>
+              <li>
+              	<?php
+              	if ($_SESSION['codigoPer'] == 'A' )
+				{
+				?>
+                <a href="?controle=Pessoa&acao=areaAdministrador">Área do Administrador</a> 
+                <?php
+                }
+				?>
+				<?php
+				if ($_SESSION['codigoPer'] == 'T' )
+				{
+				?>
+                <a href="?controle=Pessoa&acao=areaTransportador">Área do Transportador</a> 
+                <?php
+                }
+				?>
+              </li>
+              	<?php
+              	if ($_SESSION['codigoPer'] == 'A' )
+				{
+					?>
+               <li>
+                <a href="?controle=Pessoa&acao=listarTransportador">Lista de Transportadores</a>
+               </li>
+               <?php
+				}
+				?>
+               <li class="active">
+               <?php
+				if ($_SESSION['codigoPer'] == 'T' )
+				{
+				?>
+               		Meus Dados
+               	<?php
+				}
+				?>
+				<?php
+				if ($_SESSION['codigoPer'] == 'A' )
+				{
+				?>
+					Editar Transportador
+               	<?php
+				}
+				?>
+               </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+									
+<div class="container">
+	<div class="row">
+    <div class="col-xs-12">
+		<form role="form" method="post" id="form" name="form" enctype="multipart/form-data">
+			
+			<div class="col-md-4 col-sm-6 col-xs-12">
+		      <div class="text-center">
+		        <img src="<?php echo $o_pessoa->getFotoPes()?>" class="img-thumbnail" alt="Cinque Terre" width="304" height="236">
+		        <h6>Trocar Foto...</h6>
+		        <input id="fotoPes" name="fotoPes" type="file" multiple=false class="file-loading">
+		      </div>
+		    </div>
+		   <div class="col-md-8 col-sm-6 col-xs-12 personal-info">
+			<h2 class="text-center">Edição de Dados</h2>
+			<hr class="colorgraph">
+			<div class="row">
+				<div class="col-xs-12 col-sm-6 col-md-6">
+					<div class="form-group">
+						<label class="control-label">Nome</label>
+                        <input type="text" class="form-control input-lg" placeholder="Nome"
+                         id="primeiroNomePes"  name="primeiroNomePes" required="" tabindex="1" value='<?php echo $o_pessoa->getPrimeiroNomePes()?>'
+                         data-validation-required-message="Por favor coloque seu Nome.">
+                         <p class="help-block text-danger"></p>
+					</div>
+				</div>
+				<div class="col-xs-12 col-sm-6 col-md-6">
+					<div class="form-group">
+						<label class="control-label">Sobrenome</label>
+						<input type="text" class="form-control input-lg" placeholder="Sobrenome"
+                        id="sobreNomePes"  name="sobreNomePes" required="" tabindex="2" value='<?php echo $o_pessoa->getSobreNomePes()?>'
+                        data-validation-required-message="Por favor coloque seu Sobrenome.">
+                        <p class="help-block text-danger"></p>
+					</div>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="control-label">CPF ou CNPJ</label>
+                <input type="text" class="form-control input-lg" placeholder="CPF ou CNPJ" onkeydown="javascript:return aplica_mascara_cpfcnpj(this,18,event)" onkeyup="javascript:return aplica_mascara_cpfcnpj(this,18,event)" maxlength="18"
+                id="cpfCnpjPes"  name="cpfCnpjPes" required="" tabindex="3" value='<?php echo $o_pessoa->getCpfCnpjPes()?>' 
+                data-validation-required-message="Por favor coloque seu CPF ou CNPJ.">
+                <p class="help-block text-danger"></p>
+			</div>
+			
+			<?php
+				if($_SESSION['codigoPer'] == 'A'){
+			?>
+	        <div class="form-group">
+	        <label class="control-label">Status</label> 
+	        <?php 
+				$o_tb_Status_idSta = new StatusModel();
+				if ($o_pessoa->getTb_Status_idSta() !== NULL)
+					$o_tb_Status_idSta->loadById($o_pessoa->getTb_Status_idSta());
+			 ?>
+							<select class="form-control input-lg" name="tb_Status_idSta" id="tb_Status_idSta" tabindex="4">
+					<?php
+						if ($o_tb_Status_idSta->getIdSta() !== NULL)
+							$tb_Status_idSta = $o_tb_Status_idSta->getIdSta();
+						else
+							$tb_Status_idSta = 1;
+							$o_status = new StatusModel();
+							$v_status = $o_status->_list();
+							foreach($v_status AS $o_status){
+					?>
+						<option value="<?php echo $o_status->getIdSta()?>" <?php echo $o_status->getIdSta() == $tb_Status_idSta ? 'selected' : '' ?>><?php echo utf8_encode($o_status->getNomeSta())?></option>
+						<?php
+							}
+						?>
+					 		</select>
+			    </div>
+					    <?php
+							 }
+						?>
+			
+			<div class="row">
+				<div class="col-xs-12 col-sm-6 col-md-6">
+					<div class="form-group">
+						<label class="control-label">Telefone Fixo</label>
+                         <input type="text" class="form-control input-lg" placeholder="Telefone Fixo" pattern="\([0-9]{2}\)[\s][0-9]{4}-[0-9]{4,5}" 
+                         id="telefoneFixoPes"  name="telefoneFixoPes" required="" tabindex="5" value='<?php echo $o_pessoa->getTelefoneFixoPes()?>'
+                         data-validation-required-message="Por favor coloque seu telefone fixo.">
+                         <p class="help-block text-danger"></p>
+					</div>
+				</div>
+				<div class="col-xs-12 col-sm-6 col-md-6">
+					<div class="form-group">
+						<label class="control-label">Telefone Celular</label>
+						 <input type="text" class="form-control input-lg" placeholder="Telefone Celular" pattern="\([0-9]{2}\)[\s][0-9]{4}-[0-9]{4,5}"
+                         id="telefoneCelularPes"  name="telefoneCelularPes" required="" tabindex="6" value='<?php echo $o_pessoa->getTelefoneCelularPes()?>' 
+                         data-validation-required-message="Por favor coloque seu telefone celular.">
+                         <p class="help-block text-danger"></p>
+					</div>
+				</div>
+			</div>	                     
+            <div class="form-group">
+            	<label class="control-label">CEP</label>
+				<input type="text" class="form-control input-lg" placeholder="CEP"
+                id="cepEnd"  name="cepEnd" required="" tabindex="7"  value='<?php echo $o_pessoa->getCepEnd()?>' 
+                 data-validation-required-message="Por favor coloque o cep do seu endereço.">
+                <p class="help-block text-danger"></p>
+			</div>
+			<div class="form-group">
+				<label class="control-label">Logradouro</label>
+				<input type="text" class="form-control input-lg" placeholder="Logradouro"
+                id="ruaEnd"  name="ruaEnd" required="" tabindex="8"  value='<?php echo $o_pessoa->getRuaEnd()?>'
+                data-validation-required-message="Por favor coloque o nome da rua e número .">
+                <p class="help-block text-danger"></p>
+			</div>
+			<div class="form-group">
+				<label class="control-label">Bairro</label>
+				<input type="text" class="form-control input-lg" placeholder="Bairro" 
+                id="bairroEnd"  name="bairroEnd" required="" tabindex="9" value='<?php echo $o_pessoa->getBairroEnd()?>'
+                data-validation-required-message="Por favor coloque o nome do seu bairro">
+                <p class="help-block text-danger"></p>
+			</div>	
+			<div class="form-group">
+				<label class="control-label">Complemento</label>
+				 <input type="text" class="form-control input-lg" placeholder="Complemento" 
+                 id="complementoEnd"  name="complementoEnd"  tabindex="10" value='<?php echo $o_pessoa->getComplementoEnd()?>'
+                 data-validation-required-message="Por favor coloque algum complemento do seu endereço.">
+                 <p class="help-block text-danger"></p>
+			</div>
+				
+			 <?php 
+				$o_endereco= new EnderecoModel();
+				$o_cidade= new CidadeModel();
+				if ($o_pessoa->getTb_endereco_idEnd() !== NULL){
+					$o_endereco->loadById($o_pessoa->getTb_endereco_idEnd(),null);
+					if ($o_endereco->getTb_cidade_IdCid() !== NULL)
+						$o_cidade->loadById($o_endereco->getTb_cidade_IdCid());
+					}
+			 ?>
+						
+			<div class="row">
+				<div class="col-xs-12 col-sm-6 col-md-6">
+					<div class="form-group">
+						<label class="control-label">Estado</label>
+						<select class="form-control input-lg" placeholder="Estado" 
+                        id="tb_Estado_idEst"  required="" data-validation-required-message="Por favor coloque seu estado." 
+                        name="tb_Estado_idEst" onChange="fncSelecionarEstado(this)" tabindex="11">
+                        	<option value="">Selecione um Estado</option>
+						<?php
+						if ($o_cidade->getTb_Estado_idEst() !== NULL)
+							$estado = $o_cidade->getTb_Estado_idEst();
+						else
+							$estadoDestino = 18;
+							$o_estado = new EstadoModel();
+							$v_estados = $o_estado->_list();
+							foreach($v_estados AS $o_estado){
+					 		?>
+								<option value="<?php echo $o_estado->getIdEst()?>" <?php echo $o_estado->getIdEst() == $estado ? 'selected' : '' ?>><?php echo $o_estado->getUfEst()?></option>
+							<?php
+							}
+							?>
+						 </select>     
+                         <p class="help-block text-danger"></p>
+					</div>
+				</div>
+				<div class="col-xs-12 col-sm-6 col-md-6">
+					<div class="form-group">
+						<label class="control-label">Cidade</label>
+						  <select class="form-control input-lg" placeholder="Cidade" 
+                          required="" data-validation-required-message="Por favor coloque o numero da sua casa" 
+                          name="tb_Cidade_idCid" id="tb_Cidade_idCid" tabindex="12">
+                          <option value="">Selecione uma Cidade</option>
+                        <?php
+							if ($o_cidade->getIdCid() !== NULL)
+								$cidade= $o_cidade->getIdCid();
+							else
+								$cidade= 2878;
+								$o_cidade = new CidadeModel();
+								$v_cidades = $o_cidade->_list($estado);
+							foreach($v_cidades AS $o_cidade){
+							?>
+								<option value="<?php echo $o_cidade->getIdCid()?>" <?php echo $o_cidade->getIdCid() == $cidade ? 'selected' : '' ?>><?php echo utf8_encode($o_cidade->getNomeCid())?></option>
+							<?php
+							}
+							?> 
+						  </select>
+                          <p class="help-block text-danger"></p>
+					</div>
+					<div id="resposta2"></div>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="control-label">Email</label>
+				<input type="email" class="form-control input-lg" placeholder="Email" value='<?php echo $o_pessoa->getEmailPes()?>'
+                id="emailPes"  name="emailPes" required="" data-validation-required-message="Por favor coloque seu Email." tabindex="13">
+                <p class="help-block text-danger"></p>
+			</div>
+			<div id="resposta3" name="resposta3"></div>
+			<div class="row">
+				<div class="col-xs-12 col-sm-6 col-md-6">
+					<div class="form-group">
+						<label class="control-label">Senha</label>
+						<input type="password" class="form-control input-lg" placeholder="Senha" tabindex="14"
+                         id="senhaPes"  name="senhaPes"  data-validation-required-message="Por favor coloque sua senha.">
+                         <p class="help-block text-danger"></p>
+					</div>
+				</div>
+				<div class="col-xs-12 col-sm-6 col-md-6">
+					<div class="form-group">
+						<label class="control-label">Confirmar Senha</label>
+						  <input type="password" class="form-control input-lg" placeholder="Confirmar Senha"
+                          id="senhaPesCon"  name="senhaPesCon" tabindex="15"
+                          data-validation-required-message="Por favor coloque sua senha.">
+                          <p class="help-block text-danger"></p>
+					</div>
+				</div>
+			</div>
+			
+			<hr class="colorgraph">
+			<div class="row">
+									<input type="hidden" name="idEnd" value="<?php echo $o_pessoa->getTb_endereco_idEnd() ?>"
+									<input type="hidden" name="controle" value="Pessoa">
+                                       <?php
+									   if($_SESSION['codigoPer'] == 'A')
+									   {
+									   ?>
+                                    <input type="hidden" name="acao" value="manterTransportador">
+                                    <?php
+									   }
+									   ?>
+									   <?php
+									     if($_SESSION['codigoPer'] == 'T')
+									   {
+									   ?>
+                                    <input type="hidden" name="acao" value="manterTransportadorT">
+                                    <?php
+									   }
+									   ?>			
+                                     <div class="col-xs-12 col-md-6"><button type="submit" id="confirmar" name="confirmar" class="btn btn-primary btn-block btn-lg" tabindex="18">Confirmar</button></div>
+                                  
+							      	<?php
+									   if($_SESSION['codigoPer'] == 'A')
+									   {
+									   ?>
+									   <div class="col-xs-12 col-md-6"><a href="?controle=Pessoa&acao=listartransportador" class="btn btn-danger btn-block btn-lg">Cancelar</a></div>	 
+							      	  <?php
+									   }
+									   ?>
+									   	<?php
+									   if($_SESSION['codigoPer'] == 'T')
+									   {
+									   ?>
+									   <div class="col-xs-12 col-md-6"><a href="?controle=Pessoa&acao=areaTransportador" class="btn btn-danger btn-block btn-lg">Cancelar</a></div>	
+							      	  <?php
+									   }
+									   ?>
+			</div>
+		</form>
+	  </div>
+	</div>
+</div>
+
+</div>
+ 
+    </body>
+  <script type="text/javascript">
+         function msg(alerta, texto) {
+			     var resposta = '';
+			     var resposta2 = '';
+			     var resposta3 = '';
+			     $("#resposta").empty();
+			     $("#resposta2").empty();
+			     $("#resposta3").empty();
+			     if (alerta === 'sucesso') {
+			       resposta = "<div class='alert btn-success text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     } else if (alerta === 'atencao') {
+			       resposta = "<div class='alert btn-warning text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     } else if (alerta === 'erro') {
+			       resposta = "<div class='alert btn-danger text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			     else if (alerta === 'login') {
+			       resposta = "<div class='alert btn-danger text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			     else if (alerta === 'campoEmail') {
+			       resposta = "<div class='alert btn-warning text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			     else if (alerta === 'senhaEnviada') {
+			       resposta = "<div class='alert btn-success text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			     else if (alerta === 'numeroEnd') {
+			       resposta = "<div class='alert btn-warning text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			     else if (alerta === 'estadoVazio') {
+			       resposta2 = "<div class='alert btn-warning text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			      else if (alerta === 'invalido') {
+			       resposta3 = "<div class='alert btn-danger text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			        }
+			       else if (alerta === 'valido') {
+			       resposta3 = "<div class='alert btn-success text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			     $("#resposta").append(resposta);
+			     $("#resposta2").append(resposta2);
+			     $("#resposta3").append(resposta3);
+			
+			     $(".alert").click(function() {
+			       $(".alert").hide();
+			     });
+			   }
+			
+			   $("#numeroEnd").focus(function() {
+			     msg('numeroEnd', 'Por questões de segurança coloque um numero aproximado!');
+			   });
+			   
+			   $("#tb_Cidade_idCid").focus(function() {
+			   	var tb_Estado_idEst = document.getElementById('tb_Estado_idEst');
+			   	if(tb_Estado_idEst.value == ''){
+			     msg('estadoVazio', 'Selecione um Estado antes de escolher a Cidade!');
+			    }
+			   });
+			   
+			$("#telefoneFixoPes").mask("(00) 0000-00009");
+        	$("#telefoneCelularPes").mask("(00) 0000-00009");
+        	$("#cepEnd").mask("00000-009");
+        
+        	
+			jQuery.validator.addMethod("verificaTamanho", function(value, element) {
+			   return value.length == 14 || value.length == 18;
+			}, jQuery.format("Informe 11 ou 14 digitos"));
+			
+			//Retira a máscara do valor de cpf_cnpj
+			function retira_mascara(cpf_cnpj) {
+				return cpf_cnpj.replace(/\./g,'').replace(/-/g,'').replace(/\//g,'')
+			}
+			
+           $('form').validate({
+	          rules: {
+		     	telefoneFixoPes: {
+		     		minlength: 14
+		     	},
+		     	telefoneCelularPes: {
+		     		minlength: 14
+		     	},
+			     	cpfCnpjPes: {
+					required:true,
+					verificaTamanho:true,
+					cpf:function(element) {
+						if($("#cpfCnpjPes").val().length==14){ return true; }
+					},
+					cnpj:function(element) {
+						if($("#cpfCnpjPes").val().length==18){ return true; }
+					}
+				},
+					senhaPes: {
+		          
+		        	},
+		            senhaPesCon: {
+		           
+		            equalTo: "#senhaPes"
+		        	}
+		      },
+		     
+		      messages: {
+		         titulo: { required:'Informe o título' },
+		         cpfCnpjPes: {
+		            required: 'Informe o número do documento',
+		            verificaTamanho:'O documento precisa ter 11 ou 14 digitos',
+		            cpf:'Informe um CPF válido',
+		            cnpj:'Informe um CNPJ válido'
+		         },
+		      
+		      },
+				      
+		    
+	        highlight: function(element) {
+	            $(element).closest('.form-group').addClass('has-error');
+	        },
+	        unhighlight: function(element) {
+	            $(element).closest('.form-group').removeClass('has-error');
+	        },
+	        errorElement: 'span',
+	        errorClass: 'help-block',
+	        errorPlacement: function(error, element) {
+	            if(element.parent('.input-group').length) {
+	                error.insertAfter(element.parent());
+	            } else {
+	                error.insertAfter(element);
+	            }
+	        }
+	    });
+		
+	
+            function SomenteNumero(e){
+			    var tecla=(window.event)?event.keyCode:e.which;   
+			    if((tecla>47 && tecla<58)) return true;
+			    else{
+			    	if (tecla==8 || tecla==0) return true;
+				else  return false;
+			    }
+			}
+			
+			//Aplica a máscara no campo
+			//Função para ser utilizada nos eventos do input para formatação dinâmica
+			function aplica_mascara_cpfcnpj(campo,tammax,teclapres) {
+				var tecla = teclapres.keyCode;
+			
+				if ((tecla < 48 || tecla > 57) && (tecla < 96 || tecla > 105) && tecla != 46 && tecla != 8 && tecla != 9) {
+					return false;
+				}
+			
+				var vr = campo.value;
+				vr = vr.replace( /\//g, "" );
+				vr = vr.replace( /-/g, "" );
+				vr = vr.replace( /\./g, "" );
+				var tam = vr.length;
+			
+				if ( tam <= 2 ) {
+					campo.value = vr;
+				}
+				if ( (tam > 2) && (tam <= 5) ) {
+					campo.value = vr.substr( 0, tam - 2 ) + '-' + vr.substr( tam - 2, tam );
+				}
+				if ( (tam >= 6) && (tam <= 8) ) {
+					campo.value = vr.substr( 0, tam - 5 ) + '.' + vr.substr( tam - 5, 3 ) + '-' + vr.substr( tam - 2, tam );
+				}
+				if ( (tam >= 9) && (tam <= 11) ) {
+					campo.value = vr.substr( 0, tam - 8 ) + '.' + vr.substr( tam - 8, 3 ) + '.' + vr.substr( tam - 5, 3 ) + '-' + vr.substr( tam - 2, tam );
+				}
+				if ( (tam == 12) ) {
+					campo.value = vr.substr( tam - 12, 3 ) + '.' + vr.substr( tam - 9, 3 ) + '/' + vr.substr( tam - 6, 4 ) + '-' + vr.substr( tam - 2, tam );
+				}
+				if ( (tam > 12) && (tam <= 14) ) {
+					campo.value = vr.substr( 0, tam - 12 ) + '.' + vr.substr( tam - 12, 3 ) + '.' + vr.substr( tam - 9, 3 ) + '/' + vr.substr( tam - 6, 4 ) + '-' + vr.substr( tam - 2, tam );
+				}
+			}
+			$(document).on('ready', function() {
+		    $("#fotoPes").fileinput({
+		        showUpload: false,
+		        language: 'pt-BR',
+		        layoutTemplates: {
+		            main1: "{preview}\n" +
+		            "<div class=\'input-group {class}\'>\n" +
+		            "   <div class=\'input-group-btn\'>\n" +
+		            "       {browse}\n" +
+		            "       {upload}\n" +
+		            "       {remove}\n" +
+		            "   </div>\n" +
+		            "   {caption}\n" +
+		            "</div>"
+		        }
+		    });
+		});
+			</script>
+	<?php require 'template/footer.php'; ?>
+</html>
+

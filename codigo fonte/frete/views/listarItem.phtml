@@ -1,0 +1,324 @@
+<?php
+// A sessão precisa ser iniciada em cada página diferente
+if (!isset($_SESSION)) session_start();
+header('Content-Type: text/html; charset=utf-8');
+// Verifica se não há a variável da sessão que identifica o usuário
+if ($_SESSION['codigoPer'] <> 'A') {
+	// Destrói a sessão por segurança
+	session_destroy();
+	// Redireciona o visitante de volta pro login
+	header("Location: index.php"); exit;
+}
+$v_params = $this->getParams();
+$v_itens = $v_params['v_itens'];
+?>
+<html> 
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap Core CSS - Uses
+        Bootswatch Flatly Theme: http://bootswatch.com/flatly/ -->
+        <link href="template/css/bootstrap.min.css" rel="stylesheet">
+        <!-- Custom CSS -->
+        <link href="template/css/freelancer.css" rel="stylesheet">
+        <!-- Custom Fonts -->
+        <link href="template/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href="http://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
+        <link href="http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media
+        queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file://
+        -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+        <link href="template/css/fileinput.css" media="all" rel="stylesheet" type="text/css" />
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <script src="template/js/fileinput.min.js" type="text/javascript"></script>
+        <script src="template/js/fileinput_locale_pt-BR.js" type="text/javascript"></script>
+        <script type="text/javascript" src="template/js/ajaxupload.3.5.js" ></script>
+		<link rel="stylesheet" type="text/css" href="template/css/upload.css" />
+	  	<script src="template/js/jquery.validate.min.js"></script>
+        <script type="text/javascript" src="template/js/jquery.mask.min.js"></script>
+        <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+        <script type="text/javascript" src="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+        <link href="template/bootstrap-datepicker/css/bootstrap-datepicker3.css" rel="stylesheet">
+		<script src="template/bootstrap-datepicker/js/bootstrap-datepicker.js"></script>
+        <script type="text/javascript" src="template/bootstrap-datepicker/locales/bootstrap-datepicker.pt-BR.min.js"></script>
+        <script src="template/js/jquery.maskMoney.js" type="text/javascript"></script>
+        <link rel="stylesheet" type="text/css" href="template/AdminLTE.min.css" />
+    <script>
+    	$(document).ready(function() {
+			$('#btnPesquisar').click(function(){
+				//alert('teste');
+				fncJson(1);
+			});
+			
+			 $('#btnLimpar').click(function(){
+                //alert('teste');
+                $('#palavraChave').val('');
+                $('#tb_categoria_idCat').val(0);
+                fncJson(1);
+            });
+		});
+		
+		$(document).ready(function() {
+			fncJson(1);	
+		});
+		
+		function fncJson(pagina) {
+			//alert(pagina);	
+			var request = $.ajax({
+				url: "./views/listarItem.php",
+				beforeSend: function(){
+		              $('#loading').html("<img src='template/img/loading.gif'/>").fadeIn('fast');
+				},
+				type: "POST",			
+				dataType: "json",
+				data: {"categoria":$('#tb_categoria_idCat').val(),"palavraChave":$('#palavraChave').val(), "pagina":pagina}
+			});
+			request.done(function(data) {
+				//alert('teste');
+			    //$("#tabela").html(data);
+				for($i=0; $i < data.length; $i++){
+					$("#tabela").html(data[$i]);	
+				}
+				$("#tabela").focus();
+			});
+
+			request.fail(function(jqXHR, textStatus) {
+				alert( "Erro (Ajax - listar transporte): " + textStatus );
+			});
+		};
+		
+   		function fncDeletarItem()
+		{
+			//alert($('#idItem').val());
+			var idItem = $('#idItem').val(); 
+			//alert(idItem);
+			window.location.href = "?controle=Item&acao=apagarItem&idItem=" + idItem;
+		}
+		
+    </script>
+        <style>
+            body { padding-top: 120px; }
+        </style>
+    </head>
+    <?php require 'template/header.php'; ?>
+    <body id="page-top">
+    <div class="section">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <ul class="breadcrumb">
+              <li>
+                <a href="?controle=Index&acao=Index">Home</a>
+              </li>
+              <li>
+                <a href="?controle=Pessoa&acao=areaAdministrador">Área do Administrador</a> 
+              </li>
+               <li class="active">
+                Lista de Itens
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+     <div class="section">
+      <div class="container">
+      	   		 <div class="row">
+                    <div class="col-md-12">
+                        <h1 class="text-center"> 
+              			Lista de Itens
+						 </h1>
+                    </div>
+                </div>
+        <div class="row">
+            <div class="col-md-6">
+            <div class="form-group">
+              <label class="control-label" for="exampleInputEmail1">Categoria</label>
+				<select class="form-control" name='tb_categoria_idCat' id='tb_categoria_idCat'>
+				<option value="0">Categoria</option>
+				<?php
+					$o_categoria = new CategoriaModel();
+					$v_categorias = $o_categoria->_list();
+					foreach($v_categorias AS $o_categoria)
+					{
+					?>
+						<option value="<?php echo $o_categoria->getIdCat()?>"><?php echo $o_categoria->getNomeCat()?></option>
+				<?php
+					}
+					?>
+				</select>
+            </div>
+			
+            <div class="form-group" draggable="true">
+              <label class="control-label" for="exampleInputPassword1">Nome</label>
+              <input class="form-control" id="palavraChave" placeholder="">
+            </div>
+			
+            <div class="form-group" draggable="true">
+		  		<a class="btn btn-primary" id="btnPesquisar">Pesquisar</a>
+		  		<a class="btn btn-danger" id="btnLimpar">Limpar</a>
+		  		<a href="?controle=Item&acao=manterItem" class="btn btn-success">Novo item</a>
+			</div>
+          </div>
+        </div>
+      </div>
+    </div>
+			<div class="section">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                 		 <div class="col-md-12" id="tabela">
+          	
+						</div>
+								<div class="text-center">
+                                        <a href="?controle=Pessoa&acao=areaAdministrador"
+                                        class="btn btn-danger">Voltar</a>
+                                </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        	  	<div id="myModal1" class="modal fade" role="dialog">
+			<div class="modal-dialog">
+							    <!-- Modal content-->	
+				<div class="modal-content">
+					<div class="text-center">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Sucesso</h4>
+					</div>
+					</div>
+					<div class="text-center">
+					<div class="modal-body">
+						<p>O item foi cadastrado com sucesso.</p>
+					 </div>
+					 </div>
+					<div class="text-center">
+					<div class="modal-footer-center">
+					 	<button type="submit" class="btn btn-primary" data-dismiss="modal">OK</button>
+						<br>
+						<br>
+						<br>		      	
+					</div>
+					</div>
+				</div>			
+			</div>
+		</div>
+		
+		<div id="myModal2" class="modal fade" role="dialog">
+			<div class="modal-dialog">
+							    <!-- Modal content-->	
+				<div class="modal-content">
+					<div class="text-center">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Sucesso</h4>
+					</div>
+					</div>
+					<div class="text-center">
+					<div class="modal-body">
+						<p>O item foi excluido com sucesso.</p>
+					 </div>
+					 </div>
+					<div class="text-center">
+					<div class="modal-footer-center">
+					 	<button type="submit" class="btn btn-primary" data-dismiss="modal">OK</button>
+						<br>
+						<br>
+						<br>		      	
+					</div>
+					</div>
+				</div>			
+			</div>
+		</div>
+		
+		      <div id="myModal3" class="modal fade" role="dialog">
+            <div class="modal-dialog">
+                                <!-- Modal content-->   
+                <div class="modal-content">
+                    <div class="text-center">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title">Aviso</h4>
+                    </div>
+                    </div>
+                    <div class="text-center">
+                    <div class="modal-body">
+                        <p>A categoria não pode ser excluida por haverem dados vinculados.</p>
+                     </div>
+                     </div>
+                    <div class="text-center">
+                    <div class="modal-footer-center">
+                        <button type="submit" class="btn btn-primary" data-dismiss="modal">OK</button>
+                        <br>
+                        <br>
+                        <br>                
+                    </div>
+                    </div>
+                </div>          
+            </div>
+        </div>
+		
+		
+		<!-- Modal -->
+<div id="addBookDialog" class="modal fade" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title"></h4>
+      </div>
+      <div class="modal-body text-center">
+        <p>Tem certeza que deseja deletar esse Item?</p>
+        <div class="form-group">
+	  		<input type='hidden' id="idItem" name='idItem' value=''>
+			<a class="btn btn-primary" id="btnSim"  data-dismiss="modal" onclick=fncDeletarItem();>Sim</a>
+			<button type="button" class="btn btn-danger" data-dismiss="modal">Não</button>
+	  	</div>
+      </div>
+      <div class="modal-footer">
+      </div>
+    </div>
+
+  </div>
+</div>	
+       <script>
+       var targetParam = "<?php  echo $_GET['variavel'];  ?>";
+       	 if (targetParam == 'cadastrada') {
+			$(document).ready(function() {
+				$('#myModal1').modal();
+			});
+		};
+		if (targetParam == 'excluida') {
+			$(document).ready(function() {
+				$('#myModal2').modal();
+			});
+		};
+		if (targetParam == 'vinculo') {
+            $(document).ready(function() {
+                $('#myModal3').modal();
+            });
+        };
+		
+       </script> 
+       
+       <script>
+       	$(document).on("click", ".open-AddBookDialog", function () {
+		 //alert(idItem );
+	     var idItem = $(this).data('id');
+	     //alert(idIItem);
+	     $(".modal-body #idItem").val( idItem );
+		});
+       </script>
+        
+  </body>
+<?php require 'template/footer.php'; ?>
+</html>
+			
