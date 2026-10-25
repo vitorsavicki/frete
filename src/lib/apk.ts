@@ -12,13 +12,13 @@ export interface ApkInfo {
 }
 
 export const APK: ApkInfo = {
-  versao: '1.0.0',
-  versionCode: 1,
-  arquivo: '/download/quero-mudar-ja-1.0.0.apk',
+  versao: '1.0.1',
+  versionCode: 2,
+  arquivo: '/download/quero-mudar-ja-1.0.1.apk',
   arquivoEstavel: '/download/quero-mudar-ja.apk',
-  bytes: 50135,
-  sha256: '6d7f3c9488c0bdbec33b869f239754d0dea3842d4b3a2c2d0649b332be1cc66d',
+  bytes: 50134,
+  sha256: 'cf642ab197a3c74dcfb1617f2082f0b8d4829555061fabbb9be371135e0e18c8',
   geradoEm: '2026-10-25',
-  minSdk: 24,
+  minSdk: 23,
   targetSdk: 34,
 };

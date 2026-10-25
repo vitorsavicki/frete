@@ -3,7 +3,7 @@
 ## Produção
 
 - URL: https://frete.vitorsavicki.workers.dev
-- Deploy: `bcc69ecc-b63e-46d3-bb5f-a7fd23fd5804` (wrangler 4.152.0)
+- Deploy: `b3a8f7ae-ea16-437b-b8ee-c65d5cfa01a4` (wrangler 4.152.0)
 - Migration `0003_carga_caminhao.sql` aplicada no D1 remoto (`frete`,
   `77a441f6-2e58-467b-b47f-76a131fc702a`). Nenhuma migration pendente.
 
@@ -31,20 +31,29 @@
 ## APK Android
 
 - Pacote: `br.com.queromudarja.app`
-- Versão: 1.0.0 (versionCode 1), minSdk 24 (Android 7.0), targetSdk 34
-- Tamanho: 50.135 bytes
-- SHA-256: `6d7f3c9488c0bdbec33b869f239754d0dea3842d4b3a2c2d0649b332be1cc66d`
-- Download: `/download/quero-mudar-ja-1.0.0.apk` (versionado) e
-  `/download/quero-mudar-ja.apk` (estável)
+- Versão: 1.0.1 (versionCode 2), minSdk 23 (Android 6.0), targetSdk 34
+- Tamanho: 50.134 bytes
+- SHA-256: `cf642ab197a3c74dcfb1617f2082f0b8d4829555061fabbb9be371135e0e18c8`
+- Download: `/download/quero-mudar-ja-1.0.1.apk` (versionado) e
+  `/download/quero-mudar-ja.apk` (estável). A v1.0.0 saiu da distribuição e
+  responde 404.
 - Página pública: `/app`, com instruções, segurança, versão, tamanho e hash.
 - O APK é uma casca WebView que carrega a produção; links externos abrem no
   navegador, upload de arquivo, voltar, erros de rede e `confirm` da IA estão
   tratados. Só pede permissão de internet.
-- Assinatura v2/v3 verificada; certificado SHA-256
+- Assinatura v1 (JAR) + v2 + v3 verificada; certificado SHA-256
   `370b02995541356b46d49d777060f48694a2b61d795c9c9027e19bba610b63e9`.
+- Incidente: o usuário relatou “não foi possível instalar” com a v1.0.0 mesmo
+  após habilitar o modo desenvolvedor. A v1.0.0 só tinha assinatura v2/v3 e
+  minSdk 24. A v1.0.1 força a assinatura JAR v1 e reduz o minSdk para 23 para
+  cobrir aparelhos que rejeitam APK só v2/v3 e Android 6.
 - Build: `powershell -ExecutionPolicy Bypass -File android/build.ps1`
-  (JDK 17 + Android SDK 35 em `E:\kube\dev\android-tools`). O script publica o
-  APK, gera o `.sha256` e atualiza `src/lib/apk.ts`.
+  (JDK 17 + Android SDK 35 em `E:\kube\dev\android-tools`). O script lê
+  minSdk/targetSdk do manifesto, publica o APK, gera o `.sha256` e atualiza
+  `src/lib/apk.ts`.
+- A página `/app` mostra Android 6.0+ e a seção “Não conseguiu instalar?” com
+  apps desconhecidos, Auto Blocker (Samsung), Play Protect, remoção de versão
+  antiga e conferência do tamanho do arquivo.
 - Keystore: `.secrets/android/queromudarja.jks`, senha em
   `android/keystore.properties` (ambos gitignored). **Sem backup do keystore
   não é possível atualizar o app já instalado.**
@@ -63,10 +72,14 @@
   650 kg e mantém a mensagem “Medidas típicas de Fiorino aplicadas…”.
 - QA mobile 390×844 e 360×800 em `/app` local e produção: sem overflow,
   sem erros de console e sem respostas ruins.
-- Produção: `/app` 200; APK versionado e estável baixam 50.135 bytes com o
+- Produção: `/app` 200; APK versionado e estável baixam 50.134 bytes com o
   SHA-256 acima; `Content-Type: application/vnd.android.package-archive` e
-  `Content-Disposition: attachment`; `/caminhao` redireciona para login;
-  `/api/ia/carga` sem sessão responde 401; `/api/cep/01310100` responde 200.
+  `Content-Disposition: attachment`; `/download/quero-mudar-ja-1.0.0.apk`
+  responde 404; `/caminhao` redireciona para login; `/api/ia/carga` sem sessão
+  responde 401; `/api/cep/01310100` responde 200.
+- APK v1.0.1 verificado com `apksigner`: v1/v2/v3 true; `aapt2` confirma
+  versionCode 2, versionName 1.0.1, minSdk 23, targetSdk 34; `zipalign -c 4`
+  sem erro.
 
 ## Pendências e limites conhecidos
 
@@ -74,6 +87,10 @@
   caminho atual e os recursos de e-mail ficam simulados.
 - OAuth do Google não funciona dentro da WebView (abre navegador externo).
 - OSRM público inacessível nesta rede; distância segue como haversine × 1,25.
-- APK verificado estaticamente (assinatura, badging e manifesto), mas ainda não
-  instalado em aparelho/emulador Android real.
+- APK verificado estaticamente (assinatura, badging, alinhamento e manifesto),
+  mas ainda não instalado em aparelho/emulador Android real.
+- Ainda não há confirmação de instalação da v1.0.1; se o aparelho do usuário
+  for anterior ao Android 6, o APK continua incompatível.
+- Bloqueios do aparelho (apps desconhecidos, Play Protect, Auto Blocker,
+  pacote antigo) dependem de ação do usuário.
 - Sem backup externo do keystore.

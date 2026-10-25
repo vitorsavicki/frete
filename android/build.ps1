@@ -81,8 +81,10 @@ Write-Host "Build tools: $($BuildTools.Name) · Platform: $($Platform.Name)"
 $manifestTexto = Get-Content (Join-Path $AppDir 'AndroidManifest.xml') -Raw
 $versao = [regex]::Match($manifestTexto, 'android:versionName="([^"]+)"').Groups[1].Value
 $versionCode = [regex]::Match($manifestTexto, 'android:versionCode="([^"]+)"').Groups[1].Value
-if (-not $versao -or -not $versionCode) {
-    Falhar "Não foi possível ler versionName/versionCode do AndroidManifest.xml."
+$minSdk = [regex]::Match($manifestTexto, 'android:minSdkVersion="([^"]+)"').Groups[1].Value
+$targetSdk = [regex]::Match($manifestTexto, 'android:targetSdkVersion="([^"]+)"').Groups[1].Value
+if (-not $versao -or -not $versionCode -or -not $minSdk -or -not $targetSdk) {
+    Falhar "Não foi possível ler versionName/versionCode/minSdkVersion/targetSdkVersion do AndroidManifest.xml."
 }
 
 # ---------- limpeza ----------
@@ -126,7 +128,7 @@ Rodar $Jar @('cf', $classesJar, '-C', (Join-Path $BuildDir 'classes'), '.') 'Emp
 
 Rodar $D8 @(
     '--lib', $AndroidJar,
-    '--min-api', '24',
+    '--min-api', $minSdk,
     '--output', (Join-Path $BuildDir 'dex'),
     $classesJar
 ) 'Convertendo para DEX'
@@ -174,6 +176,9 @@ Rodar $ApkSigner @(
     '--ks-key-alias', $keyAlias,
     '--ks-pass', 'env:APK_STORE_PASS',
     '--key-pass', 'env:APK_KEY_PASS',
+    '--v1-signing-enabled', 'true',
+    '--v2-signing-enabled', 'true',
+    '--v3-signing-enabled', 'true',
     '--out', $apkFinal,
     $alignedApk
 ) 'Assinando o APK'
@@ -226,8 +231,8 @@ export const APK: ApkInfo = {
   bytes: $bytes,
   sha256: '$sha256',
   geradoEm: '$geradoEm',
-  minSdk: 24,
-  targetSdk: 34,
+  minSdk: $minSdk,
+  targetSdk: $targetSdk,
 };
 "@
     [System.IO.File]::WriteAllText(

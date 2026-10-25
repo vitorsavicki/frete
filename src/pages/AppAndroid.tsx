@@ -16,6 +16,29 @@ function tamanhoArquivo(bytes: number): string {
   return `${(kb / 1024).toFixed(1).replace('.', ',')} MB`;
 }
 
+const VERSOES_ANDROID: Record<number, string> = {
+  21: '5.0',
+  22: '5.1',
+  23: '6.0',
+  24: '7.0',
+  25: '7.1',
+  26: '8.0',
+  27: '8.1',
+  28: '9',
+  29: '10',
+  30: '11',
+  31: '12',
+  32: '12L',
+  33: '13',
+  34: '14',
+  35: '15',
+  36: '16',
+};
+
+function versaoAndroid(api: number): string {
+  return VERSOES_ANDROID[api] ?? String(api);
+}
+
 export const AppAndroidPage: FC<AppAndroidProps> = ({ user, alertas = 0 }) => (
   <Layout
     titulo="App para Android"
@@ -36,7 +59,7 @@ export const AppAndroidPage: FC<AppAndroidProps> = ({ user, alertas = 0 }) => (
             <span aria-hidden="true">⬇️</span> Baixar APK grátis
           </a>
           <span class="app-hero__meta">
-            v{APK.versao} · {tamanhoArquivo(APK.bytes)} · Android 7.0+
+            v{APK.versao} · {tamanhoArquivo(APK.bytes)} · Android {versaoAndroid(APK.minSdk)}+
           </span>
         </div>
         <ul class="lista-check app-hero__lista">
@@ -143,7 +166,7 @@ export const AppAndroidPage: FC<AppAndroidProps> = ({ user, alertas = 0 }) => (
         </div>
         <div>
           <dt>Android mínimo</dt>
-          <dd>7.0 (API {APK.minSdk})</dd>
+          <dd>{versaoAndroid(APK.minSdk)} (API {APK.minSdk})</dd>
         </div>
         <div>
           <dt>Tamanho</dt>
@@ -171,6 +194,29 @@ export const AppAndroidPage: FC<AppAndroidProps> = ({ user, alertas = 0 }) => (
         Também disponibilizamos o{' '}
         <a href="/download/quero-mudar-ja.apk.sha256">arquivo de checksum .sha256</a>.
       </p>
+    </details>
+
+    <details class="cartao app-detalhes">
+      <summary>Não conseguiu instalar?</summary>
+      <ul class="lista-check">
+        <li>
+          Autorize “instalar apps desconhecidos” para o Chrome ou para o gerenciador de arquivos
+          que abriu o APK.
+        </li>
+        <li>No Samsung, desative temporariamente o Auto Blocker em Segurança e privacidade.</li>
+        <li>
+          Desative temporariamente o Play Protect na Play Store e tente de novo; depois reative a
+          proteção.
+        </li>
+        <li>
+          Se já existe uma versão antiga do Quero Mudar Já, desinstale em Configurações, Apps,
+          antes de instalar.
+        </li>
+        <li>
+          Baixe novamente pelo Chrome. O arquivo deve ter {tamanhoArquivo(APK.bytes)} e terminar em
+          .apk.
+        </li>
+      </ul>
     </details>
   </Layout>
 );
