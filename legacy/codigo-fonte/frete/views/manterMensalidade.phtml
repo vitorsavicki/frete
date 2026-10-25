@@ -1,0 +1,315 @@
+  <?php
+  require_once('calendar/classes/tc_calendar.php');
+  $v_params = $this->getParams();
+  $o_mensalidade = $v_params['o_mensalidade'];
+  if(!isset($_SESSION)) session_start();
+  ?>
+  <html>
+  <head>
+	 <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="">
+        <meta name="author" content="">
+		
+        <!-- Bootstrap Core CSS - Uses
+        Bootswatch Flatly Theme: http://bootswatch.com/flatly/ -->
+        <link href="template/css/bootstrap.min.css" rel="stylesheet">
+        <!-- Custom CSS -->
+        <link href="template/css/freelancer.css" rel="stylesheet">
+        <!-- Custom Fonts -->
+        <link href="template/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href="http://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
+        <link href="http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media
+        queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file://
+        -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+		<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+        <script type="text/javascript" src="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+	  	<link rel="stylesheet" type="text/css" href="template/css/default.css" />
+	  	<script language="javascript" src="calendar/calendar.js"></script>s
+	  	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+	  	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.5/jquery-ui.min.js"></script>
+	  	<link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.5/themes/humanity/jquery-ui.css" type="text/css" />
+	  
+	  	<script>
+  
+		  /*formata input com máscara de moeda
+		  Ex. onKeyUp="moeda(this)*/
+		  function moeda(z){
+			  v = z.value;
+			  v=v.replace(/\D/g,"")  //permite digitar apenas números
+			  v=v.replace(/[0-9]{12}/,"inválido")   //limita pra máximo 999.999.999,99
+			  v=v.replace(/(\d{1})(\d{8})$/,"$1.$2")  //coloca ponto antes dos últimos 8 digitos
+			  v=v.replace(/(\d{1})(\d{5})$/,"$1.$2")  //coloca ponto antes dos últimos 5 digitos
+			  v=v.replace(/(\d{1})(\d{1,2})$/,"$1,$2")	//coloca virgula antes dos últimos 2 digitos
+			  z.value = v;
+		  }
+		  $(document).ready(function() {
+			  $('#pesqFornecedor').click(function(){
+				  jQuery('#dialog').load('?controle=Pessoa&acao=pesquisarTransportador&tipo=T').dialog('open'); 
+				  return false;
+			  });
+			  
+		  });
+	  	</script>
+  
+       <style>
+            body { padding-top: 210px; }
+        </style>
+    </head>
+    <nav class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header page-scroll">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a  href="#page-top"><img class="img-rounded" height="150px" width="200px" src="template/images/frete1.png"></a>
+        </div>
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+          <ul class="nav navbar-nav navbar-right">
+            <li class="hidden">
+              <a href="#page-top"></a>
+            </li>
+             <li class="page-scroll">
+              <a href="?controle=Index&acao=Index">HOME</a>
+            </li>
+            <li class="page-scroll">
+              <a href="?controle=Index&acao=Index&#cadastre">CADASTRE-SE</a>
+            </li>
+            <li class="page-scroll">
+              <a href="?controle=Index&acao=Index&#about">SOBRE</a>
+            </li>
+            <li class="page-scroll">
+              <a href="?controle=Index&acao=Index&#contact">FALE CONOSCO</a>
+            </li>
+             <?php
+            
+			if(!isset($_SESSION['primeiroNomePes'])){
+			?>
+             <li class="page-scroll">
+              <a href="?controle=Pessoa&acao=paginaLogin">ENTRAR</a>
+            </li>
+            	<?php
+			}
+			?>
+          	 <?php
+			if(isset($_SESSION['primeiroNomePes'])){
+			?>
+            <li class="dropdown dropdown-right">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown"> 
+              <?php if(isset($_SESSION['fotoPes']) AND $_SESSION['fotoPes'] <> "")
+			{
+				?>
+			<img class="img-rounded" height="25px" width="25px" src="<?php echo $_SESSION['fotoPes'];?>"> <?php echo $_SESSION['primeiroNomePes']; ?>  <b class="caret"></b></a>
+			<?php
+			}
+			else {
+			?>
+            <img class="img-rounded" height="25px" width="25px" src="http://pingendo.github.io/pingendo-bootstrap/assets/user_placeholder.png"> <?php echo $_SESSION['primeiroNomePes']; ?>  <b class="caret"></b></a>
+            <?php
+			}
+            ?>
+            <ul class="dropdown-menu">
+            	<?php
+               if($_SESSION['codigoPer'] == 'U')
+			   {
+			   ?>
+              <li><a href="?controle=Pessoa&acao=areaCliente">Minha Área</a></li>
+              <?php
+			   }
+			   ?>
+			   <?php
+			   if($_SESSION['codigoPer'] == 'T')
+			   {
+			   ?>
+              <li><a href="?controle=Pessoa&acao=areaTransportador">Minha Área</a></li>
+              <?php
+			   }
+			   ?>
+			   <?php
+			   if($_SESSION['codigoPer'] == 'A')
+			   {
+			   ?>
+              <li><a href="?controle=Pessoa&acao=areaAdministrador">Minha Área</a></li>
+              <?php
+			   }
+			   ?>
+              <li><a href="?controle=Login&acao=logout">Sair</a></li>
+            </ul>
+          	</li>
+          	<?php
+          	}
+			?>		
+          </ul>
+        </div>
+        <!-- /.navbar-collapse -->
+      </div>
+      <!-- /.container-fluid -->
+    </nav>
+     				<br>
+                    <br>
+                    <br>
+                    <br>
+                    <br>
+                    <br>
+  
+   
+   <body id="page-top">
+   	  <div id="dialog" title="Pesquisar">
+	  </div>
+	  <script type="text/javascript">
+		  jQuery(function() {
+			  jQuery("#dialog").dialog({
+				  bgiframe: true, autoOpen: false, height: 300, width: 600, modal: true
+			  });
+			  jQuery('body').bind('click',function(e){
+				  if (jQuery('#dialog').dialog('isOpen') && !jQuery(e.target).is('.ui-dialog, a') && !jQuery(e.target).closest('.ui-dialog').length){
+					  jQuery('#dialog').dialog('close');
+				  }
+				  if (jQuery('#dialog').dialog('isOpen') && jQuery(e.target).is('.ui-dialog, img')){
+					  if (jQuery(e.target).attr('id') == 'pesquisarT'){
+						  document.getElementById('tb_pessoa_idPes').value = jQuery(e.target).attr('value-a');
+						  document.getElementById('desctransportador').innerHTML = jQuery(e.target).attr('value-b');
+						  jQuery('#dialog').dialog('close');
+					  }
+					  
+				  }
+			  });
+		  });
+	  </script>
+        <div class="section">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h1 class="text-center">Controlar Mensalidade</h1>
+                    </div>
+                </div>
+                <div class="row">
+     
+	  <div class="row">
+                    <div class="col-md-6 col-md-offset-3">
+                        <form role="form" method="post">
+					  <div class="form-group">	  
+						  <label class="control-label" for="lblDataVencimento">Data vencimento</label>
+						  <div class="form-control">
+							  <?php
+								  $myCalendar = new tc_calendar("date1", true, false);
+								  $myCalendar->setIcon("calendar/images/iconCalendar.gif");
+								  if ($o_mensalidade->getDataVencimentoMensa() != NULL)
+								  {
+									  $myDate = $o_mensalidade->getDataVencimentoMensa();
+									  $datetime = new DateTime($myDate);
+									  $myCalendar->setDate($datetime->format('d'),$datetime->format('m'),$datetime->format('Y'));
+								  }
+								  $myCalendar->setPath("calendar/");
+								  $myCalendar->setYearInterval(2000, 2015);
+								  $myCalendar->dateAllow('2015-01-01', '2050-12-31');
+								  $myCalendar->setDateFormat('j F Y');
+								  $myCalendar->setAlignment('left', 'bottom');
+								  $myCalendar->setOnChange("myChanged()");
+								  $myCalendar->writeScript();
+							  ?>
+							  <script language="javascript">
+							  function myChanged(){
+								 document.forms[0].dataVencimentoMensa.value = document.forms[0].date1.value;
+							  }
+							  </script>
+							  <input type='hidden' name='dataVencimentoMensa' value='<?php echo $o_mensalidade->getDataVencimentoMensa()?>'>
+					  	</div>
+					  </div>
+					  <div class="form-group">
+						  <label class="control-label" for="lblPagamento">Data pagamento</label>
+							<div class="form-control">
+							<?php
+								  $myCalendar = new tc_calendar("date2", true, false);
+								  $myCalendar->setIcon("calendar/images/iconCalendar.gif");
+								  if ($o_mensalidade->getDataPagamentoMensa() != NULL)
+								  {
+									  $myDate = $o_mensalidade->getDataPagamentoMensa();
+									  $datetime = new DateTime($myDate);
+									  $myCalendar->setDate($datetime->format('d'),$datetime->format('m'),$datetime->format('Y'));
+								  }
+								  $myCalendar->setPath("calendar/");
+								  $myCalendar->setYearInterval(2000, 2015);
+								  $myCalendar->dateAllow('2015-01-01', '2050-12-31');
+								  $myCalendar->setDateFormat('j F Y');
+								  $myCalendar->setAlignment('left', 'bottom');
+								  $myCalendar->setOnChange("myChanged2()");
+								  $myCalendar->writeScript();
+							  ?>
+							  <script language="javascript">
+							  function myChanged2(){
+								 document.forms[0].dataPagamentoMensa.value = document.forms[0].date2.value;
+							  }
+							  </script>
+							  <input type='hidden' name='dataPagamentoMensa' value='<?php echo $o_mensalidade->getDataPagamentoMensa()?>'>
+						</div>
+					  </div>
+					  <div class="form-group">
+						  <label class="control-label" for="lblValor">Valor</label>
+							  <input type='text' class="form-control" name='valorMensa' maxlength='10' value='<?php echo number_format($o_mensalidade->getValorMensa(), 2, ',', '.')?>' onKeyUp="moeda(this)"> 
+					  </div>
+					  <div class="form-group">
+						  <label class="control-label" for="lblSituacao">Situação</label>
+							<div class="form-control">
+							  <?php
+								  $o_situacaomensalidade = new SituacaoMensalidadeModel();
+								  $v_situacaomensalidades = $o_situacaomensalidade->_list();
+								  foreach($v_situacaomensalidades AS $o_situacaomensalidade)
+								  {
+							  ?>
+								  <input type="radio" name='tb_situacaoMensalidade_idSit' value="<?php echo $o_situacaomensalidade->getIdSit()?>" <?php if ($o_mensalidade->getTb_situacaoMensalidade_idSit() == $o_situacaomensalidade->getIdSit()) echo 'checked'?>><?php echo $o_situacaomensalidade->getDescricaoSit()?>
+							  <?php
+									}
+							  ?>
+						</div>
+					  </div>
+					  <div class="form-group">
+						  <label class="control-label" for="lblTransportadora">Transportadora</label>
+							<div class="form-control">
+							  <label id="desctransportador">
+							  <?php 
+								  if ($o_mensalidade->getTb_pessoa_idPes() != NULL)
+								  {
+									  $o_transportador = new PessoaModel();
+									  $o_transportador->loadById($o_mensalidade->getTb_pessoa_idPes());
+									  echo $o_transportador->getPrimeiroNomePes();
+								  }
+							  ?>
+							  </label>
+							  <input type='hidden' id='tb_pessoa_idPes' name='tb_pessoa_idPes' value='<?php echo $o_mensalidade->getTb_pessoa_idPes()?>'>
+							  <a href="#" id="pesqFornecedor"><img src="template/images/bullet_magnify.png"></a>
+						</div>
+					  </div>
+					    <br>
+      	  				<br>
+					  <div class="form-group">
+					  	<div class="col-md-12 text-center">
+							  <input type='hidden' name='controle' value='Mensalidade'>
+							  <input type='hidden' name='acao' value='manterMensalidade'>
+							  <input type='hidden' name='idMensa' value='<?php echo $o_mensalidade->getIdMensa()?>'>
+							  <button type='submit' class='btn btn-primary btn-lg'>Salvar</button>
+							  <a href='?controle=Mensalidade&acao=listarMensalidade' class='btn btn-danger btn-lg'>Cancelar</a>
+						</div>
+					  </div>
+					  </form>
+				 </div>
+			  </div>
+		  </div>
+  		</div>
+  		  <br>
+      	  <br>
+    </body>
+     <?php require 'template/footer.php'; ?>
+  </html>

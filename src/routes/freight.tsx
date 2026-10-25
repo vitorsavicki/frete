@@ -1,0 +1,453 @@
+// Fretes: listagem com filtros, detalhe, publicar, dar lance, aceitar, cancelar.
+// Toda query usa prepared statement (bind) — injeção de SQL impossível.
+import { Hono } from 'hono';
+import { exigirLogin, type Vars } from '../lib/session';
+import { schemaFrete, schemaLance, primeiraMensagemErro } from '../lib/validate';
+import { validarLance, podeAceitarLance, podeCancelarFrete } from '../lib/rules';
+import { audit, criarAlerta, type Category, type FreightResumo, type BidComNome, type User } from '../lib/db';
+import { consultarCep, haversineKm } from '../lib/geo';
+import { ListaFretesPage, DetalheFretePage, NovoFretePage } from '../pages/Freight';
+
+const freight = new Hono<{ Bindings: { DB: D1Database }; Variables: Vars }>();
+
+const POR_PAGINA = 10;
+
+function redir(destino: string, params: Record<string, string>): string {
+  const qs = new URLSearchParams(params).toString();
+  return `${destino}?${qs}`;
+}
+
+const SQL_RESUMO = `
+  SELECT f.*, c.nome AS categoria_nome, u.nome AS cliente_nome,
+         (SELECT COUNT(*) FROM bids b WHERE b.freight_id = f.id) AS total_lances,
+         (SELECT MIN(b.valor) FROM bids b WHERE b.freight_id = f.id) AS menor_lance
+  FROM freight f
+  JOIN categories c ON c.id = f.category_id
+  JOIN users u ON u.id = f.user_id`;
+
+// ---------------- GET /fretes — lista pública com filtros ----------------
+freight.get('/fretes', async (c) => {
+  const db = c.env.DB;
+  const q = c.req.query();
+
+  const filtros = {
+    categoria: (q.categoria ?? '').trim(),
+    uf: (q.uf ?? '').trim().toUpperCase(),
+    cidade: (q.cidade ?? '').trim(),
+    q: (q.q ?? '').trim(),
+    data: (q.data ?? '').trim(),
+    pagina: Math.max(1, parseInt(q.pagina ?? '1', 10) || 1),
+  };
+
+  const where: string[] = ["f.status = 'aberto'"];
+  const binds: (string | number)[] = [];
+
+  if (filtros.categoria && /^\d+$/.test(filtros.categoria)) {
+    where.push('f.category_id = ?');
+    binds.push(Number(filtros.categoria));
+  }
+  if (filtros.uf) {
+    where.push('(f.origem_uf = ? OR f.destino_uf = ?)');
+    binds.push(filtros.uf, filtros.uf);
+  }
+  if (filtros.cidade) {
+    where.push('(f.origem_cidade LIKE ? COLLATE NOCASE OR f.destino_cidade LIKE ? COLLATE NOCASE)');
+    const termo = `%${filtros.cidade}%`;
+    binds.push(termo, termo);
+  }
+  if (filtros.q) {
+    where.push('(f.descricao LIKE ? COLLATE NOCASE OR f.comentario LIKE ? COLLATE NOCASE)');
+    const termo = `%${filtros.q}%`;
+    binds.push(termo, termo);
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(filtros.data)) {
+    where.push('f.data_retirada >= ?');
+    binds.push(filtros.data);
+  }
+
+  const whereSql = `WHERE ${where.join(' AND ')}`;
+  const clausulas = [...binds];
+
+  const [lista, total, categorias, alertas] = await Promise.all([
+    db
+      .prepare(`${SQL_RESUMO} ${whereSql} ORDER BY f.criado_em DESC LIMIT ? OFFSET ?`)
+      .bind(...clausulas, POR_PAGINA, (filtros.pagina - 1) * POR_PAGINA)
+      .all<FreightResumo>(),
+    db.prepare(`SELECT COUNT(*) AS n FROM freight f ${whereSql}`).bind(...clausulas).first<{ n: number }>(),
+    db.prepare('SELECT id, nome FROM categories ORDER BY nome').all<Category>(),
+    c.get('user')
+      ? db
+          .prepare('SELECT COUNT(*) AS n FROM alerts WHERE user_id = ? AND lido = 0')
+          .bind(c.get('user')!.id)
+          .first<{ n: number }>()
+      : Promise.resolve({ n: 0 }),
+  ]);
+
+  const totalPaginas = Math.max(1, Math.ceil((total?.n ?? 0) / POR_PAGINA));
+  const fretes = (lista.results ?? []).map((f) => ({
+    ...f,
+    distancia_km: haversineKm(f.origem_lat, f.origem_lng, f.destino_lat, f.destino_lng),
+  }));
+
+  // Query string dos filtros (sem paginação) para links de navegação
+  const qsFiltros = new URLSearchParams();
+  for (const chave of ['categoria', 'uf', 'cidade', 'q', 'data'] as const) {
+    if (filtros[chave]) qsFiltros.set(chave, filtros[chave]);
+  }
+
+  return c.html(
+    <ListaFretesPage
+      user={c.get('user')}
+      alertas={alertas?.n ?? 0}
+      fretes={fretes}
+      categorias={categorias.results ?? []}
+      filtros={filtros}
+      totalPaginas={totalPaginas}
+      queryString={qsFiltros.toString()}
+      mensagem={q.msg || null}
+      erro={q.erro || null}
+    />,
+  );
+});
+
+// ---------------- GET /novo-frete — formulário (só cliente) ----------------
+freight.get('/novo-frete', async (c) => {
+  const user = c.get('user');
+  const bloqueio = exigirLogin(user);
+  if (bloqueio) return bloqueio;
+  if (user!.papel !== 'cliente') {
+    return c.redirect(redir('/fretes', { erro: 'Só clientes publicam fretes.' }));
+  }
+
+  const [categorias, alertas] = await Promise.all([
+    c.env.DB.prepare('SELECT id, nome FROM categories ORDER BY nome').all<Category>(),
+    c.env.DB.prepare('SELECT COUNT(*) AS n FROM alerts WHERE user_id = ? AND lido = 0')
+      .bind(user!.id)
+      .first<{ n: number }>(),
+  ]);
+
+  return c.html(
+    <NovoFretePage
+      user={user!}
+      alertas={alertas?.n ?? 0}
+      categorias={categorias.results ?? []}
+      valores={{}}
+    />,
+  );
+});
+
+// ---------------- POST /fretes — publicar ----------------
+freight.post('/fretes', async (c) => {
+  const user = c.get('user');
+  const bloqueio = exigirLogin(user);
+  if (bloqueio) return bloqueio;
+  if (user!.papel !== 'cliente') {
+    return c.redirect(redir('/fretes', { erro: 'Só clientes publicam fretes.' }));
+  }
+
+  const body = await c.req.parseBody();
+  const bruto: Record<string, string> = {};
+  for (const [k, v] of Object.entries(body)) if (typeof v === 'string') bruto[k] = v;
+
+  const resultado = schemaFrete.safeParse(bruto);
+  if (!resultado.success) {
+    const [categorias, alertas] = await Promise.all([
+      c.env.DB.prepare('SELECT id, nome FROM categories ORDER BY nome').all<Category>(),
+      c.env.DB.prepare('SELECT COUNT(*) AS n FROM alerts WHERE user_id = ? AND lido = 0')
+        .bind(user!.id)
+        .first<{ n: number }>(),
+    ]);
+    return c.html(
+      <NovoFretePage
+        user={user!}
+        alertas={alertas?.n ?? 0}
+        categorias={categorias.results ?? []}
+        valores={bruto}
+        erro={primeiraMensagemErro(resultado.error)}
+      />,
+      400,
+    );
+  }
+  const f = resultado.data;
+
+  // Coordenadas best-effort via BrasilAPI (sem coords, o mapa simplesmente não aparece)
+  const [cepOrigem, cepDestino] = await Promise.all([
+    consultarCep(f.origem_cep),
+    consultarCep(f.destino_cep),
+  ]);
+
+  let freteId: number;
+  try {
+    const r = await c.env.DB
+      .prepare(
+        `INSERT INTO freight (
+           user_id, category_id, descricao, comentario, ajudantes, preco_maximo,
+           data_retirada, hora_retirada,
+           origem_cep, origem_rua, origem_bairro, origem_cidade, origem_uf, origem_lat, origem_lng,
+           destino_cep, destino_rua, destino_bairro, destino_cidade, destino_uf, destino_lat, destino_lng
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .bind(
+        user!.id,
+        f.category_id,
+        f.descricao,
+        f.comentario || null,
+        f.ajudantes,
+        f.preco_maximo,
+        f.data_retirada,
+        f.hora_retirada || null,
+        f.origem_cep,
+        f.origem_rua,
+        f.origem_bairro,
+        f.origem_cidade,
+        f.origem_uf,
+        cepOrigem?.lat ?? null,
+        cepOrigem?.lng ?? null,
+        f.destino_cep,
+        f.destino_rua,
+        f.destino_bairro,
+        f.destino_cidade,
+        f.destino_uf,
+        cepDestino?.lat ?? null,
+        cepDestino?.lng ?? null,
+      )
+      .run();
+    freteId = Number(r.meta.last_row_id);
+  } catch {
+    return c.redirect(redir('/novo-frete', { erro: 'Não foi possível publicar. Tente de novo.' }));
+  }
+
+  await audit(c.env.DB, user!.id, 'publicar_frete', 'freight', freteId);
+  return c.redirect(redir(`/fretes/${freteId}`, { msg: 'Frete publicado! 🚚 O leilão está aberto.' }));
+});
+
+// ---------------- GET /fretes/:id — detalhe ----------------
+freight.get('/fretes/:id', async (c) => {
+  const id = parseInt(c.req.param('id'), 10);
+  if (!Number.isInteger(id) || id <= 0) return c.notFound();
+
+  const user = c.get('user');
+  const db = c.env.DB;
+  const q = c.req.query();
+
+  const frete = await db.prepare(`${SQL_RESUMO} WHERE f.id = ?`).bind(id).first<FreightResumo>();
+  if (!frete) return c.notFound();
+
+  const donoDoFrete = user?.id === frete.user_id;
+
+  const [lances, meuLance, alertas] = await Promise.all([
+    donoDoFrete
+      ? db
+          .prepare(
+            `SELECT b.*, u.nome AS transportador_nome
+             FROM bids b JOIN users u ON u.id = b.transportador_id
+             WHERE b.freight_id = ? ORDER BY b.valor ASC`,
+          )
+          .bind(id)
+          .all<BidComNome>()
+      : Promise.resolve({ results: [] as BidComNome[] }),
+    user?.papel === 'transportador'
+      ? db
+          .prepare(
+            `SELECT b.*, u.nome AS transportador_nome
+             FROM bids b JOIN users u ON u.id = b.transportador_id
+             WHERE b.freight_id = ? AND b.transportador_id = ?`,
+          )
+          .bind(id, user.id)
+          .first<BidComNome | null>()
+      : Promise.resolve(null),
+    user
+      ? db
+          .prepare('SELECT COUNT(*) AS n FROM alerts WHERE user_id = ? AND lido = 0')
+          .bind(user.id)
+          .first<{ n: number }>()
+      : Promise.resolve({ n: 0 }),
+  ]);
+
+  return c.html(
+    <DetalheFretePage
+      user={user}
+      alertas={alertas?.n ?? 0}
+      frete={{
+        ...frete,
+        distancia_km: haversineKm(frete.origem_lat, frete.origem_lng, frete.destino_lat, frete.destino_lng),
+      }}
+      lances={lances.results ?? []}
+      meuLance={meuLance}
+      donoDoFrete={donoDoFrete}
+      mensagem={q.msg || null}
+      erro={q.erro || null}
+    />,
+  );
+});
+
+// ---------------- POST /fretes/:id/lances — dar/melhorar lance ----------------
+freight.post('/fretes/:id/lances', async (c) => {
+  const id = parseInt(c.req.param('id'), 10);
+  const user = c.get('user');
+  const bloqueio = exigirLogin(user);
+  if (bloqueio) return bloqueio;
+
+  const voltarErro = (erro: string) => c.redirect(redir(`/fretes/${id}`, { erro }));
+
+  const body = await c.req.parseBody();
+  const bruto: Record<string, string> = {};
+  for (const [k, v] of Object.entries(body)) if (typeof v === 'string') bruto[k] = v;
+
+  const resultado = schemaLance.safeParse(bruto);
+  if (!resultado.success) return voltarErro(primeiraMensagemErro(resultado.error));
+  const { valor, mensagem } = resultado.data;
+
+  const frete = await c.env.DB
+    .prepare('SELECT user_id, status, preco_maximo FROM freight WHERE id = ?')
+    .bind(id)
+    .first<{ user_id: number; status: string; preco_maximo: number | null }>();
+  if (!frete) return c.notFound();
+
+  // Menor lance de OUTROS transportadores (para a regra do leilão reverso)
+  const menorDosOutros = await c.env.DB
+    .prepare(
+      'SELECT transportador_id, valor FROM bids WHERE freight_id = ? AND transportador_id != ? ORDER BY valor ASC LIMIT 1',
+    )
+    .bind(id, user!.id)
+    .first<{ transportador_id: number; valor: number } | null>();
+
+  const regra = validarLance({
+    papel: user!.papel,
+    statusFrete: frete.status,
+    valor,
+    menorLanceDosOutros: menorDosOutros?.valor ?? null,
+    precoMaximo: frete.preco_maximo,
+    donoDoFrete: frete.user_id === user!.id,
+  });
+  if (!regra.ok) return voltarErro(regra.erro);
+
+  await c.env.DB
+    .prepare(
+      `INSERT INTO bids (freight_id, transportador_id, valor, mensagem)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT (freight_id, transportador_id)
+       DO UPDATE SET valor = excluded.valor, mensagem = excluded.mensagem, criado_em = excluded.criado_em`,
+    )
+    .bind(id, user!.id, valor, mensagem || null)
+    .run();
+
+  // Alertas: dono do frete sempre; quem estava com o menor lance, se superado
+  const avisos: Promise<void>[] = [
+    criarAlerta(
+      c.env.DB,
+      frete.user_id,
+      id,
+      'novo_lance',
+      `Novo lance de R$ ${valor.toFixed(2).replace('.', ',')} no seu frete #${id}.`,
+    ),
+  ];
+  if (menorDosOutros && valor < menorDosOutros.valor) {
+    avisos.push(
+      criarAlerta(
+        c.env.DB,
+        menorDosOutros.transportador_id,
+        id,
+        'lance_superado',
+        `Seu lance no frete #${id} foi superado. Melhore seu lance!`,
+      ),
+    );
+  }
+  await Promise.all(avisos);
+  await audit(c.env.DB, user!.id, 'lance', 'freight', id, { valor });
+
+  return c.redirect(redir(`/fretes/${id}`, { msg: 'Lance registrado! Boa sorte 🍀' }));
+});
+
+// ---------------- POST /fretes/:id/aceitar/:bidId — encerrar leilão ----------------
+freight.post('/fretes/:id/aceitar/:bidId', async (c) => {
+  const id = parseInt(c.req.param('id'), 10);
+  const bidId = parseInt(c.req.param('bidId'), 10);
+  const user = c.get('user');
+  const bloqueio = exigirLogin(user);
+  if (bloqueio) return bloqueio;
+
+  const voltarErro = (erro: string) => c.redirect(redir(`/fretes/${id}`, { erro }));
+
+  const frete = await c.env.DB
+    .prepare('SELECT user_id, status, descricao FROM freight WHERE id = ?')
+    .bind(id)
+    .first<{ user_id: number; status: string; descricao: string }>();
+  if (!frete) return c.notFound();
+
+  const lance = await c.env.DB
+    .prepare('SELECT id, transportador_id, valor FROM bids WHERE id = ? AND freight_id = ?')
+    .bind(bidId, id)
+    .first<{ id: number; transportador_id: number; valor: number } | null>();
+  if (!lance) return voltarErro('Lance não encontrado neste frete.');
+
+  if (!podeAceitarLance(frete.user_id === user!.id, frete.status)) {
+    return voltarErro('Só o dono pode aceitar lances, e apenas em fretes abertos.');
+  }
+
+  // Atômico: marca vencedor e encerra na mesma transação
+  await c.env.DB.batch([
+    c.env.DB.prepare('UPDATE bids SET vencedor = 1 WHERE id = ?').bind(bidId),
+    c.env.DB.prepare("UPDATE freight SET status = 'encerrado' WHERE id = ?").bind(id),
+  ]);
+
+  // Alertas: vencedor comemora, os outros ficam sabendo
+  const perdedores = await c.env.DB
+    .prepare('SELECT DISTINCT transportador_id FROM bids WHERE freight_id = ? AND id != ?')
+    .bind(id, bidId)
+    .all<{ transportador_id: number }>();
+
+  await Promise.all([
+    criarAlerta(
+      c.env.DB,
+      lance.transportador_id,
+      id,
+      'voce_venceu',
+      `🎉 Seu lance de R$ ${lance.valor.toFixed(2).replace('.', ',')} venceu o frete #${id} (${frete.descricao})!`,
+    ),
+    ...(perdedores.results ?? []).map((p) =>
+      criarAlerta(c.env.DB, p.transportador_id, id, 'lance_perdido', `O frete #${id} foi encerrado.`),
+    ),
+  ]);
+  await audit(c.env.DB, user!.id, 'aceitar_lance', 'freight', id, { bidId });
+
+  return c.redirect(redir(`/fretes/${id}`, { msg: 'Lance aceito! Leilão encerrado. 🤝' }));
+});
+
+// ---------------- POST /fretes/:id/cancelar — dono cancela ----------------
+freight.post('/fretes/:id/cancelar', async (c) => {
+  const id = parseInt(c.req.param('id'), 10);
+  const user = c.get('user');
+  const bloqueio = exigirLogin(user);
+  if (bloqueio) return bloqueio;
+
+  const voltarErro = (erro: string) => c.redirect(redir(`/fretes/${id}`, { erro }));
+
+  const frete = await c.env.DB
+    .prepare('SELECT user_id, status FROM freight WHERE id = ?')
+    .bind(id)
+    .first<{ user_id: number; status: string }>();
+  if (!frete) return c.notFound();
+
+  if (!podeCancelarFrete(frete.user_id === user!.id, frete.status)) {
+    return voltarErro('Só o dono pode cancelar, e apenas fretes abertos.');
+  }
+
+  await c.env.DB.prepare("UPDATE freight SET status = 'cancelado' WHERE id = ?").bind(id).run();
+
+  const licitantes = await c.env.DB
+    .prepare('SELECT DISTINCT transportador_id FROM bids WHERE freight_id = ?')
+    .bind(id)
+    .all<{ transportador_id: number }>();
+
+  await Promise.all(
+    (licitantes.results ?? []).map((l) =>
+      criarAlerta(c.env.DB, l.transportador_id, id, 'frete_cancelado', `O frete #${id} foi cancelado pelo cliente.`),
+    ),
+  );
+  await audit(c.env.DB, user!.id, 'cancelar_frete', 'freight', id);
+
+  return c.redirect(redir('/painel', { msg: 'Frete cancelado. Os licitantes foram avisados.' }));
+});
+
+export default freight;

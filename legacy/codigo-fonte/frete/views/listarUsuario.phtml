@@ -1,0 +1,67 @@
+<?php
+$v_params = $this->getParams();
+$v_usuarios = $v_params['v_usuarios'];
+?>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>
+			Usuario
+		</title>
+		<link rel="stylesheet" type="text/css" href="template/css/default.css" />
+	</head>
+<body>
+	<div align="center">
+		<table class='table_list' width="80%">
+			<tr>
+				<th>
+					ID
+				</th>
+				<th>
+					E-mail
+				</th>
+				<th>
+					Password
+				</th>
+				<th>
+					Permissão
+				</th>
+				<th colspan="3">
+					A&ccedil;&otilde;es
+				</th>
+			</tr>
+			<?php
+			foreach($v_usuarios AS $o_usuario)
+			{
+				?>
+				<tr>
+					<td>
+						<?php echo $o_usuario->getIdUsu()?>
+						
+					</td>
+					<td>
+						<?php echo $o_usuario->getEmailUsu()?>
+					</td>
+					<td>
+						<?php echo $o_usuario->getPasswordUsu()?>
+					</td>
+					<td>
+						<?php echo $o_usuario->getPermissaoUsu()?>
+					</td>
+					<td align="center">
+						<a href='?controle=Usuario&acao=manterUsuario&idUsu=<?php echo $o_usuario->getIdUsu()?>' class='bt_blue'>Editar</a>
+					</td>
+					<td align="center">
+						<a href='?controle=Usuario&acao=apagarUsuario&idUsu=<?php echo $o_usuario->getIdUsu()?>' class='bt_red'>Apagar</a>
+					</td>
+				</tr>
+				<?php
+			
+			}
+			?>
+		</table>
+		<br />
+		<a href='?controle=Usuario&acao=manterUsuario' class='bt_green'>Novo</a>
+	</div>
+</body>
+</html>

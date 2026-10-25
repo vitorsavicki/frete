@@ -1,0 +1,64 @@
+<?php
+// A sessão precisa ser iniciada em cada página diferente
+if (!isset($_SESSION)) session_start();
+
+
+// Verifica se não há a variável da sessão que identifica o usuário
+if ($_SESSION['codigoPer'] <> 'A') {
+	// Destrói a sessão por segurança
+	session_destroy();
+	// Redireciona o visitante de volta pro login
+	header("Location: index.php"); exit;
+}
+$v_params = $this->getParams();
+$v_situacaomensalidades= $v_params['v_situacaomensalidades'];
+?>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>
+			Situação da Mensalidade
+		</title>
+		<link rel="stylesheet" type="text/css" href="template/css/default.css" />
+	</head>
+<body>
+	<div align="center">
+		<table class='table_list' width="80%">
+			<tr>
+				<th>
+					ID
+				</th>
+				<th>
+					Descrição
+				</th>
+				<th colspan="3">
+					A&ccedil;&otilde;es
+				</th>
+			</tr>
+			<?php
+			foreach($v_situacaomensalidades AS $o_situacaomensalidade)
+			{
+				?>
+				<tr>
+					<td>
+						<?php echo $o_situacaomensalidade->getIdSit()?>
+					</td>
+					<td>
+						<?php echo $o_situacaomensalidade->getDescricaoSit()?>
+					</td>
+					<td align="center">
+						<a href='?controle=SituacaoMensalidade&acao=manterSituacaoMensalidade&idSit=<?php echo $o_situacaomensalidade->getIdSit()?>' class='bt_blue'>Editar</a>
+					</td>
+					<td align="center">
+						<a href='?controle=SituacaoMensalidade&acao=apagarSituacaoMensalidade&idSit=<?php echo $o_situacaomensalidade->getIdSit()?>' class='bt_red'>Apagar</a>
+					</td>
+				</tr>
+				<?php
+			}
+			?>
+		</table>
+		<br />
+		<a href='?controle=SituacaoMensalidade&acao=manterSituacaoMensalidade' class='bt_green'>Novo</a>
+	</div>
+</body>
+</html>

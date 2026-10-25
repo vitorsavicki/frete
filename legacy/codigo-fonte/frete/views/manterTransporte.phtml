@@ -1,0 +1,1559 @@
+<?php
+header('Content-Type: text/html; charset=utf-8');
+$v_params = $this->getParams();
+$o_transporte = $v_params['o_transporte'];
+unset($_SESSION["conteudotransporte"]);
+unset($_SESSION["imagenstransporte"]);
+$consulta = isset($_GET['consulta']) ? $_GET['consulta'] : 'N';
+$edicao   = isset($_GET['edicao']) ? $_GET['edicao'] : 'N';
+$tipo = isset($_GET['tipo']) ? $_GET['tipo'] : ''; 
+$AtivacaoSemLance = isset($_GET['AtivacaoSemLance']) ? $_GET['AtivacaoSemLance'] : '';
+?>
+<html>
+	<head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- Bootstrap Core CSS - Uses
+        Bootswatch Flatly Theme: http://bootswatch.com/flatly/ -->
+        <link href="template/css/bootstrap.min.css" rel="stylesheet">
+        <!-- Custom CSS -->
+        <link href="template/css/freelancer.css" rel="stylesheet">
+        <!-- Custom Fonts -->
+        <link href="template/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+        <link href="http://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
+        <link href="http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic" rel="stylesheet" type="text/css">
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media
+        queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file://
+        -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+        <link href="template/css/fileinput.css" media="all" rel="stylesheet" type="text/css" />
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <script src="template/js/fileinput.min.js" type="text/javascript"></script>
+        <script src="template/js/fileinput_locale_pt-BR.js" type="text/javascript"></script>
+        <script type="text/javascript" src="template/js/ajaxupload.3.5.js" ></script>
+		<link rel="stylesheet" type="text/css" href="template/css/upload.css" />
+        <script type="text/javascript" src="template/js/jquery.mask.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="template/css/datepicker.css">
+        <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+        <script type="text/javascript" src="http://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+        <script src="template/js/jquery.validate.min.js"></script>
+        <script src="template/js/bootstrap-datepicker.js"></script>
+        <link href="template/bootstrap-datepicker/bootstrap-datepicker/css/datepicker3.css" rel="stylesheet">
+		<script src="template/bootstrap-datepicker/bootstrap-datepicker/js/bootstrap-datepicker.js"></script>
+        <script type="text/javascript" src="template/js/locales/bootstrap-datepicker.pt-BR.js"></script>
+        <script src="template/js/jquery.maskMoney.js" type="text/javascript"></script>
+    
+	  <style>
+		  #uploaded_images {width: 800px;margin: 0 auto}
+		  #uploaded_images div{float:left;padding-left: 10px;}
+		  .hide{display:none}
+	  </style>
+	   <script type="text/javascript">	 
+	   function init() {
+  
+		    var _inputs = document.getElementsByTagName('input');
+		
+		    for (var i = 0; i < _inputs.length; i++) {
+		
+		        if(!Modernizr.inputtypes[_inputs[i].type]) {
+		            _inputs[i].className = 'not-supported';
+		        }
+		
+		        _inputs[i].parentNode.getElementsByClassName('result')[0].innerHTML = _inputs[i].value;
+		
+		        _inputs[i].onchange = function () {
+		            //console.log(this.value);
+		            var result_node = this.parentNode.getElementsByClassName('result');
+		            result_node[0].innerHTML = this.value;
+		        }
+		    }
+		}
+		
+		window.onload = init; 
+		 
+		$(document).ready(function() {
+			$('#btnAdiconar').click(function(){
+				var id = parseInt($('#qtdeItens').val());
+				id++;
+				$('#qtdeItens').val(String(id));
+				fncJson('adicionar', id);
+			});
+			$(".btnExcluir").click(function(){
+				Excluir(this);
+			});
+		});
+			
+		function fncSelecionarEstadoOrigem(estado) {
+			 $('#tb_cidadeOrigem_IdCid').load('views/listarCidade.php?estado='+estado.value);
+		};
+		
+		function fncSelecionarEstadoDestino(estado) {
+			 $('#tb_cidadeDestino_IdCid').load('views/listarCidade.php?estado='+estado.value);
+		};
+					  
+		function fncJson(opcao, id) {
+			var myId = id;
+			var request = $.ajax({
+				url: "./views/manterTransporte.php",
+				type: "POST",			
+				dataType: "json",
+				data: {"opcao":opcao,"id":myId,"itemvalue":$('#itens option:selected').val(),"itemtext":$('#itens option:selected').text(), "itemDescricao":$('#itemDescricao').val(), "itemqtde":$('#itemQtde').val(), "itemAltura":$('#itemAltura').val() ,"itemLargura":$('#itemLargura').val(), "itemComprimento":$('#itemComprimento').val(), "itemPeso":$('#itemPeso').val()}
+			});
+			request.done(function(data) {			
+				var html = "";
+				for($i=0; $i < data.length; $i++){
+					html += "<tr>";
+					html += "<td align='center'>"+data[$i].id+"</td>";
+					html += "<td>"+data[$i].itemtext+"</td>";
+					html += "<td>"+data[$i].itemDescricao+"</td>";
+					html += "<td align='right'>"+data[$i].itemqtde+"</td>";
+					html += "<td align='right'>"+data[$i].itemAltura+"</td>";
+					html += "<td align='right'>"+data[$i].itemLargura+"</td>";
+					html += "<td align='right'>"+data[$i].itemComprimento+"</td>";
+					html += "<td align='right'>"+data[$i].itemPeso+"</td>";
+					html += "<td align='center'><a class='btn btnExcluir' onclick='Excluir(this);'><img src='./template/images/decline.png'/></a></td>";
+					html += "</tr>";
+				}
+				//alert(html);
+				Adicionar(html);	
+			});
+
+			request.fail(function(jqXHR, textStatus) {
+				alert( "Erro (Ajax - manter transporte): " + textStatus );
+			});
+		};
+		function Adicionar(html){
+			$("#tblItens tbody").html(html);
+			//$(".btnExcluir").bind("click", Excluir(this));
+		};
+		function Excluir(linha){ 
+			var id = $(linha).parent().parent().find('td:eq(0)').html();
+			//alert($(linha).parent().parent().html())
+			var varid = parseInt($('#qtdeItens').val());
+			varid--;
+			$('#qtdeItens').val(String(varid));
+			fncJson('remover',id);
+			var par = $(linha).parent().parent(); //tr
+			par.remove(); 
+		};
+		
+		/*formata input com máscara numérica
+		Ex. onKeyUp="formata(this)*/
+		function formata(z){
+		  v = z.value;
+		  v=v.replace(/\D/g,"")  //permite digitar apenas números
+		  v=v.replace(/[0-9]{12}/,"inválido")   //limita pra máximo 999.999.999,99
+		  v=v.replace(/(\d{1})(\d{9})$/,"$1.$2")  //coloca ponto antes dos últimos 8 digitos
+		  v=v.replace(/(\d{1})(\d{6})$/,"$1.$2")  //coloca ponto antes dos últimos 5 digitos
+		  v=v.replace(/(\d{1})(\d{1,3})$/,"$1,$2")	//coloca virgula antes dos últimos 3 digitos
+		  z.value = v;
+		};
+		
+		function moeda(z){
+		  v = z.value;
+		  v=v.replace(/\D/g,"")  //permite digitar apenas números
+		  v=v.replace(/[0-9]{12}/,"inválido")   //limita pra máximo 999.999.999,99
+		  v=v.replace(/(\d{1})(\d{8})$/,"$1.$2")  //coloca ponto antes dos últimos 8 digitos
+		  v=v.replace(/(\d{1})(\d{5})$/,"$1.$2")  //coloca ponto antes dos últimos 5 digitos
+		  v=v.replace(/(\d{1})(\d{1,2})$/,"$1,$2")	//coloca virgula antes dos últimos 2 digitos
+		  z.value = v;
+		}
+		
+		function cep(z){
+		  v = z.value;
+		  v=v.replace(/\D/g,"")  //permite digitar apenas números
+		  v=v.replace(/[0-9]{10}/,"inválido")  
+		  v=v.replace(/(\d{1})(\d{1,3})$/,"$1-$2")	//coloca virgula antes dos últimos 2 digitos
+		  z.value = v;
+		}
+		
+		function fncCadastrarLance(idTransp, idPes)
+		{
+			var lance = $('#valorLan').val();
+			if (Number(lance) <= 0)
+			{
+				$(document).ready(function() {
+						msg3('lanceZero', 'Você deve colocar um valor maior que zero.');
+					});
+			}
+			else
+			{
+			
+				$('#btnValorLan').attr('disabled', 'disabled');
+				
+					
+				$(document).ready(function() {
+						msg3('cadastro', 'Cadastrando....');
+					});
+				//alert('teste' + idTransp + ' - ' + idPes + ' - ' +lance);
+				$('#fValorLan').val(String(lance));
+				$('#fTb_transporte_idTransp').val(idTransp);
+				$('#fTb_pessoa_idPes').val(idPes);
+				//alert($('#fValorLan').val() + ' - ' + $('#fTb_transporte_idTransp').val() + ' - ' + $('#fTb_pessoa_idPes').val());
+				$("#formLance").submit();
+				//return false;
+			}
+		}
+		
+		$(function() {
+			$("#formLance").on("submit", function(e) {
+				e.preventDefault();
+				$.ajax({
+					url: $(this).attr("action"),
+					type: 'POST',
+					data: $(this).serialize(),
+					success: function(data) {
+						$(document).ready(function() {
+							$('#btnValorLan').removeAttr('disabled');
+						msg3('sucesso', 'Lance cadastrado com sucesso.');
+						});
+						$('#valorLan').val('');
+					}
+				});
+			});
+		});
+		$('#accordion').on('hidden.bs.collapse', function () {
+		//do something...
+		})
+		
+		$('#accordion .accordion-toggle').click(function (e){
+		  var chevState = $(e.target).siblings("i.indicator").toggleClass('glyphicon-chevron-down glyphicon-chevron-up');
+		  $("i.indicator").not(chevState).removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-up");
+		});
+		
+		$('#accordion2').on('hidden.bs.collapse', function () {
+
+		})
+		
+		$('#accordion2 .accordion-toggle').click(function (e){
+		  var chevState = $(e.target).siblings("i.indicator").toggleClass('glyphicon-chevron-down glyphicon-chevron-up');
+		  $("i.indicator").not(chevState).removeClass("glyphicon-chevron-down").addClass("glyphicon-chevron-up");
+		});
+
+		  
+	</script>
+      <style>
+            body { padding-top: 210px; }
+        </style>
+    </head>
+    <?php require 'template/header.php'; ?>
+
+                    <?php
+                    $opcao = isset($_GET['opcao']) ? $_GET['opcao'] : '';
+                    ?>
+  <body id="page-top">
+   	<div class="section">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <ul class="breadcrumb">
+            <li>
+                <a href="?controle=Index&acao=Index">Home</a>
+             </li>
+             <li>
+              	<?php
+              	if ($_SESSION['codigoPer'] == 'U' )
+				{
+				?>
+                <a href="?controle=Pessoa&acao=areaCliente">Área do Cliente</a> 
+                <?php
+                }
+				?>
+				<?php
+				if ($_SESSION['codigoPer'] == 'T' )
+				{
+				?>
+                <a href="?controle=Pessoa&acao=areaTransportador">Área do Transportador</a> 
+                 <?php
+                }
+				?>
+              </li>
+               <?php if ($consulta == 'S' or $edicao == 'S') 
+								  	{ 
+									?>
+               <li>
+               <?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "clienteativos")
+				{
+				?>
+				<a href="?controle=Transporte&acao=listartransporte&opcao=clienteativos">Transportes Ativos</a>
+				<?php 
+				}
+				?>
+			
+				<?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "clienteinativos")
+				{
+				?>
+				<a href="?controle=Transporte&acao=listartransporte&opcao=clienteinativos">Transportes Cancelados</a>
+				<?php 
+				}
+				?>
+					<?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "transpganhos")
+				{
+				?>
+				<a href="?controle=Transporte&acao=listartransporte&opcao=transpganhos">Transportes Ganhos</a>
+				<?php 
+				}
+				?>
+				<?php 
+				if(isset($_GET['opcao'] ) and $_GET['opcao'] == 'clienteativosTrans'){
+					?>
+               <a href="?controle=Transporte&acao=listartransporte&opcao=clienteativosTrans">Pesquisar Transporte</a>
+               <?php
+				}
+				?>
+				<?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "transpandamento")
+				{
+				?>
+				<a href="?controle=Transporte&acao=listartransporte&opcao=transpandamento">Transportes em Andamento</a>
+				<?php 
+				}
+				?>
+				<?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "transpAndamentoTrans")
+				{
+				?>
+				<a href="?controle=Transporte&acao=listartransporte&opcao=transpAndamentoTrans">Transportes em Andamento</a>
+				<?php 
+				}
+				?>
+				<?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "transpconcluido")
+				{
+				?>
+				<a href="?controle=Transporte&acao=listartransporte&opcao=transpconcluido">Transportes Concluidos</a>
+				<?php 
+				}
+				?>
+				<?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "transpConcluidoTrans")
+				{
+				?>
+				<a href="?controle=Transporte&acao=listartransporte&opcao=transpConcluidoTrans">Transportes Concluidos</a>
+				<?php 
+				}
+				?>
+					<?php
+               	if(isset($_GET['opcao']) and $_GET['opcao'] == "meusLances")
+				{
+				?>
+				<a href="?controle=Lance&acao=meusLances">Meus Lances</a>
+				<?php 
+				}
+				?>
+				</li>
+				<?php
+				}?>
+               <li class="active">
+              	<?php if ($consulta !== 'S') echo 'Faça sua '?>Solicitação de Transporte
+               </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+        <section id="formulario">
+            <div class="col-lg-8 col-lg-offset-2" style="border: 2px solid; border-radius: 25px;" >
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <h2 class="text-center text-primary" contenteditable="true"><?php if ($consulta !== 'S') echo 'Faça sua '?>Solicitação de Transporte</h2>
+                        <hr class="star-primary">
+                    </div>
+                </div>
+                <br>
+                <br>
+	  	<div class="col-md-8 col-md-offset-2">
+      		<form role="form" method="post" id="form">
+     		 	<div class="row">
+     		 		<h3 class="text-center" style="border: 2px  #a1a1a1; background: #dddddd; width: auto; border-radius: 25px;">Dados Básicos</h3>
+     		 		<div class="row control-group">
+     		 			<?php if ($consulta == 'S') 
+     		 			echo '<label class="control-label">Categoria do Transporte</label> ';
+     		 			?>  
+                        <div class="form-group col-xs-12 floating-label-form-group controls">
+                             <label>Categoria do Transporte</label>
+                             <?php if ($consulta !== 'S') 
+						  	{ 
+							?>
+							
+							<p class="help-block text-danger"></p>
+                           	 <select class="form-control" name='tb_categoria_idCat' id='tb_categoria_idCat' required=""
+                           	 data-validation-required-message="Por favor selecione uma categoria."
+                             placeholder="Categoria">
+                             <option value="">Selecione uma Categoria</option>
+							 
+								<?php
+								$o_categoria = new CategoriaModel();
+								$v_categorias = $o_categoria->_list();
+								foreach($v_categorias AS $o_categoria)
+								{
+								?>
+									<option value="<?php echo $o_categoria->getIdCat()?>" <?php if ($o_categoria->getIdCat() == $o_transporte->getTb_categoria_idCat()) echo 'selected' ?>><?php echo $o_categoria->getNomeCat()?></option>
+								<?php
+								}
+								?>
+								</select>
+								<?php }
+								else
+								{		
+										$o_categoria = new CategoriaModel();
+										$o_categoria->loadById($o_transporte->getTb_categoria_idCat());
+										echo  $o_categoria->getNomeCat();
+										
+										
+								}
+								?>
+						            
+                        </div>
+                    </div>
+          
+             				<div class="row control-group">
+             					<?php if ($consulta == 'S'){
+									echo '<br>';
+     		 						echo '<label class="control-label">Descrição breve do que será transportado</label> ';
+								}
+     		 					?> 
+                                <div class="form-group col-xs-12 floating-label-form-group controls">
+                                    <label>Descreva brevemente o que você precisa transportar<?php if ($consulta == 'S') echo 'Descreva brevemente o que você precisa transportar:'?></label>
+                                    <p class="help-block text-danger"></p>
+								    <?php if ($consulta !== 'S') 
+								  	{ 
+									?>
+                                    <textarea rows="5" class="form-control" placeholder="Descreva brevemente o que você precisa transportar"
+                                    id="descricaoTransp" name='descricaoTransp' maxlength='255'
+                                    data-validation-required-message="Descreva brevemente o que você precisa transportar." 
+                                    required><?php echo $o_transporte->getDescricaoTransp()?></textarea>
+                                    <?php }
+									else
+									{
+										echo $o_transporte->getDescricaoTransp();
+									}
+									?>
+                                    <p class="help-block text-danger"></p>
+                                </div>
+                            </div>
+                            <br>
+               
+	   		<div class="input-group">
+               	<label><?php if ($consulta == 'S') echo '<label class="control-label">Data da retirada do transporte</label> '?></label>
+               		<div class="form-group col-xs-12  controls">
+   							<div class="input-group date">
+	   						    <?php if ($consulta !== 'S') 
+							  	{ ?>
+	            				<input type="text" class="form-control" id='dataRetiradaTransp' name='dataRetiradaTransp' 
+								value='<?php if($o_transporte->getDataRetiradaTransp() and $tipo <> 'ativacao')echo date('d-m-Y', strtotime($o_transporte->getDataRetiradaTransp()))?>' 
+								data-validation-required-message="Por favor selecione uma data da coleta do transporte"
+			                    placeholder="Data da coleta do transporte" readonly="" required=""><span class="input-group-addon">
+			                    <i class="glyphicon glyphicon-th"></i></span>
+		                    <?php }
+							else
+							{
+								echo date('d/m/Y', strtotime($o_transporte->getDataRetiradaTransp()));
+							}
+							?>
+							
+							<p class="help-block text-danger"></p>
+        					</div>
+        			</div>
+        	</div>
+        	<br>
+	        	<div class="input-group">
+               	<label><?php if ($consulta == 'S' and $o_transporte->getHoraRetiradaTransp() <> '1900-01-01 01:00:00.000') echo '<label class="control-label">Horário da retirada do transporte</label> '?></label>
+               		<div class="form-group col-xs-12 floating-label-form-group controls">
+               			<?php if ($consulta !== 'S') 
+							  	{ ?>
+					    <div class="input-group clockpicker">
+					    	
+						    <input type="time" class="form-control" id='horaRetiradaTransp' name='horaRetiradaTransp' 
+							value='<?php if($o_transporte->getHoraRetiradaTransp() AND $o_transporte->getHoraRetiradaTransp() <> '1900-01-01 01:00:00.000' and  $tipo <> 'ativacao')echo date('H:i', strtotime($o_transporte->getHoraRetiradaTransp()))?>' 
+							data-validation-required-message="Por favor selecione um horário para a  coleta do transporte"
+			                placeholder="Horário da coleta do transporte">
+						    <span class="input-group-addon">
+						        <span class="glyphicon glyphicon-time"></span>
+						    </span>
+						        <?php }
+							else
+							{
+								
+								echo date('H:i', strtotime($o_transporte->getHoraRetiradaTransp()));
+							}
+							?>
+						    <p class="help-block text-danger"></p>
+						</div>
+					</div>
+					
+			</div>
+
+		<?php 
+		$o_enderecoTransporte = new EnderecoTransporteModel();
+		$o_cidadeOrigem = new CidadeModel();
+		$o_cidadeDestino = new CidadeModel();
+		if ($o_transporte->getTb_endereco_transporte_idEndTran() !== NULL)
+		{
+			$o_enderecoTransporte->loadById($o_transporte->getTb_endereco_transporte_idEndTran());
+			if ($o_enderecoTransporte->getTb_cidadeOrigem_IdCid() !== NULL)
+				$o_cidadeOrigem->loadById($o_enderecoTransporte->getTb_cidadeOrigem_IdCid());
+			if ($o_enderecoTransporte->getTb_cidadeDestino_IdCid() !== NULL)
+				$o_cidadeDestino->loadById($o_enderecoTransporte->getTb_cidadeDestino_IdCid());
+		}
+		?>
+		<?php if ($consulta == 'S') 
+		{
+			
+		?>
+		 <div class="row">
+				<div class="col-md-12">
+				  <h3 class="text-center" style="border: 2px  #a1a1a1; background: #dddddd; width: auto; border-radius: 25px;">Endereços</h3>
+				</div>
+		 </div>
+		<?php
+		
+		}
+		?>
+	  	<?php if ($consulta !== 'S') 
+		{ 
+		?>
+			  <div class="row">
+				<div class="col-md-12">
+				  <h3 class="text-center" style="border: 2px  #a1a1a1; background: #dddddd; width: auto; border-radius: 25px;">Endereço de Origem</h3>
+				</div>
+			  </div>
+			  
+			  <div class="row">
+				<div class="col-md-12">
+					<div class="row control-group">
+                        <div class="form-group col-xs-12 floating-label-form-group controls">
+                             <label>CEP</label>
+                             <input type="text" class="form-control" placeholder="CEP"
+                             id="cepOrigemEndTran"  name="cepOrigemEndTran" onkeyup="cep(this)"
+                             maxlength='9' value='<?php echo $o_enderecoTransporte->getCepOrigemEndTran()?>' 
+                             required="" data-validation-required-message="Por favor coloque seu cep.">
+                             <p class="help-block text-danger"></p>
+                                    
+                        </div>
+                    </div>
+				    <div class="row control-group">
+                        <div class="form-group col-xs-12 floating-label-form-group controls">
+                             <label>Logradouro</label>
+                             <input type="text" class="form-control" placeholder="Logradouro"
+                             id="ruaOrigemEndTran"  name="ruaOrigemEndTran" required="" 
+                             value='<?php echo $o_enderecoTransporte->getRuaOrigemEndTran()?>' maxlength='255'
+                             data-validation-required-message="Por favor coloque a sua rua e número.">
+                             <p class="help-block text-danger"></p>
+                                    
+                        </div>
+                    </div>
+				    <div id="resposta1"></div>
+					<div class="row control-group">
+                        <div class="form-group col-xs-12 floating-label-form-group controls">
+                             <label>Bairro</label>
+                             <input type="text" class="form-control" placeholder="Bairro"
+                             id="bairroOrigemEndTran"  name="bairroOrigemEndTran" required="" 
+                             value='<?php echo $o_enderecoTransporte->getBairroOrigemEndTran()?>'
+                             data-validation-required-message="Por favor coloque seu bairro"
+                             maxlength='255'>
+                             <p class="help-block text-danger"></p>
+                                    
+                        </div>
+                    </div>
+                    <div class="row control-group">
+                        <div class="form-group col-xs-12 floating-label-form-group controls">
+                             <label>Estado</label>
+                             <p class="help-block text-danger"></p>
+                             <select class="form-control" name='estadoOrigem' id='estadoOrigem'
+                              onChange="fncSelecionarEstadoOrigem(this)" required=""
+                              data-validation-required-message="Por favor coloque seu estado"
+                              placeholder="Estado">
+							 <option value="">Selecione um Estado</option>
+						<?php
+							if ($o_cidadeOrigem->getTb_Estado_idEst() !== NULL)
+								$estadoOrigem = $o_cidadeOrigem->getTb_Estado_idEst();
+							else
+								$estadoOrigem = 0;
+							$o_estado = new EstadoModel();
+							$v_estados = $o_estado->_list();
+							foreach($v_estados AS $o_estado)
+							{
+							?>
+								<option value="<?php echo $o_estado->getIdEst()?>" <?php echo $o_estado->getIdEst() == $estadoOrigem ? 'selected' : '' ?>><?php echo $o_estado->getUfEst()?></option>
+						<?php
+							}
+							?>
+						</select>
+                        <p class="help-block text-danger"></p>       
+                        </div>
+                    </div>
+                    <div class="row control-group">
+                        <div class="form-group col-xs-12 floating-label-form-group controls">
+                             <label>Cidade</label>
+                             <p class="help-block text-danger"></p>
+                           	 <select class="form-control" name='tb_cidadeOrigem_IdCid' id='tb_cidadeOrigem_IdCid' required=""
+                           	 data-validation-required-message="Por favor coloque sua Cidade"
+                             placeholder="Cidade">
+							 <option value="">Selecione uma Cidade</option>
+							<?php
+								if ($o_cidadeOrigem->getIdCid() !== NULL)
+									$cidadeOrigem = $o_cidadeOrigem->getIdCid();
+								else
+									$cidadeOrigem = 0;
+								$o_cidade = new CidadeModel();
+								$v_cidades = $o_cidade->_list($estadoOrigem);
+								foreach($v_cidades AS $o_cidade)
+								{
+								?>
+									<option value="<?php echo $o_cidade->getIdCid()?>" <?php echo $o_cidade->getIdCid() == $cidadeOrigem ? 'selected' : '' ?>><?php echo $o_cidade->getNomeCid()?></option>
+							<?php
+								}
+								?>
+						</select>            
+                        </div>
+                    </div>
+				 </div>
+			  </div>
+
+			  <div class="row">
+				<div class="col-md-12">
+				  <h3 class="text-center" style="border: 2px  #a1a1a1; background: #dddddd; width: auto; border-radius: 25px;">Endereço de Destino</h3>
+				</div>
+			  </div>
+			  <div class="row">
+				<div class="col-md-12">
+					<div class="row control-group">
+                        <div class="form-group col-xs-12 floating-label-form-group controls">
+                             <label>CEP</label>
+                             <input type="text" class="form-control" placeholder="CEP"
+                             id="cepDestinoEndTran"  name="cepDestinoEndTran" onkeyup="cep(this)"
+                             maxlength='9' value='<?php echo $o_enderecoTransporte->getCepDestinoEndTran()?>' 
+                             required="" data-validation-required-message="Por favor coloque o cep do local de entrega.">
+                             <p class="help-block text-danger"></p>
+                                    
+                        </div>
+                    </div>
+                    <div class="row control-group">
+                        <div class="form-group col-xs-12 floating-label-form-group controls">
+                             <label>Logradouro</label>
+                             <input type="text" class="form-control" placeholder="Logradouro"
+                             id="ruaDestinoEndTran"  name="ruaDestinoEndTran" required="" 
+                             value='<?php echo $o_enderecoTransporte->getRuaDestinoEndTran()?>' maxlength='255'
+                             data-validation-required-message="Por favor coloque a rua e número do local de entrega.">
+                             <p class="help-block text-danger"></p>        
+                        </div>
+                    </div>
+                    <div id="resposta2"></div>
+					<div class="row control-group">
+                        <div class="form-group col-xs-12 floating-label-form-group controls">
+                             <label>Bairro</label>
+                             <input type="text" class="form-control" placeholder="Bairro"
+                             id="bairroDestinoEndTran"  name='bairroDestinoEndTran' maxlength='255' required="" 
+                             value='<?php echo $o_enderecoTransporte->getBairroDestinoEndTran()?>'
+                             data-validation-required-message="Por favor coloque o bairro do local de entrega.">
+                             <p class="help-block text-danger"></p>
+                                    
+                        </div>
+                    </div>
+                    <div class="row control-group">
+                        <div class="form-group col-xs-12 floating-label-form-group controls">
+                             <label>Estado</label>
+                             <p class="help-block text-danger"></p>
+                             <select class="form-control" name='estadoDestino' id='estadoDestino'
+                              onChange="fncSelecionarEstadoDestino(this)" required=""
+                              data-validation-required-message="Por favor coloque o Estado do local de entrega."
+                              placeholder="Estado">
+							 <option value="">Selecione um Estado</option>
+							<?php
+								if ($o_cidadeDestino->getTb_Estado_idEst() !== NULL)
+									$estadoDestino = $o_cidadeDestino->getTb_Estado_idEst();
+								else
+									$estadoDestino = 0;
+								$o_estado = new EstadoModel();
+								$v_estados = $o_estado->_list();
+								foreach($v_estados AS $o_estado)
+								{
+								?>
+									<option value="<?php echo $o_estado->getIdEst()?>" <?php echo $o_estado->getIdEst() == $estadoDestino ? 'selected' : '' ?>><?php echo $o_estado->getUfEst()?></option>
+							<?php
+								}
+								?>
+							</select>
+                        <p class="help-block text-danger"></p>       
+                        </div>
+                    </div>
+                     <div class="row control-group">
+                        <div class="form-group col-xs-12 floating-label-form-group controls">
+                             <label>Cidade</label>
+                             <p class="help-block text-danger"></p>
+                           	 <select class="form-control" name='tb_cidadeDestino_IdCid' id='tb_cidadeDestino_IdCid' required=""
+                           	 data-validation-required-message="Por favor coloque sua Cidade do local de entrega."
+                             placeholder="Cidade">
+							 <option value="">Selecione uma Cidade</option>
+								<?php
+									if ($o_cidadeDestino->getIdCid() !== NULL)
+										$cidadeDestino = $o_cidadeDestino->getIdCid();
+									else
+										$cidadeDestino = 0;
+									$o_cidade = new CidadeModel();
+									$v_cidades = $o_cidade->_list($estadoDestino);
+									foreach($v_cidades AS $o_cidade)
+									{
+									?>
+										<option value="<?php echo $o_cidade->getIdCid()?>" <?php echo $o_cidade->getIdCid() == $cidadeDestino ? 'selected' : '' ?>><?php echo $o_cidade->getNomeCid()?></option>
+								<?php
+									}
+									?>
+						</select>            
+                        </div>
+                    </div>
+         
+				</div>
+			  </div>
+			
+	  <?php }
+	  else
+	  {
+			$o_estado = new EstadoModel();
+			$o_estado->loadById($o_cidadeOrigem->getTb_Estado_idEst());
+			$s_endecoOrigem = $o_enderecoTransporte->getRuaOrigemEndTran() . ' - ' .$o_enderecoTransporte->getBairroOrigemEndTran() . ' - ' . iconv('ISO-8859-1', 'UTF-8',$o_cidadeOrigem->getNomeCid()).' - '.iconv('ISO-8859-1', 'UTF-8',$o_estado->getNomeEst()) . ' - ' . $o_enderecoTransporte->getCepOrigemEndTran();
+			
+			$s_endecoOrigemGoogle = $o_enderecoTransporte->getRuaOrigemEndTran() . ' - ' . iconv('ISO-8859-1', 'UTF-8',$o_cidadeOrigem->getNomeCid()).' - '.iconv('ISO-8859-1', 'UTF-8',$o_estado->getNomeEst());
+			
+			$o_estado->loadById($o_cidadeDestino->getTb_Estado_idEst());
+			$s_endecoDestino = $o_enderecoTransporte->getRuaDestinoEndTran() . ' - ' .$o_enderecoTransporte->getBairroDestinoEndTran() . ' - ' . iconv('ISO-8859-1', 'UTF-8',$o_cidadeDestino->getNomeCid()).' - '.iconv('ISO-8859-1', 'UTF-8',$o_estado->getNomeEst()) . ' - ' . $o_enderecoTransporte->getCepDestinoEndTran();
+			
+			$s_endecoDestinoGoogle = $o_enderecoTransporte->getRuaDestinoEndTran() . ' - ' . iconv('ISO-8859-1', 'UTF-8',$o_cidadeDestino->getNomeCid()).' - '.iconv('ISO-8859-1', 'UTF-8',$o_estado->getNomeEst());
+			
+			echo '<br>
+					<div class="row control-group">
+						<label class="control-label">Endeço de origem</label>
+                        <div class="form-group col-xs-12 floating-label-form-group controls">
+							 ' . $s_endecoOrigem . '<br>'.
+						'</div>
+					</div>';
+					
+				echo '<br>
+						<div class="row control-group">
+							<label class="control-label">Endeço de destino</label>
+	                        <div class="form-group col-xs-12 floating-label-form-group controls">
+								 ' . $s_endecoDestino . '<br>'.
+							'</div>
+						</div>';
+
+			?>
+			<br>
+			<br>
+			<div class="row control-group">
+				<div class="row">
+					<div class="col-md-12">
+				  		<h3 class="text-center" style="border: 2px  #a1a1a1; background: #dddddd; width: auto; border-radius: 25px;">Trajeto Sugerido</h3>
+					</div>
+		 		</div>
+				<div class="form-group col-xs-12 floating-label-form-group controls">
+					<div id="mapa" style="height: 500px; width: 500px;"></div>
+					<div id="trajeto-texto"></div>
+				</div>
+			</div>
+							
+			<?php	
+	  }
+	  ?>
+	  <?php if ($consulta !== 'S') 
+		{ 
+		?>
+		<div class="panel-group" id="accordion">
+		  <div class="panel panel-default">
+		    <div class="panel-heading">
+		      <h4 class="panel-title">
+		        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapseOne">
+		            Informações Opcionais<i class="indicator glyphicon glyphicon-chevron-down pull-right"></i>
+		        </a>
+		      </h4>
+		    </div>
+		    <div id="collapseOne" class="panel-collapse collapse">
+			      <div class="panel-body">
+			<div class="panel-group" id="accordion2">
+			  <div class="panel panel-default">
+			    <div class="panel-heading">
+			      <h4 class="panel-title">
+			        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseOneDotOne">
+			          Quantidade de Itens, pesos e medidas.<i class="indicator glyphicon glyphicon-chevron-down  pull-right"></i>
+			        </a>
+			      </h4>
+			    </div>
+			    <div id="collapseOneDotOne" class="panel-collapse collapse">
+			      <div class="panel-body">
+			        <div class="col-md-12">
+					  <h4 class="text-center" style="border: 2px  #a1a1a1; background: #dddddd; width: auto; border-radius: 25px;">Número de Itens</h4>
+					</div>
+					<div class="form-group">
+				  <label class="control-label" for="lblItens">Item</label>
+					<select class="form-control" name='itens' id='itens'>
+					<?php
+						$o_item = new ItemModel();
+						$v_itens = $o_item->_list();
+						foreach($v_itens AS $o_item)
+						{
+						?>
+							<option value="<?php echo $o_item->getIdItem()?>"><?php echo $o_item->getNomeItem()?></option>
+					<?php
+						}
+						?>
+					</select>
+			<div class="form-group">
+				  <label class="control-label" for="lblFrmDescricao">Descrição do item</label>
+				  <textarea rows="3" class="form-control" id="itemDescricao" name='itemDescricao' maxlength='255'></textarea>
+				</div>
+				<div class="form-group">
+				  <label class="control-label" for="lblFrmQtde">Quantidade</label>
+				  <input class="form-control" id="itemQtde" placeholder="" type="text" maxlength="13"  data-suffix=" un">
+				  <script type="text/javascript">$("#itemQtde").maskMoney();</script>
+				</div>
+				<div class="form-group">
+				  <label class="control-label" for="lblFrmAltura">Altura (Metro)</label>
+				  <input class="form-control" id="itemAltura" placeholder="" type="text" maxlength="13" >
+				  <script type="text/javascript">$("#itemAltura").maskMoney();</script>
+				</div>
+				<div class="form-group">
+				  <label class="control-label" for="lblFrmLargura">Largura (Metro)</label>
+				  <input class="form-control" id="itemLargura" placeholder="" type="text" maxlength="13" data-thousands="." data-decimal="," data-suffix=" m">
+				  <script type="text/javascript">$("#itemLargura").maskMoney();</script>
+				</div>
+				<div class="form-group">
+				  <label class="control-label" for="lblFrmComprimento">Comprimento (Metro)</label>
+				  <input class="form-control" id="itemComprimento" placeholder="" type="text" maxlength="13" data-thousands="." data-decimal="," data-suffix=" m">
+				  <script type="text/javascript">$("#itemComprimento").maskMoney();</script>
+				</div>
+				<div class="form-group">
+				  <label class="control-label" for="lblFrmPeso">Peso (Quilos)</label>
+				  <input class="form-control" id="itemPeso" placeholder="" type="text"  maxlength="13" data-thousands="." data-decimal="," data-suffix=" Kg">
+				  <script type="text/javascript">$("#itemPeso").maskMoney();</script>
+				</div>
+			  <div class="row">
+				<div class="col-md-12 text-center">
+				  <a class="btn btn-primary" id="btnAdiconar">Adicionar</a>
+				  <input type='hidden' id='qtdeItens' value='0'>
+				</div>
+			  </div>
+			  <br>
+			  
+	  <?php  
+		}
+		else
+		{
+			
+			 echo  '<div class="row">
+						<div class="col-md-12">
+				  			<h3 class="text-center" style="border: 2px  #a1a1a1; background: #dddddd; width: auto; border-radius: 25px;">Conteudo do Transporte</h3>
+						</div>
+		 		    </div>';
+			 
+		}
+			$o_conteudoTransporte = new ConteudoTransporteModel();
+			$v_conteudoTransportes = $o_conteudoTransporte->_list(null,$o_transporte->getIdTransp());
+			if ($v_conteudoTransportes > 0)
+			{
+			?>
+			<table class="table table-bordered table-condensed table-hover table-striped" id="tblItens" width="100%">
+			
+				<thead>
+				  <tr>
+					<th style="font-size: 8px" width="5%" style="text-align:center;">#ID</th>
+					<th style="font-size: 8px" width="15%" style="text-align:center;">Item</th>
+					<th style="font-size: 8px" width="25%" style="text-align:center;">Descrição</th>
+					<th style="font-size: 8px" width="10%" style="text-align:center;">Quantidade</th>
+					<th style="font-size: 8px" width="10%" style="text-align:center;">Altura(M)</th>
+					<th style="font-size: 8px" width="10%" style="text-align:center;">Largura(M)</th>
+					<th style="font-size: 8px" width="10%" style="text-align:center;">Comprimento(M)</th>
+					<th style="font-size: 8px" width="10%" style="text-align:center;">Peso(Kg)</th>
+					<?php if ($consulta !== 'S') 
+					{ 
+					?>
+						<th width="5%" style="text-align:center; font-size: 8px;">Excluir</th>
+					<?php 
+					}
+					?>
+				  </tr>
+				</thead>
+				
+				<tbody>
+					
+					<?php
+					}
+					?>
+						
+					<?php
+						if ($o_transporte->getIdTransp() !== NULL)
+						{
+							//$_SESSION["conteudotransporte"] = $v_conteudoTransportes;
+							$varConteudo = array();
+							$qtde_itens = 0;
+							foreach($v_conteudoTransportes AS $o_conteudoTransporte)
+							{
+								$qtde_itens++;
+							
+								$o_item = new ItemModel();
+								$o_item->loadById($o_conteudoTransporte->getTb_item_idItem());
+									
+								$registro = array(
+									"id"=>$qtde_itens,
+									"itemvalue"=>$o_conteudoTransporte->getTb_item_idItem(),
+									"itemtext"=>$o_item->getNomeItem(),
+									"itemDescricao"=>$o_conteudoTransporte->getDescricaoItemConTran(),
+									"itemqtde"=>number_format($o_conteudoTransporte->getQtdeConTran(), 2, ',', '.'),
+									"itemAltura"=>number_format($o_conteudoTransporte->getAlturaConTran(), 2, ',', '.'),
+									"itemLargura"=>number_format($o_conteudoTransporte->getLarguraConTran(), 2, ',', '.'),
+									"itemComprimento"=>number_format($o_conteudoTransporte->getComprimentoConTran(), 2, ',', '.'),
+									"itemPeso"=>number_format($o_conteudoTransporte->getPesoConTran(), 2, ',', '.')
+									);
+								$varConteudo[] = $registro;
+								
+								?>
+								<tr>
+								<td align='center'><?php echo $qtde_itens; ?></td>
+								<td><?php echo $o_item->getNomeItem(); ?></td>
+								<td><?php echo $o_conteudoTransporte->getDescricaoItemConTran(); ?></td>
+								<td align='right'><?php echo number_format($o_conteudoTransporte->getQtdeConTran(), 2, ',', '.'); ?></td>
+								<td align='right'><?php echo number_format($o_conteudoTransporte->getAlturaConTran(), 2, ',', '.'); ?></td>
+								<td align='right'><?php echo number_format($o_conteudoTransporte->getLarguraConTran(), 2, ',', '.'); ?></td>
+								<td align='right'><?php echo number_format($o_conteudoTransporte->getComprimentoConTran(), 2, ',', '.'); ?></td>
+								<td align='right'><?php echo number_format($o_conteudoTransporte->getPesoConTran(), 2, ',', '.'); ?></td>
+								<?php if ($consulta !== 'S') 
+								{ 
+								?>
+									<td align='center'><a class='btn btnExcluir' onclick='Excluir(this);'><img src='./template/images/decline.png'/></a></td>
+								<?php 
+								}
+								?>
+								</tr>
+						<?php
+							}
+							$_SESSION["conteudotransporte"] = $varConteudo;
+							//echo print_l($_SESSION["conteudotransporte"]);
+						}
+					?>
+					<script>$('#qtdeItens').val('<?php echo $qtde_itens ?>');</script>
+				</tbody>
+			  </table>
+			    <?php if ($consulta !== 'S') 
+				{ 
+				?>
+					
+				</div>
+			      </div>
+			    </div>
+			  </div>
+			  <div class="panel panel-default">
+			    <div class="panel-heading">
+			      <h4 class="panel-title">
+			        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseOneDotTwo">
+			           Fotos dos itens do transporte.<i class="indicator glyphicon glyphicon-chevron-down  pull-right"></i></a>
+			        
+			      </h4>
+			    </div>
+			    <div id="collapseOneDotTwo" class="panel-collapse collapse">
+			      <div class="panel-body">
+			       <div class="row">
+			        <div class="col-md-12">
+					<h4 class="text-center" style="border: 2px  #a1a1a1; background: #dddddd; width: auto; border-radius: 25px;">Fotos dos Itens</h4>
+					  <?php if ($consulta !== 'S') 
+						{ 
+						?>
+						  
+							<div  align="center" style="padding:10px"> 
+							 <a class="btn btn-primary" onClick="Uploader.upload();" id="btnUploader">Upload</a>
+							 <div id="wait" class="hide"><img src="template/images/upload-indicator.gif" alt=""></div>
+							</div>
+							<div>
+							<iframe name="hidden_iframe" id="hidden_iframe" class="hide"></iframe>
+							</div>
+					  <?php 
+					  } ?>
+						<div id="uploaded_images" align="center">
+						
+							<?php
+								$varCaminhoDasImagens = '';
+								if ($o_transporte->getIdTransp() !== NULL)
+								{
+									
+									$o_imagemTransporte = new ImagemTransporteModel();
+									$v_imagemTransporte = $o_imagemTransporte->_list($o_transporte->getIdTransp());
+									$varImagens = array();
+									$qtde_itens = 0;
+									foreach($v_imagemTransporte AS $o_imagemTransporte)
+									{
+										$varImagens[] = $o_imagemTransporte->getCaminhoImgTran();
+										?>
+										<div><img src='<?php echo $o_imagemTransporte->getCaminhoImgTran();?>' style='height:100px' class='img-thumbnail'></div>
+								<?php
+									$varCaminhoDasImagens = $o_imagemTransporte->getCaminhoImgTran();
+									}
+									$_SESSION["imagenstransporte"] = $varImagens;
+								}
+							?>
+						</div>
+			        </div>
+			      </div>
+			      <div class="row">
+			      </div>
+			      <div class="row">
+			        <div class="col-md-12 text-center">
+						<ul id="files" ></ul>
+			        </div>
+			      </div>
+				  <?php if ($consulta !== 'S') 
+					{ 
+					?>
+			      </div>
+			    </div>
+			  </div>
+			  <div class="panel panel-default" >
+			    <div class="panel-heading">
+			      <h4 class="panel-title">
+			        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseOneDotThree">
+			          Necessita de ajuda, preço Máximo, comentarios.<i class="indicator glyphicon glyphicon-chevron-down pull-right"></i>
+			        </a>
+			      </h4>
+			    </div>
+			    <div id="collapseOneDotThree" class="panel-collapse collapse">
+			      <div class="panel-body">
+					  <div class="row">
+						<div class="col-md-12">
+						  <h4 class="text-center" style="border: 2px  #a1a1a1; background: #dddddd; width: auto; border-radius: 25px;">Até que valor você pode pagar?</h4>
+						</div>
+					  </div>
+					  <div class="row">
+						<div class="col-md-12">
+							<div class="form-group" draggable="true">
+							  <label class="control-label" for="lblprecomaximo">Valor</label>
+							  <input class="form-control" id="precoMaxiTransp" name="precoMaxiTransp" 
+							  type="text" value='<?php echo 'R$ ' . number_format($o_transporte->getPrecoMaxiTransp(), 2, ',', '.')?>' 
+							  data-thousands="." data-decimal="," data-prefix="R$ ">
+							</div>
+						</div>
+					  </div>
+					  <script type="text/javascript">$("#precoMaxiTransp").maskMoney();</script>
+					   <div class="row"> 
+					<div class="col-md-12">
+					  <h4 class="text-center" style="border: 2px  #a1a1a1; background: #dddddd; width: auto; border-radius: 25px;">Necessita de ajudante para carregar ? Quantos ?</h4>
+					</div>
+				</div>
+				  <div class="row">
+					<div class="col-md-3">
+					  <blockquote>
+						<p>
+						  <input type="number" name="numAjudantesTransp" value="<?php echo $o_transporte->getNumAjudantesTransp() !== NULL ? $o_transporte->getNumAjudantesTransp() : '0' ?>" max="10" min="0"></p>
+					  </blockquote>
+					</div>
+				  </div>
+			  <?php }
+			  else
+			  { ?>
+				  <div class="row">
+					<div class="col-md-12">
+						<label class="control-label" for="lblAjudantes">Ajudantes: </label>
+					  <?php echo $o_transporte->getNumAjudantesTransp() !== NULL ? $o_transporte->getNumAjudantesTransp() : '0' ?>
+					</div>
+				  </div>
+			  <?php 
+			  } ?>
+					  <div class="row">
+						<div class="col-md-12">
+						  <h4 class="text-center" style="border: 2px  #a1a1a1; background: #dddddd; width: auto; border-radius: 25px;">Coloque comentarios ou informações adicionais.</h4>
+						</div>
+					  </div>
+					  <div class="row">
+						<div class="col-md-12">
+							<div class="form-group" draggable="true">
+								<textarea rows="5" class="form-control" placeholder="Mensagem"
+                                    id="comentarioAdiTransp" name="comentarioAdiTransp"  data-validation-required-message="Por favor escreva alguma mensagem." value='<?php echo $o_transporte->getComentarioAdiTransp()?>'></textarea>
+							  
+							</div>
+						</div>
+					  </div>
+			      </div>
+			    </div>
+			  </div>
+			 </div>
+		   </div>
+		</div>	   
+	
+		</div>
+		<br>
+		<br>
+		<br>
+		  <div class="row">
+			<div class="col-md-12 text-center">
+									<?php if($tipo == 'ativacao'){
+										?>
+									<input type='hidden' name='controle' value='Transporte'>
+									<input type='hidden' name='acao' value='manterTransporte'>
+									<input type='hidden' name='idEndTran' value='<?php echo $o_transporte->getTb_endereco_transporte_idEndTran() !== NULL ? $o_transporte->getTb_endereco_transporte_idEndTran() : ''?>'>
+									<input type='hidden' name='tb_pessoa_idPes' value='<?php if(isset($_SESSION['idPes']) && !empty($_SESSION['idPes'])) echo $_SESSION["idPes"]; else echo $o_transporte->getTb_pessoa_idPes();?>'>
+									<input type='hidden' name='tb_statusTransp_idStaTransp' value='6'>
+									<input type='hidden' name='AtivacaoSemLance' value='<?php echo $AtivacaoSemLance ?>'>
+									<input type='hidden' name='idTransp' value='<?php echo $o_transporte->getIdTransp()?>'>
+							      	<button type="submit" id="confirm" name="confirm" class="btn btn-primary">Confirmar</button>
+							      	<?php }
+									else { ?>
+							      	
+							      	<input type='hidden' name='controle' value='Transporte'>
+									<input type='hidden' name='acao' value='manterTransporte'>
+									<input type='hidden' name='idEndTran' value='<?php echo $o_transporte->getTb_endereco_transporte_idEndTran() !== NULL ? $o_transporte->getTb_endereco_transporte_idEndTran() : ''?>'>
+									<input type='hidden' name='tb_pessoa_idPes' value='<?php if(isset($_SESSION['idPes']) && !empty($_SESSION['idPes'])) echo $_SESSION["idPes"]; else echo $o_transporte->getTb_pessoa_idPes();?>'>
+									<input type='hidden' name='tb_statusTransp_idStaTransp' value='<?php echo $o_transporte->getTb_statusTransp_idStaTransp() !== NULL ? $o_transporte->getTb_statusTransp_idStaTransp() : '6'?>'>
+									<input type='hidden' name='idTransp' value='<?php echo $o_transporte->getIdTransp()?>'>
+							      	<button type="submit" id="confirm" name="confirm" class="btn btn-primary">Confirmar</button>
+							      	<?php }
+									?>
+                                    <?php if($edicao == 'S')
+									{
+										?>
+									<a href="?controle=Transporte&acao=listarTransporte&opcao=clienteativos" type="button" class="btn btn-danger">Cancelar</a>
+									<?php	
+									}
+									else{
+									?>
+               						<a href="?controle=Pessoa&acao=areaCliente" type="button" class="btn btn-danger">Cancelar</a>	
+									<?php 	}
+									?>
+		  <br>
+		  <br>              
+	  <?php 
+		}
+	    else
+		{
+	  ?>
+	  	  <div class="row">
+		  	<div class="col-md-12">
+				<h3 class="text-center" style="border: 2px  #a1a1a1; background: #dddddd; width: auto; border-radius: 25px;"> <?php echo 'Fotos dos itens' ?></h3>
+			</div>
+		  </div>
+		  <?php
+								$varCaminhoDasImagens = '';
+								if ($o_transporte->getIdTransp() !== NULL)
+								{
+									
+									$o_imagemTransporte = new ImagemTransporteModel();
+									$v_imagemTransporte = $o_imagemTransporte->_list($o_transporte->getIdTransp());
+									$varImagens = array();
+									$qtde_itens = 0;
+									foreach($v_imagemTransporte AS $o_imagemTransporte)
+									{
+										$varImagens[] = $o_imagemTransporte->getCaminhoImgTran();
+										?>
+										<div><img src='<?php echo $o_imagemTransporte->getCaminhoImgTran();?>' style='height:100px' class='img-thumbnail'></div>
+								<?php
+									$varCaminhoDasImagens = $o_imagemTransporte->getCaminhoImgTran();
+									}
+									
+								}
+							?>
+							 <br>
+	                         <br>
+	 	  <div class="row">
+		  	<div class="col-md-12">
+				<h3 class="text-center" style="border: 2px  #a1a1a1; background: #dddddd; width: auto; border-radius: 25px;"><?php if(number_format($o_transporte->getPrecoMaxiTransp(), 2, ',', '.') !== '0,00') echo 'Dados Adicionais' ?></h3>
+			</div>
+		  </div>
+		  <div class="input-group">
+               	<label class="control-label" for="lblprecomaximo"><?php if(number_format($o_transporte->getPrecoMaxiTransp(), 2, ',', '.') !== '0,00' OR $o_transporte->getNumAjudantesTransp() !== '0' OR $o_transporte->getComentarioAdiTransp() !== '') echo 'Posso pagar até' ?></label>
+               		<div class="form-group col-xs-12 floating-label-form-group controls">
+			        <?php if(number_format($o_transporte->getPrecoMaxiTransp(), 2, ',', '.') !== '0,00') echo 'R$ ' . number_format($o_transporte->getPrecoMaxiTransp(), 2, ',', '.') ?> <br>
+			      
+			</div>
+		  </div>
+		    <br>
+		    <div class="input-group">
+				<label class="control-label" for="comentarioAdiTransp"><?php if($o_transporte->getNumAjudantesTransp() !== '0' ) echo 'Necessito desse número de ajudantes:' ?></label>
+				<div class="form-group col-xs-12 floating-label-form-group controls">
+			   <?php if($o_transporte->getNumAjudantesTransp() !== '0' ) echo $o_transporte->getNumAjudantesTransp() ?>
+			</div>
+		  </div>
+		  <br>
+		  <div class="input-group">
+			<label class="control-label" for="comentarioAdiTransp"><?php if($o_transporte->getComentarioAdiTransp() !== '') echo 'Comentarios ou informações Adicionais:' ?></label>
+			<div class="form-group col-xs-12 floating-label-form-group controls">
+			  <?php echo $o_transporte->getComentarioAdiTransp() ?>
+			</div>
+		  </div>
+		 
+		  <br>
+		  <br>
+			
+	  <?php 
+		}
+	  ?>
+	 		
+	  <?php 
+			$idPes = isset($_SESSION['idPes']) ? $_SESSION['idPes'] : '0';
+			$idPer = isset($_SESSION['tb_perfil_idPer']) ? $_SESSION['tb_perfil_idPer'] : 0;
+			$idTransp = $o_transporte->getIdTransp();
+			if(isset($_GET['opcao'] ) and $_GET['opcao'] == 'clienteativosTrans')
+			{
+			?>
+		<h3 class="text-center" style="border: 2px  #a1a1a1; background: #dddddd; width: auto; border-radius: 25px;">Cadastre seu Lance</h3>
+		  <div class="row">
+		  	  			<div class="row">
+							<div class="col-md-12">
+								<div class="form-group" draggable="true">
+							  		<input class="form-control" id="valorLan" name="valorLan" 
+							  		type="text"  
+							  		data-thousands="." data-decimal="," data-prefix="R$ " placeholder="Informe o valor do lance">
+							    </div>
+						   </div>
+			           </div>
+			<script type="text/javascript">$("#valorLan").maskMoney();</script>
+		  </div>
+		   <div class="row">
+		  	<div id="resposta3"></div>
+		  </div>
+		  <div class="row">		
+			<div class="col-md-12 text-center">
+				<br>
+				<button type="button" id="btnValorLan" name="btnValorLan" class="btn btn-success" onclick="fncCadastrarLance('<?php echo $idTransp;?>','<?php echo $idPes;?>');">Confirmar</button>		
+			</div>
+		  </div>
+		 <br>
+		 <br>
+		 <br>
+		<?php
+			} 
+		?> 
+						</form>
+						</div>
+	               		</div>
+                    </div>
+                </div>
+              </div>
+              </div>
+        </section>
+        
+          <div class="row">
+        	
+		 </div>
+       
+	<br>
+	  <?php if ($consulta !== 'S') 
+		{ 
+		?>
+				 <div id="upload_form" class="hide">
+					 <form action="upload/multi_files.php" target="hidden_iframe" enctype="multipart/form-data" method="post">
+						<input type="file" multiple name="upload_files[]" id="upload_files">
+						<input type='text' name="caminhodasimagens" id="caminhodasimagens" value='<?php echo $varCaminhoDasImagens !== '' ? substr($varCaminhoDasImagens, 0, strrpos($varCaminhoDasImagens, '/')+1) : ''; ?>'>
+					</form>
+				 </div>
+				 <script type="text/javascript">
+					var Uploader = (function () {
+						jQuery('#upload_files').on('change', function () {
+							jQuery("#wait").removeClass('hide');
+							jQuery('#upload_files').parent('form').submit();
+						});
+						var fnUpload = function () {
+							jQuery('#upload_files').trigger('click');
+						}
+						var fnDone = function (data) {
+							var data = JSON.parse(data);
+							if (typeof (data['error']) != "undefined") {
+								jQuery('#uploaded_images').html(data['error']);
+								jQuery('#upload_files').val("");
+								jQuery("#wait").addClass('hide');
+								return;
+							}
+							var divs = [];
+							for (i in data) {
+								divs.push("<div><img src='" + data[i] + "' style='height:100px' class='img-thumbnail'></div>");
+							}
+							jQuery('#uploaded_images').html(divs.join(""));
+							jQuery('#upload_files').val("");
+							jQuery("#wait").addClass('hide');
+						}
+						return {
+							upload: fnUpload,
+							done: fnDone
+						}
+					}());
+				  </script>
+	  <?php 
+		}
+		else
+		{
+		?>
+			<form method="post" id="formMapa">
+				<input type="hidden" id="txtEnderecoPartida" name="txtEnderecoPartida" value="<?php echo $s_endecoOrigemGoogle;?>" />
+				<input type="hidden" id="txtEnderecoChegada" name="txtEnderecoChegada" value="<?php echo $s_endecoDestinoGoogle;?>"/>
+			</form>
+			<script src="./mapa/js/jquery.min.js"></script>
+			
+			<!-- Maps API Javascript -->
+			<script src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
+	 
+			<!-- Arquivo de inicializa��o do mapa -->
+			<script src="./mapa/js/mapa.js"></script>
+			<script>
+				$(document).ready(function() {
+
+					event.preventDefault();
+					
+					var enderecoPartida = $("#txtEnderecoPartida").val();
+					var enderecoChegada = $("#txtEnderecoChegada").val();
+					var request = {
+						origin: enderecoPartida,
+						destination: enderecoChegada,
+						travelMode: google.maps.TravelMode.DRIVING
+					};
+					
+					directionsService.route(request, function(result, status) {
+						if (status == google.maps.DirectionsStatus.OK) {
+							directionsDisplay.setDirections(result);
+						}
+					});
+
+				});
+			</script>
+							 <?php if ($consulta == 'S') 
+								{ 
+								?>
+									<br>
+			                        <br>
+			                        <div class='text-center'>
+                               
+							      	  <a href="?controle=Transporte&acao=listartransporte&opcao=<?php echo $opcao ?>" type="button" class="btn btn-danger" >Voltar</a>
+							      	
+									</div>
+			                        <br>
+			                        <br>
+			                        
+			                        <?php
+			                        }
+			                         ?>
+			
+				 <form action="./?controle=Lance&acao=cadastrarLance" id="formLance" name="formLance" method="post">
+					<input type="hidden" id="fValorLan" name="fValorLan" value="">				
+					<input type="hidden" id="fTb_transporte_idTransp" name="fTb_transporte_idTransp" value="">
+					<input type="hidden" id="fTb_pessoa_idPes" name="fTb_pessoa_idPes" value="">
+				 </form>
+			<?php
+		}
+	  ?>
+	  
+	  
+	  	<div id="myModal1" class="modal fade" role="dialog">
+			<div class="modal-dialog">
+							    <!-- Modal content-->	
+				<div class="modal-content">
+					<div class="text-center">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+						<h4 class="modal-title">Ativar</h4>
+					</div>
+					</div>
+					<div class="text-center">
+					<div class="modal-body">
+						<p>O preencha um nova data e edite as informações do transporte se necessário.</p>
+					 </div>
+					 </div>
+					<div class="text-center">
+					<div class="modal-footer-center">
+					 	<button type="submit" class="btn btn-primary" data-dismiss="modal">OK</button>
+						<br>
+						<br>
+						<br>		      	
+					</div>
+					</div>
+				</div>			
+			</div>
+		</div>
+		
+		<script>
+		  var targetParam = "<?php  echo $tipo;  ?>";
+		  //alert(targetParam );
+		  if (targetParam == 'ativacao') {
+			$(document).ready(function() {
+				$('#myModal1').modal();
+			});
+		};
+		</script>
+		
+	 <script>
+		 $('a[href*=#]:not([href*=#collapseOne])').click(function() {
+	      if (location.pathname.replace(/^\//,'') == this.pathname.replace(/^\//,'') && location.hostname == this.hostname) {
+	        var target = $(this.hash);
+	        target = target.length ? target : $('[name=' + this.hash.slice(1) +']');
+	        if (target.length) {
+	          $('html,body').animate({
+	            scrollTop: target.offset().top
+	          }, 1000);
+	          return false;
+	        }
+	      }
+	    });
+			
+	 	$('form').validate({
+	          rules: {
+		     	telefoneFixoPes: {
+		     		minlength: 14
+		     	},
+		     	telefoneCelularPes: {
+		     		minlength: 14
+		     	},
+		     	cepOrigemEndTran: {
+		     		minlength: 9
+		     	},
+		     	cepDestinoEndTran: {
+		     		minlength: 9
+		     	},
+			     	cpfCnpjPes: {
+					required:true,
+					verificaTamanho:true,
+					cpf:function(element) {
+						if($("#cpfCnpjPes").val().length==14){ return true; }
+					},
+					cnpj:function(element) {
+						if($("#cpfCnpjPes").val().length==18){ return true; }
+					}
+				}
+		      },
+		      messages: {
+		         titulo: { required:'Informe o título' },
+		         cpfCnpjPes: {
+		            required: 'Informe o número do documento',
+		            verificaTamanho:'O documento precisa ter 11 ou 14 digitos',
+		            cpf:'Informe um CPF válido',
+		            cnpj:'Informe um CNPJ válido'
+		         },
+		         cepOrigemEndTran: {
+		     		minlength: 'Por favor coloque um número de pelo menos 8 digitos'
+		     	},
+		     	cepDestinoEndTran: {
+		     		minlength: 'Por favor coloque um número de pelo menos 8 digitos'
+		     	}
+		      }
+		      ,
+				      
+		    
+	        highlight: function(element) {
+	            $(element).closest('.form-group').addClass('has-error');
+	        },
+	        unhighlight: function(element) {
+	            $(element).closest('.form-group').removeClass('has-error');
+	        },
+	        errorElement: 'span',
+	        errorClass: 'help-block',
+	        errorPlacement: function(error, element) {
+	            if(element.parent('.input-group').length) {
+	                error.insertAfter(element.parent());
+	            } else {
+	                error.insertAfter(element);
+	            }
+	        }
+	    });
+	    
+	    	function msg1(alerta, texto) {
+			     var resposta1 = '';
+			     $("#resposta1").empty();
+			     if (alerta === 'sucesso') {
+			       resposta1 = "<div class='alert btn-success text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     } else if (alerta === 'atencao') {
+			       resposta1 = "<div class='alert btn-warning text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     } else if (alerta === 'erro') {
+			       resposta1 = "<div class='alert btn-danger text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			     $("#resposta1").append(resposta1);
+			
+			     $(".alert").click(function() {
+			       $(".alert").hide();
+			     });
+			   }
+			   
+			   function msg2(alerta, texto) {
+			     var resposta2 = '';
+			     $("#resposta2").empty();
+			     if (alerta === 'sucesso') {
+			       resposta2 = "<div class='alert btn-success text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     } else if (alerta === 'atencao') {
+			       resposta2 = "<div class='alert btn-warning text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     } else if (alerta === 'erro') {
+			       resposta2 = "<div class='alert btn-danger text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			     $("#resposta2").append(resposta2);
+			
+			     $(".alert").click(function() {
+			       $(".alert").hide();
+			     });
+			   }
+			   
+			   function msg3(alerta, texto) {
+			     var resposta3 = '';
+			     $("#resposta3").empty();
+			     if (alerta === 'sucesso') {
+			       resposta3 = "<div class='alert btn-success text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     } else if (alerta === 'lanceZero') {
+			       resposta3 = "<div class='alert btn-warning text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     } else if (alerta === 'cadastro') {
+			       resposta3 = "<div class='alert btn-primary text-center' role='alert'>" +
+			         "<a href='#' class='close' data-dismiss='alert' aria-label='Close'>&times;</a>" +
+			         texto + "</div>";
+			     }
+			     $("#resposta3").append(resposta3);
+			
+			     $(".alert").click(function() {
+			       $(".alert").hide();
+			     });
+			   }
+
+			   $("#ruaOrigemEndTran").click(function() {
+			     msg1('atencao', ' Por questões de segurança coloque um número aproximado do local de coleta!');
+			   });
+			   $("#ruaDestinoEndTran").click(function() {
+			     msg2('atencao', ' Por questões de segurança coloque um número aproximado do local de entrega!');
+			   });
+	 </script>
+	 
+			<script>
+				var targetParam = "<?php  echo isset($_GET['consulta']); ?>";
+				if (targetParam !== 'S') {
+				  $('.input-group.date').datepicker({
+			        format: "dd-mm-yyyy",
+			        todayBtn: "linked",
+			        autoclose: true,
+			        todayHighlight: true,
+			        language: "pt-BR",
+			        startDate: 'today'
+			    	});
+			  	}
+			  
+			  	function SomenteNumero() { 
+					if (event.keyCode<48 || event.keyCode>57) 
+					{ 
+						return false; 
+					} 
+				} 
+			</script>
+  </body>
+  
+  <?php require 'template/footer.php'; ?>
+ 
+</script>
+
+</html>
+

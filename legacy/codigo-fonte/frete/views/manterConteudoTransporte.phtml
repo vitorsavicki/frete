@@ -1,0 +1,79 @@
+<?php
+$v_params = $this->getParams();
+$o_conteudo = $v_params['o_conteudo'];
+?>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>
+			Conteudo Transporte
+		</title>
+		<link rel="stylesheet" type="text/css" href="template/css/default.css" />
+	</head>
+<body>
+	<div align="center">
+		<form method='post'>
+		<table class='table_list' width="300">
+			<tr>
+				<th>
+					Descrição
+				</th>
+				<th>
+					Altura 
+				</th>
+				<th>
+					Largura
+				</th>
+				<th>
+					Comprimento
+				</th>
+				<th>
+					Peso
+				</th>
+				<th>
+					Item
+				</th>
+				<th>
+					Transporte
+				</th>
+				<th colspan="2">
+					A&ccedil;&otilde;es
+				</th>
+			</tr>
+			<tr>
+				<td>
+					<input type='text' name='descricaoItemConTran' value='<?php echo $o_conteudo->getDescricaoItemConTran()?>'> 
+				</td>
+				<td>
+					<input type='text' name='alturaConTran' value='<?php echo $o_conteudo->getAlturaConTran()?>'>
+				</td>
+					<td>
+					<input type='text' name='larguraConTran' value='<?php echo $o_conteudo->getLarguraConTran()?>'> 
+				</td>
+				<td>
+					<input type='text' name='comprimentoConTran' value='<?php echo $o_conteudo->getComprimentoConTran()?>'>
+				</td>	
+					<td>
+					<input type='text' name='pesoConTran' value='<?php echo $o_conteudo->getPesoConTran()?>'> 
+				</td>
+				<td>
+					<input type='text' name='tb_item_idItem' value='<?php echo $o_conteudo->getTb_item_idItem()?>'>
+				</td>
+					<td>
+					<input type='text' name='tb_transporte_idTransp' value='<?php echo $o_conteudo->getTb_transporte_idTransp()?>'>
+				</td>						
+				<td align="center">
+					<a href='?controle=ConteudoTransporte&acao=listarConteudoTransporte' class='bt_red'>Cancelar</a>
+				</td>
+				<td align="center">
+					<input type='hidden' name='controle' value='ConteudoTransporte'>
+					<input type='hidden' name='acao' value='manterConteudoTransporte'>
+					<input type='hidden' name='idConTran' value='<?php echo $o_conteudo->getIdConTran()?>'>
+					<button type='submit' class='bt_green'>Salvar</button>
+				</td>
+			</tr>			
+		</table>
+		</form>
+	</div>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<?php
+$v_params = $this->getParams();
+$v_endtransportes = $v_params['v_endtransportes'];
+?>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>
+			Endereço Transporte
+		</title>
+		<link rel="stylesheet" type="text/css" href="template/css/default.css" />
+	</head>
+<body>
+	<div align="center">
+		<table class='table_list' width="80%">
+			<tr>
+				<th>
+					ID
+				</th>
+				<th>
+					CEP Origem 
+				</th>
+				<th>
+					CEP Destino
+				</th>
+				<th>
+					Rua Origem
+				</th>
+				<th>
+					Rua Destino
+				</th>
+				<th>
+					Bairro Origem
+				</th>
+				<th>
+					Bairro Destino
+				</th>
+				<th>
+					Cidade Origem
+				</th>
+				<th>
+					Cidade Destino
+				</th>
+				<th>
+					Estado Origem
+				</th>
+				<th>
+					Estado Destino
+				</th>
+				<th>
+					Transporte
+				</th>
+				<th colspan="3">
+					A&ccedil;&otilde;es
+				</th>
+			</tr>
+			<?php
+			foreach($v_endtransportes AS $o_endtransporte)
+			{
+				?>
+				<tr>
+					<td>
+						<?php echo $o_endtransporte->getIdEndTran()?>
+					</td>
+					<td>
+						<?php echo $o_endtransporte->CepOrigemEndTran()?>
+					</td>
+					<td>
+						<?php echo $o_endtransporte->getCepDestinoEndTran()?>
+					</td>
+					<td>
+						<?php echo $o_endtransporte->getRuaOrigemEndTran()?>
+					</td>
+					<td>
+						<?php echo $o_endtransporte->getRuaDestinoEndTran()?>
+					</td>
+					<td>
+						<?php echo $o_endtransporte->getBairroOrigemEndTran()?>
+					</td>
+					<td>
+						<?php echo $o_endtransporte->getBairroDestinoEndTran()?>
+					</td>
+					<td>
+						<?php echo $o_endtransporte->getCidadeOrigemEndTran()?>
+					</td>
+					<td>
+						<?php echo $o_endtransporte->getCidadeDestinoEndTran()?>
+					</td>
+					<td>
+						<?php echo $o_endtransporte->getEstadoOrigemEndTran()?>
+					</td>
+					<td>
+						<?php echo $o_endtransporte->getEstadoDestinoEndTran()?>
+					</td>
+					<td>
+						<?php echo $o_endtransporte->getTb_transporte_idTransp()?>
+					</td>
+					<td align="center">
+						<a href='?controle=EnderecoTransporte&acao=manterEnderecotransporte&idEndTran=<?php echo $o_endtransporte->getIdEndTran()?>' class='bt_blue'>Editar</a>
+					</td>
+					<td align="center">
+						<a href='?controle=EnderecoTransporte&acao=apagarEnderecoTransporte&idEndTran=<?php echo $o_endtransporte->getIdEndTran()?>' class='bt_red'>Apagar</a>
+					</td>
+				</tr>
+				<?php
+			}
+			?>
+		</table>
+		<br />
+		<a href='?controle=EnderecoTransporte&acao=manterEnderecoTransporte' class='bt_green'>Novo</a>
+	</div>
+</body>
+</html>

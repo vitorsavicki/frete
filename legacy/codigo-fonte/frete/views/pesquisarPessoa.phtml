@@ -1,0 +1,63 @@
+<?php
+$v_params = $this->getParams();
+$v_pessoas = $v_params['v_pessoas'];
+?>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>
+			Pesquisar
+		</title>
+		<link rel="stylesheet" type="text/css" href="template/css/default.css" />
+	</head>
+<body>
+	<div align="center">
+		<table class='table_list' width="100%">
+			<tr>
+				<th>
+					Sel
+				</th>
+				<th>
+					ID
+				</th>
+				<th>
+					Nome
+				</th>
+				<th>
+					Sobrenome
+				</th>
+				<th>
+					E-mail
+				</th>
+				<th>
+					CPF ou CNPJ
+				</th>
+			</tr>
+			<?php foreach($v_pessoas AS $o_pessoa){?>
+				<tr>
+					<td align="center">
+						<a href="#">
+						<img id="pesquisar<?php echo $_GET['tipo'];?>" src="template/images/accept.png" value-a="<?php echo $o_pessoa->getIdPes()?>" value-b="<?php echo $o_pessoa->getPrimeiroNomePes()?>" border="0"></a>
+					</td>
+					<td align="center">
+						<?php echo $o_pessoa->getIdPes()?>	
+					</td>
+					<td>
+						<?php echo $o_pessoa->getPrimeiroNomePes()?>
+					</td>
+					<td>
+						<?php echo $o_pessoa->getSobreNomePes()?>
+					</td>
+					<td>
+						<?php echo $o_pessoa->getEmailPes()?>	
+					</td>
+					<td>
+						<?php echo $o_pessoa->getCpfCnpjPes()?>
+					</td>
+				</tr>
+				<?php } ?>
+		</table>
+		<br />
+	</div>
+</body>
+</html>

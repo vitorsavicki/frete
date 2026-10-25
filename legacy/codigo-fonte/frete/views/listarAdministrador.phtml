@@ -1,0 +1,77 @@
+<?php
+$v_params = $this->getParams();
+$v_administradores = $v_params['v_administradores'];
+?>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>
+			Administrador
+		</title>
+		<link rel="stylesheet" type="text/css" href="template/css/default.css" />
+	</head>
+<body>
+	<div align="center">
+		<table class='table_list' width="80%">
+			<tr>
+				<th>
+					ID
+				</th>
+				<th>
+					Nome
+				</th>
+				<th>
+					Sobrenome
+				</th>
+				<th>
+					Data Cadastro
+				</th>
+				<th>
+					Status
+				</th>
+				<th>
+					Usuario
+				</th>
+				<th colspan="3">
+					A&ccedil;&otilde;es
+				</th>
+			</tr>
+			<?php
+			foreach($v_administradores AS $o_administrador)
+			{
+				?>
+				<tr>
+					<td>
+						<?php echo $o_administrador->getIdAdm()?>
+					</td>
+					<td>
+						<?php echo $o_administrador->getPrimeiroNomeAdm()?>
+					</td>
+					<td>
+						<?php echo $o_administrador->getSobreNomeAdm()?>
+					</td>
+					<td>
+						<?php echo $o_administrador->getDataCadastroAdm()?>
+					</td>
+					<td>
+						<?php echo $o_administrador->getStatusAdm()?>
+					</td>
+					<td>
+						<?php echo $o_administrador->getTb_usuario_idUsu()?>
+					</td>
+					<td align="center">
+						<a href='?controle=Administrador&acao=manterAdministrador&idAdm=<?php echo $o_administrador->getIdAdm()?>' class='bt_blue'>Editar</a>
+					</td>
+					<td align="center">
+						<a href='?controle=Administrador&acao=apagarAdministrador&idAdm=<?php echo $o_administrador->getIdAdm()?>' class='bt_red'>Apagar</a>
+					</td>
+				</tr>
+				<?php
+			}
+			?>
+		</table>
+		<br />
+		<a href='?controle=Administrador&acao=manterAdministrador' class='bt_green'>Novo</a>
+	</div>
+</body>
+</html>

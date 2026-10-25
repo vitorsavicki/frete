@@ -1,0 +1,35 @@
+{
+  "name": "frete",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Quero Mudar Já v2 — marketplace de fretes e mudanças com leilão reverso de lances. Cloudflare Workers + Hono + D1.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:migrate:local": "wrangler d1 migrations apply frete --local",
+    "db:migrate": "wrangler d1 migrations apply frete --remote",
+    "db:seed:local": "wrangler d1 execute frete --local --file=seed.sql",
+    "db:seed": "wrangler d1 execute frete --remote --file=seed.sql",
+    "audit": "npm audit --audit-level=high"
+  },
+  "dependencies": {
+    "hono": "^4.9.0",
+    "leaflet": "^1.9.4",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.8.0",
+    "@cloudflare/workers-types": "^5.20261019.1",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0",
+    "wrangler": "^4.42.0"
+  },
+  "allowScripts": {
+    "workerd@1.20250906.0": true,
+    "workerd@1.20261019.1": true
+  }
+}
