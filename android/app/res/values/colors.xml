@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="marca">#2563EB</color>
+    <color name="marca_escura">#1D4ED8</color>
+    <color name="tinta">#0F172A</color>
+    <color name="cinza">#475569</color>
+    <color name="branco">#FFFFFF</color>
+    <color name="fundo">#FFFFFF</color>
+    <color name="ambar">#FBBF24</color>
+</resources>

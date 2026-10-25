@@ -1,16 +1,17 @@
-// Landing page pública: estatísticas + fretes recém-publicados.
+// Landing page pública: estatísticas + categorias + fretes recém-publicados.
 import { Hono } from 'hono';
 import { haversineKm } from '../lib/geo';
 import { HomePage } from '../pages/Home';
-import type { FreightResumo } from '../lib/db';
+import type { Category, FreightResumo } from '../lib/db';
 import type { Vars } from '../lib/session';
+import type { AppBindings } from '../lib/bindings';
 
-const home = new Hono<{ Bindings: { DB: D1Database }; Variables: Vars }>();
+const home = new Hono<{ Bindings: AppBindings; Variables: Vars }>();
 
 home.get('/', async (c) => {
   const db = c.env.DB;
 
-  const [recentes, abertos, transportadores, fretes, alertas] = await Promise.all([
+  const [recentes, abertos, transportadores, fretes, categorias, alertas] = await Promise.all([
     db
       .prepare(
         `SELECT f.*, c.nome AS categoria_nome, u.nome AS cliente_nome,
@@ -27,6 +28,7 @@ home.get('/', async (c) => {
     db.prepare("SELECT COUNT(*) AS n FROM freight WHERE status = 'aberto'").first<{ n: number }>(),
     db.prepare("SELECT COUNT(*) AS n FROM users WHERE papel = 'transportador'").first<{ n: number }>(),
     db.prepare('SELECT COUNT(*) AS n FROM freight').first<{ n: number }>(),
+    db.prepare('SELECT id, nome FROM categories ORDER BY nome').all<Category>(),
     c.get('user')
       ? db
           .prepare('SELECT COUNT(*) AS n FROM alerts WHERE user_id = ? AND lido = 0')
@@ -45,6 +47,7 @@ home.get('/', async (c) => {
       user={c.get('user')}
       alertas={alertas?.n ?? 0}
       fretesRecentes={fretesRecentes}
+      categorias={categorias.results ?? []}
       totalAbertos={abertos?.n ?? 0}
       totalTransportadores={transportadores?.n ?? 0}
       totalFretes={fretes?.n ?? 0}

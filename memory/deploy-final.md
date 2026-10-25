@@ -1,5 +1,9 @@
 # Deploy final — 2026-10-25
 
+> Atualização: o estado mais recente (redesign, carga com IA e APK Android)
+> está em `memory/sessao-carga-apk-2026-10-25.md`. Este arquivo registra o
+> deploy anterior da v2 e pode estar defasado.
+
 ## Onde o trabalho anterior parou
 A sessão anterior (Letta Code) terminou com o código pronto e `tsc` sem erros, mas sem o teste local completo e sem deploy atualizado. O Worker em produção ainda era o MVP antigo ("MVP Quero Mudar Já v2 operando.").
 

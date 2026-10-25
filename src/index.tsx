@@ -3,6 +3,7 @@
 
 import { Hono } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
+import type { AppBindings } from './lib/bindings';
 import { middlewareSessao, type Vars } from './lib/session';
 import { protecaoOrigem } from './lib/csrf';
 import { limiteAuth } from './lib/rate-limit';
@@ -11,26 +12,38 @@ import home from './routes/home';
 import auth from './routes/auth';
 import freight from './routes/freight';
 import dashboard from './routes/dashboard';
+import truck from './routes/truck';
+import android from './routes/android';
 import api from './routes/api';
 
-export type Bindings = {
-  DB: D1Database;
-  ASSETS: Fetcher;
-};
-
-const app = new Hono<{ Bindings: Bindings; Variables: Vars }>();
+const app = new Hono<{ Bindings: AppBindings; Variables: Vars }>();
 
 // 1) Headers de segurança em TODAS as respostas dinâmicas.
 //    (assets estáticos recebem os mesmos headers via public/_headers)
 app.use(
   '*',
   secureHeaders({
+    // A política de tiles do OpenStreetMap exige que o navegador envie o
+    // Referer. O padrão do Hono (no-referrer) faz o OSM bloquear o mapa.
+    referrerPolicy: 'strict-origin-when-cross-origin',
+    xFrameOptions: 'DENY',
+    permissionsPolicy: {
+      camera: [],
+      microphone: [],
+      geolocation: ['self'],
+    },
     contentSecurityPolicy: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'"],
       styleSrc: ["'self'"],
-      imgSrc: ["'self'", 'data:', 'https://*.tile.openstreetmap.org'],
-      connectSrc: ["'self'"], // CEP é buscado server-side (proxy /api/cep)
+      imgSrc: [
+        "'self'",
+        'data:',
+        'https://tile.openstreetmap.org',
+        'https://*.tile.openstreetmap.org',
+        'https://*.googleusercontent.com',
+      ],
+      connectSrc: ["'self'"], // APIs externas são chamadas server-side (CSP fechada)
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
@@ -47,7 +60,7 @@ app.use('*', middlewareSessao);
 // 3) CSRF: bloqueia mutações vindas de outros sites
 app.use('*', protecaoOrigem);
 
-// 4) Rate limit só nos endpoints abusáveis (login/cadastro)
+// 4) Rate limit nos endpoints abusáveis (login/cadastro)
 app.use('/login', limiteAuth);
 app.use('/cadastro', limiteAuth);
 
@@ -56,15 +69,20 @@ app.route('/', home);
 app.route('/', auth);
 app.route('/', freight);
 app.route('/', dashboard);
+app.route('/', truck);
+app.route('/', android);
 app.route('/api', api);
 
 app.notFound((c) =>
   c.html(
     <Layout titulo="Não encontrado" user={c.get('user')}>
-      <div class="cartao-form">
+      <div class="estado-vazio">
+        <span class="estado-vazio__emoji" aria-hidden="true">
+          🧭
+        </span>
         <h1>404 — Página não encontrada</h1>
         <p class="auxiliar">Esse caminho não existe (ou o frete já partiu 🚚).</p>
-        <a href="/" class="botao">
+        <a href="/" class="btn btn-primario">
           Voltar ao início
         </a>
       </div>
@@ -77,10 +95,13 @@ app.onError((err, c) => {
   console.error('Erro não tratado:', err);
   return c.html(
     <Layout titulo="Erro" user={c.get('user')}>
-      <div class="cartao-form">
+      <div class="estado-vazio">
+        <span class="estado-vazio__emoji" aria-hidden="true">
+          ⚠️
+        </span>
         <h1>Algo deu errado</h1>
         <p class="auxiliar">Nosso time já foi notificado. Tente de novo em instantes.</p>
-        <a href="/" class="botao">
+        <a href="/" class="btn btn-primario">
           Voltar ao início
         </a>
       </div>

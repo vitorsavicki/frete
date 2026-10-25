@@ -16,6 +16,12 @@
       "migrations_dir": "migrations"
     }
   ],
+  "ai": {
+    "binding": "AI"
+  },
+  "vars": {
+    "EMAIL_FROM": "Quero Mudar Já <onboarding@resend.dev>"
+  },
   "observability": {
     "enabled": true
   }

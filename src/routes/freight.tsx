@@ -4,11 +4,29 @@ import { Hono } from 'hono';
 import { exigirLogin, type Vars } from '../lib/session';
 import { schemaFrete, schemaLance, primeiraMensagemErro } from '../lib/validate';
 import { validarLance, podeAceitarLance, podeCancelarFrete } from '../lib/rules';
-import { audit, criarAlerta, type Category, type FreightResumo, type BidComNome, type User } from '../lib/db';
-import { consultarCep, haversineKm } from '../lib/geo';
+import { audit, criarAlerta, type Category, type FreightResumo, type BidComNome, type Truck, type User } from '../lib/db';
+import { consultarCep, geocodificarEndereco, haversineKm } from '../lib/geo';
+import { previsaoRetirada } from '../lib/clima';
+import { emailLanceVencedor, emailNovoLance } from '../lib/email';
+import { estimarCusto } from '../lib/cost';
+import {
+  analisarEncaixe,
+  dimensoesTexto,
+  medidasDoCaminhao,
+  parseItensDb,
+  parseItensForm,
+  resumoCarga,
+  serializarItens,
+  sugerirVeiculo,
+} from '../lib/carga';
 import { ListaFretesPage, DetalheFretePage, NovoFretePage } from '../pages/Freight';
+import type { AppBindings } from '../lib/bindings';
 
-const freight = new Hono<{ Bindings: { DB: D1Database }; Variables: Vars }>();
+const freight = new Hono<{ Bindings: AppBindings; Variables: Vars }>();
+
+function baseUrl(c: { req: { url: string } }): string {
+  return new URL(c.req.url).origin;
+}
 
 const POR_PAGINA = 10;
 
@@ -103,6 +121,7 @@ freight.get('/fretes', async (c) => {
       categorias={categorias.results ?? []}
       filtros={filtros}
       totalPaginas={totalPaginas}
+      totalResultados={total?.n ?? 0}
       queryString={qsFiltros.toString()}
       mensagem={q.msg || null}
       erro={q.erro || null}
@@ -132,6 +151,7 @@ freight.get('/novo-frete', async (c) => {
       alertas={alertas?.n ?? 0}
       categorias={categorias.results ?? []}
       valores={{}}
+      iaAtiva={Boolean(c.env.AI)}
     />,
   );
 });
@@ -163,12 +183,15 @@ freight.post('/fretes', async (c) => {
         alertas={alertas?.n ?? 0}
         categorias={categorias.results ?? []}
         valores={bruto}
+        iaAtiva={Boolean(c.env.AI)}
         erro={primeiraMensagemErro(resultado.error)}
       />,
       400,
     );
   }
   const f = resultado.data;
+  const itensCarga = parseItensForm(bruto);
+  const resumo = resumoCarga(itensCarga);
 
   // Coordenadas best-effort via BrasilAPI (sem coords, o mapa simplesmente não aparece)
   const [cepOrigem, cepDestino] = await Promise.all([
@@ -184,8 +207,9 @@ freight.post('/fretes', async (c) => {
            user_id, category_id, descricao, comentario, ajudantes, preco_maximo,
            data_retirada, hora_retirada,
            origem_cep, origem_rua, origem_bairro, origem_cidade, origem_uf, origem_lat, origem_lng,
-           destino_cep, destino_rua, destino_bairro, destino_cidade, destino_uf, destino_lat, destino_lng
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           destino_cep, destino_rua, destino_bairro, destino_cidade, destino_uf, destino_lat, destino_lng,
+           carga_itens, carga_peso_kg, carga_volume_m3
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .bind(
         user!.id,
@@ -210,6 +234,9 @@ freight.post('/fretes', async (c) => {
         f.destino_uf,
         cepDestino?.lat ?? null,
         cepDestino?.lng ?? null,
+        itensCarga.length > 0 ? serializarItens(itensCarga) : null,
+        itensCarga.length > 0 ? resumo.pesoKg : null,
+        itensCarga.length > 0 ? resumo.volumeM3 : null,
       )
       .run();
     freteId = Number(r.meta.last_row_id);
@@ -230,12 +257,67 @@ freight.get('/fretes/:id', async (c) => {
   const db = c.env.DB;
   const q = c.req.query();
 
-  const frete = await db.prepare(`${SQL_RESUMO} WHERE f.id = ?`).bind(id).first<FreightResumo>();
+  let frete = await db.prepare(`${SQL_RESUMO} WHERE f.id = ?`).bind(id).first<FreightResumo>();
   if (!frete) return c.notFound();
+
+  // Fretes antigos podem não ter coordenadas. Geocodifica sob demanda e
+  // persiste o resultado para que o mapa funcione nas próximas visitas.
+  if (
+    frete.origem_lat == null ||
+    frete.origem_lng == null ||
+    frete.destino_lat == null ||
+    frete.destino_lng == null
+  ) {
+    const [origemGeo, destinoGeo] = await Promise.all([
+      frete.origem_lat == null || frete.origem_lng == null
+        ? geocodificarEndereco({
+            rua: frete.origem_rua,
+            bairro: frete.origem_bairro,
+            cidade: frete.origem_cidade,
+            uf: frete.origem_uf,
+          })
+        : Promise.resolve(null),
+      frete.destino_lat == null || frete.destino_lng == null
+        ? geocodificarEndereco({
+            rua: frete.destino_rua,
+            bairro: frete.destino_bairro,
+            cidade: frete.destino_cidade,
+            uf: frete.destino_uf,
+          })
+        : Promise.resolve(null),
+    ]);
+
+    const atualizacoes: Promise<unknown>[] = [];
+    if (origemGeo) {
+      atualizacoes.push(
+        db
+          .prepare('UPDATE freight SET origem_lat = ?, origem_lng = ? WHERE id = ?')
+          .bind(origemGeo.lat, origemGeo.lng, id)
+          .run(),
+      );
+    }
+    if (destinoGeo) {
+      atualizacoes.push(
+        db
+          .prepare('UPDATE freight SET destino_lat = ?, destino_lng = ? WHERE id = ?')
+          .bind(destinoGeo.lat, destinoGeo.lng, id)
+          .run(),
+      );
+    }
+    if (atualizacoes.length > 0) await Promise.all(atualizacoes);
+
+    frete = {
+      ...frete,
+      origem_lat: origemGeo?.lat ?? frete.origem_lat,
+      origem_lng: origemGeo?.lng ?? frete.origem_lng,
+      destino_lat: destinoGeo?.lat ?? frete.destino_lat,
+      destino_lng: destinoGeo?.lng ?? frete.destino_lng,
+    };
+  }
 
   const donoDoFrete = user?.id === frete.user_id;
 
-  const [lances, meuLance, alertas] = await Promise.all([
+  const [lances, meuLance, alertas, caminhao] = await Promise.all([
     donoDoFrete
       ? db
           .prepare(
@@ -262,7 +344,28 @@ freight.get('/fretes/:id', async (c) => {
           .bind(user.id)
           .first<{ n: number }>()
       : Promise.resolve({ n: 0 }),
+    user?.papel === 'transportador'
+      ? db.prepare('SELECT * FROM trucks WHERE user_id = ?').bind(user.id).first<Truck>()
+      : Promise.resolve(null as Truck | null),
   ]);
+
+  const distanciaKm = haversineKm(frete.origem_lat, frete.origem_lng, frete.destino_lat, frete.destino_lng);
+  const itensCarga = parseItensDb(frete.carga_itens);
+  const carga = itensCarga.length > 0 ? resumoCarga(itensCarga) : null;
+  const veiculoRecomendado = carga ? sugerirVeiculo(carga) : null;
+  const medidasCaminhao = caminhao ? medidasDoCaminhao(caminhao) : null;
+  const analiseCaminhao = carga && medidasCaminhao ? analisarEncaixe(carga, medidasCaminhao) : null;
+  const custoInicial = caminhao
+    ? {
+        consumoKmL: caminhao.consumo_km_l,
+        precoDiesel: caminhao.diesel_preco,
+        custoFixo: caminhao.custo_fixo + frete.ajudantes * 120,
+        margemPercentual: caminhao.margem_percentual,
+      }
+    : undefined;
+  const estimativaCaminhao = custoInicial ? estimarCusto(distanciaKm, custoInicial) : null;
+
+  const previsao = await previsaoRetirada(frete.origem_lat, frete.origem_lng, frete.data_retirada);
 
   return c.html(
     <DetalheFretePage
@@ -270,11 +373,19 @@ freight.get('/fretes/:id', async (c) => {
       alertas={alertas?.n ?? 0}
       frete={{
         ...frete,
-        distancia_km: haversineKm(frete.origem_lat, frete.origem_lng, frete.destino_lat, frete.destino_lng),
+        distancia_km: distanciaKm,
       }}
       lances={lances.results ?? []}
       meuLance={meuLance}
       donoDoFrete={donoDoFrete}
+      previsao={previsao}
+      iaAtiva={Boolean(c.env.AI)}
+      caminhao={caminhao}
+      carga={carga}
+      analiseCaminhao={analiseCaminhao}
+      veiculoRecomendado={veiculoRecomendado}
+      estimativaCaminhao={estimativaCaminhao}
+      custoInicial={custoInicial}
       mensagem={q.msg || null}
       erro={q.erro || null}
     />,
@@ -299,9 +410,9 @@ freight.post('/fretes/:id/lances', async (c) => {
   const { valor, mensagem } = resultado.data;
 
   const frete = await c.env.DB
-    .prepare('SELECT user_id, status, preco_maximo FROM freight WHERE id = ?')
+    .prepare('SELECT user_id, status, preco_maximo, descricao FROM freight WHERE id = ?')
     .bind(id)
-    .first<{ user_id: number; status: string; preco_maximo: number | null }>();
+    .first<{ user_id: number; status: string; preco_maximo: number | null; descricao: string }>();
   if (!frete) return c.notFound();
 
   // Menor lance de OUTROS transportadores (para a regra do leilão reverso)
@@ -355,6 +466,24 @@ freight.post('/fretes/:id/lances', async (c) => {
   }
   await Promise.all(avisos);
   await audit(c.env.DB, user!.id, 'lance', 'freight', id, { valor });
+
+  // Aviso por e-mail para o dono (Resend; sem chave vira log)
+  const dono = await c.env.DB
+    .prepare('SELECT email, nome FROM users WHERE id = ?')
+    .bind(frete.user_id)
+    .first<{ email: string; nome: string }>();
+  if (dono?.email) {
+    c.executionCtx.waitUntil(
+      emailNovoLance(c.env, {
+        para: dono.email,
+        nomeDono: dono.nome,
+        descricao: frete.descricao,
+        valor,
+        freteId: id,
+        baseUrl: baseUrl(c),
+      }),
+    );
+  }
 
   return c.redirect(redir(`/fretes/${id}`, { msg: 'Lance registrado! Boa sorte 🍀' }));
 });
@@ -410,6 +539,24 @@ freight.post('/fretes/:id/aceitar/:bidId', async (c) => {
     ),
   ]);
   await audit(c.env.DB, user!.id, 'aceitar_lance', 'freight', id, { bidId });
+
+  // Aviso por e-mail para o vencedor
+  const vencedor = await c.env.DB
+    .prepare('SELECT email, nome FROM users WHERE id = ?')
+    .bind(lance.transportador_id)
+    .first<{ email: string; nome: string }>();
+  if (vencedor?.email) {
+    c.executionCtx.waitUntil(
+      emailLanceVencedor(c.env, {
+        para: vencedor.email,
+        nome: vencedor.nome,
+        descricao: frete.descricao,
+        valor: lance.valor,
+        freteId: id,
+        baseUrl: baseUrl(c),
+      }),
+    );
+  }
 
   return c.redirect(redir(`/fretes/${id}`, { msg: 'Lance aceito! Leilão encerrado. 🤝' }));
 });

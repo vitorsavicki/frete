@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Quero Mudar Já</string>
+    <string name="url_inicial" translatable="false">https://frete.vitorsavicki.workers.dev/</string>
+    <string name="host_app" translatable="false">frete.vitorsavicki.workers.dev</string>
+
+    <string name="erro_titulo">Não foi possível carregar</string>
+    <string name="erro_texto">Verifique sua internet e tente de novo.\n\nO app precisa de conexão para carregar fretes, lances e o seu painel.</string>
+    <string name="erro_tentar">Tentar novamente</string>
+    <string name="erro_navegador">Abrir no navegador</string>
+    <string name="arquivo_escolher">Escolher arquivo</string>
+    <string name="link_indisponivel">Não há app para abrir este link.</string>
+    <string name="js_confirmar">Confirmar</string>
+    <string name="js_ok">OK</string>
+    <string name="js_cancelar">Cancelar</string>
+</resources>

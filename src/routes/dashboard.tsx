@@ -3,7 +3,7 @@
 import { Hono } from 'hono';
 import { exigirLogin, type Vars } from '../lib/session';
 import { DashboardPage } from '../pages/Dashboard';
-import type { Alert, BidComNome, FreightResumo } from '../lib/db';
+import type { Alert, BidComNome, FreightResumo, Truck } from '../lib/db';
 
 const dashboard = new Hono<{ Bindings: { DB: D1Database }; Variables: Vars }>();
 
@@ -14,7 +14,7 @@ dashboard.get('/painel', async (c) => {
   const u = user!;
   const db = c.env.DB;
 
-  const [alertas, naoLidos, meusFretes, meusLances] = await Promise.all([
+  const [alertas, naoLidos, meusFretes, meusLances, caminhao] = await Promise.all([
     db
       .prepare('SELECT * FROM alerts WHERE user_id = ? ORDER BY lido ASC, criado_em DESC LIMIT 30')
       .bind(u.id)
@@ -56,6 +56,9 @@ dashboard.get('/painel', async (c) => {
             BidComNome & { frete_descricao: string; frete_status: string; menor_lance: number | null }
           >()
       : Promise.resolve({ results: [] as (BidComNome & { frete_descricao: string; frete_status: string; menor_lance: number | null })[] }),
+    u.papel === 'transportador'
+      ? db.prepare('SELECT * FROM trucks WHERE user_id = ?').bind(u.id).first<Truck>()
+      : Promise.resolve(null as Truck | null),
   ]);
 
   const q = c.req.query();
@@ -67,6 +70,7 @@ dashboard.get('/painel', async (c) => {
       alertasNaoLidos={naoLidos?.n ?? 0}
       meusFretes={meusFretes.results ?? []}
       meusLances={meusLances.results ?? []}
+      caminhao={caminhao}
     />,
   );
 });

@@ -18,6 +18,22 @@ const fmtData = new Intl.DateTimeFormat('pt-BR', {
   year: 'numeric',
 });
 
+const fmtPeso = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 });
+const fmtVolume = new Intl.NumberFormat('pt-BR', {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
+
+export function peso(valor: number | null | undefined): string {
+  if (valor == null || !Number.isFinite(valor)) return '—';
+  return `${fmtPeso.format(valor)} kg`;
+}
+
+export function volume(valor: number | null | undefined): string {
+  if (valor == null || !Number.isFinite(valor)) return '—';
+  return `${fmtVolume.format(valor)} m³`;
+}
+
 export function dinheiro(valor: number | null | undefined): string {
   if (valor == null) return '—';
   return fmtDinheiro.format(valor);
@@ -59,4 +75,11 @@ export function tempoRelativo(iso: string | null | undefined): string {
 export function distancia(km: number | null | undefined): string {
   if (km == null) return '—';
   return `${km.toFixed(1).replace('.', ',')} km`;
+}
+
+/** Linha reta → estimativa rodoviária (fator 1,25), formatada. */
+export function distanciaAproximada(kmLinhaReta: number | null | undefined): string {
+  if (kmLinhaReta == null || !Number.isFinite(kmLinhaReta)) return '—';
+  const rodovia = Math.round(kmLinhaReta * 1.25 * 10) / 10;
+  return `~${rodovia.toFixed(1).replace('.', ',')} km`;
 }

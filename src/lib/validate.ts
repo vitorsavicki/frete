@@ -9,15 +9,37 @@ const cep = z
 
 const textoOpcional = (max: number) => z.string().trim().max(max).optional().or(z.literal(''));
 
-export const schemaCadastro = z.object({
-  nome: z.string().trim().min(2, 'Nome muito curto').max(80),
-  sobrenome: z.string().trim().min(2, 'Sobrenome muito curto').max(120),
-  email: z.string().trim().email('E-mail inválido').max(255),
-  senha: z.string().min(8, 'Senha precisa de pelo menos 8 caracteres').max(72),
-  papel: z.enum(['cliente', 'transportador'], { message: 'Escolha: cliente ou transportador' }),
-  telefone: textoOpcional(20),
-  cpf_cnpj: textoOpcional(20),
-});
+/** Aceita "1,45" e "1.45" sem confundir separador decimal com milhar. */
+function paraNumero(valor: string): number {
+  const texto = valor.trim();
+  if (!texto) return Number.NaN;
+  if (texto.includes(',')) return Number(texto.replace(/\./g, '').replace(',', '.'));
+  return Number(texto);
+}
+
+const numeroCampo = (mensagem: string, minimo: number, maximo: number) =>
+  z
+    .string()
+    .trim()
+    .min(1, mensagem)
+    .transform(paraNumero)
+    .pipe(z.number({ message: mensagem }).min(minimo, mensagem).max(maximo, mensagem));
+
+export const schemaCadastro = z
+  .object({
+    nome: z.string().trim().min(2, 'Nome muito curto').max(80),
+    sobrenome: z.string().trim().min(2, 'Sobrenome muito curto').max(120),
+    email: z.string().trim().email('E-mail inválido').max(255),
+    senha: z.string().min(8, 'Senha precisa de pelo menos 8 caracteres').max(72),
+    senha2: z.string().min(1, 'Confirme a senha'),
+    papel: z.enum(['cliente', 'transportador'], { message: 'Escolha: cliente ou transportador' }),
+    telefone: textoOpcional(20),
+    cpf_cnpj: textoOpcional(20),
+  })
+  .refine((dados) => dados.senha === dados.senha2, {
+    message: 'As senhas não conferem',
+    path: ['senha2'],
+  });
 
 export const schemaLogin = z.object({
   email: z.string().trim().email('E-mail inválido').max(255),
@@ -57,6 +79,30 @@ export const schemaLance = z.object({
     .transform((v) => Number(v.replace(/\./g, '').replace(',', '.')))
     .pipe(z.number({ message: 'Valor inválido' }).positive('Lance deve ser maior que zero').max(1_000_000)),
   mensagem: textoOpcional(500),
+});
+
+export const schemaIa = z.object({
+  texto: z.string().trim().min(5, 'Escreva um pouco mais antes de usar a IA').max(500),
+  tipo: z.enum(['descricao', 'mensagem']).default('descricao'),
+});
+
+export const schemaIaCarga = z.object({
+  freight_id: z.coerce.number().int().positive('Frete inválido'),
+});
+
+export const schemaCaminhao = z.object({
+  nome: z.string().trim().min(2, 'Dê um nome ao caminhão').max(80),
+  tipo: z.enum(['fiorino', 'van', 'tres_quartos', 'bau', 'carreta', 'outro'], {
+    message: 'Escolha o tipo de caminhão',
+  }),
+  comprimento: numeroCampo('Comprimento inválido (use metros)', 1, 20),
+  largura: numeroCampo('Largura inválida (use metros)', 1, 4),
+  altura: numeroCampo('Altura inválida (use metros)', 1, 5),
+  capacidade_kg: numeroCampo('Capacidade inválida (use kg)', 100, 40_000),
+  consumo_km_l: numeroCampo('Consumo inválido (km/L)', 1, 30),
+  diesel_preco: numeroCampo('Preço do diesel inválido', 1, 20),
+  custo_fixo: numeroCampo('Custo fixo inválido', 0, 100_000),
+  margem_percentual: numeroCampo('Margem inválida (0 a 100%)', 0, 100),
 });
 
 // Normaliza erro do zod em mensagem amigável única

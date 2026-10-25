@@ -13,6 +13,8 @@ export interface User {
   cpf_cnpj: string | null;
   papel: Papel;
   ativo: number;
+  google_sub: string | null;
+  avatar_url: string | null;
   criado_em: string;
 }
 
@@ -47,7 +49,27 @@ export interface Freight {
   origem_lng: number | null;
   destino_lat: number | null;
   destino_lng: number | null;
+  carga_itens: string | null;
+  carga_peso_kg: number | null;
+  carga_volume_m3: number | null;
   criado_em: string;
+}
+
+export interface Truck {
+  id: number;
+  user_id: number;
+  nome: string;
+  tipo: string;
+  comprimento_cm: number;
+  largura_cm: number;
+  altura_cm: number;
+  capacidade_kg: number;
+  consumo_km_l: number;
+  diesel_preco: number;
+  custo_fixo: number;
+  margem_percentual: number;
+  criado_em: string;
+  atualizado_em: string;
 }
 
 // Frete enriquecido para listagens (JOINs + agregações)

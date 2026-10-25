@@ -6,3 +6,11 @@ dist/
 .DS_Store
 coverage/
 package-lock.json.tmp
+
+# Cópia local da versão antiga; mantida fora do Git
+legacy/
+
+# Android: build local e segredos de assinatura
+android/build/
+android/keystore.properties
+.secrets/
