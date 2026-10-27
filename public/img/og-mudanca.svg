@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="fundo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f172a"/>
+      <stop offset=".55" stop-color="#1e3a8a"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="van" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#60a5fa"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="caixa" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fcd34d"/>
+      <stop offset="1" stop-color="#f59e0b"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#fundo)"/>
+  <circle cx="1050" cy="110" r="210" fill="#3b82f6" opacity=".18"/>
+  <circle cx="1110" cy="520" r="260" fill="#f59e0b" opacity=".08"/>
+
+  <g transform="translate(72 84)">
+    <rect x="0" y="0" width="58" height="58" rx="16" fill="#f59e0b"/>
+    <path d="M12 38V21c0-1.5 1.5-3 3-3h17v20" fill="none" stroke="#fff" stroke-width="3.4" stroke-linejoin="round"/>
+    <path d="M32 24h8l6 8v6h-4" fill="none" stroke="#fff" stroke-width="3.4" stroke-linejoin="round"/>
+    <circle cx="21" cy="41" r="4" fill="#fff"/>
+    <circle cx="39" cy="41" r="4" fill="#fff"/>
+  </g>
+  <text x="150" y="126" font-family="system-ui,Segoe UI,sans-serif" font-size="30" font-weight="700" fill="#fff">Quero Mudar Já</text>
+
+  <text x="72" y="238" font-family="system-ui,Segoe UI,sans-serif" font-size="66" font-weight="800" fill="#fff">Quem muda publica.</text>
+  <text x="72" y="312" font-family="system-ui,Segoe UI,sans-serif" font-size="66" font-weight="800" fill="#fbbf24">Quem transporta dá o lance.</text>
+  <text x="72" y="370" font-family="system-ui,Segoe UI,sans-serif" font-size="26" fill="#cbd5e1">Mudanças e fretes com lances de transportadores.</text>
+  <text x="72" y="408" font-family="system-ui,Segoe UI,sans-serif" font-size="26" fill="#cbd5e1">Sem taxa de intermediação. Publicar é grátis.</text>
+
+  <g transform="translate(72 468)">
+    <rect x="0" y="0" width="222" height="56" rx="28" fill="#f59e0b"/>
+    <text x="111" y="37" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="20" font-weight="700" fill="#0f172a">Sou cliente</text>
+    <rect x="242" y="0" width="292" height="56" rx="28" fill="#fff"/>
+    <text x="388" y="37" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="20" font-weight="700" fill="#1d4ed8">Sou transportador</text>
+  </g>
+
+  <g transform="translate(620 210)">
+    <ellipse cx="270" cy="350" rx="250" ry="30" fill="#020617" opacity=".3"/>
+    <path d="M40 220c0-26 20-46 46-46h270c18 0 34 10 42 26l34 76c3 7 5 14 5 22v36c0 13-11 24-24 24H64c-13 0-24-11-24-24V220Z" fill="url(#van)"/>
+    <path d="M38 268h396v58H38z" fill="#1e40af" opacity=".45"/>
+    <path d="M250 190h102c8 0 15 5 19 12l32 66H250V190Z" fill="#dbeafe"/>
+    <path d="M262 204h78c6 0 11 3 13 8l22 48h-113V204Z" fill="#93c5fd"/>
+    <path d="M130 190h104v66H130z" fill="#dbeafe"/>
+    <path d="M140 202h84v46h-84z" fill="#bfdbfe"/>
+    <path d="M348 320h46v22h-46z" fill="#fbbf24"/>
+    <path d="M394 320h16v22h-16z" fill="#ef4444"/>
+    <circle cx="132" cy="344" r="42" fill="#0f172a"/>
+    <circle cx="132" cy="344" r="19" fill="#cbd5e1"/>
+    <circle cx="406" cy="344" r="42" fill="#0f172a"/>
+    <circle cx="406" cy="344" r="19" fill="#cbd5e1"/>
+
+    <g transform="translate(-52 110)">
+      <path d="M0 42C0 20 18 2 40 2h76c22 0 40 18 40 40v92c0 22-18 40-40 40H40C18 174 0 156 0 134V42Z" fill="url(#caixa)"/>
+      <path d="M40 2h30v46H40z" fill="#fef3c7" opacity=".8"/>
+      <circle cx="46" cy="72" r="9" fill="#0f172a"/>
+      <circle cx="108" cy="72" r="9" fill="#0f172a"/>
+      <path d="M54 100c12 9 28 9 40 0" fill="none" stroke="#0f172a" stroke-width="5" stroke-linecap="round"/>
+      <path d="M-6 10h92v20H-6z" fill="#1d4ed8" transform="rotate(-5)"/>
+      <rect x="-4" y="-20" width="92" height="34" rx="12" fill="#172554" transform="rotate(-5)"/>
+      <rect x="34" y="174" width="22" height="28" rx="10" fill="#1e293b"/>
+      <rect x="96" y="174" width="22" height="28" rx="10" fill="#1e293b"/>
+    </g>
+
+    <g transform="translate(330 100)">
+      <rect x="0" y="0" width="190" height="94" rx="22" fill="#fff"/>
+      <path d="M24 94h34l-14 30z" fill="#fff"/>
+      <text x="95" y="40" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="22" font-weight="700" fill="#0f172a">Bora mudar?</text>
+      <text x="95" y="68" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="16" fill="#475569">o menor lance vence</text>
+    </g>
+  </g>
+</svg>

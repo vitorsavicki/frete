@@ -4,6 +4,7 @@ import { Hono } from 'hono';
 import { exigirLogin, type Vars } from '../lib/session';
 import { schemaCaminhao, primeiraMensagemErro } from '../lib/validate';
 import { audit, type Truck } from '../lib/db';
+import { lerReferencias } from '../lib/referencias';
 import { CaminhaoPage } from '../pages/Truck';
 import type { AppBindings } from '../lib/bindings';
 
@@ -18,13 +19,14 @@ async function contexto(c: {
   get: (k: 'user') => { id: number } | null;
 }) {
   const user = c.get('user')!;
-  const [alertas, caminhao] = await Promise.all([
+  const [alertas, caminhao, referencias] = await Promise.all([
     c.env.DB.prepare('SELECT COUNT(*) AS n FROM alerts WHERE user_id = ? AND lido = 0')
       .bind(user.id)
       .first<{ n: number }>(),
     c.env.DB.prepare('SELECT * FROM trucks WHERE user_id = ?').bind(user.id).first<Truck>(),
+    lerReferencias(c.env.DB),
   ]);
-  return { alertas: alertas?.n ?? 0, caminhao };
+  return { alertas: alertas?.n ?? 0, caminhao, referencias };
 }
 
 truck.get('/caminhao', async (c) => {
@@ -35,7 +37,7 @@ truck.get('/caminhao', async (c) => {
     return c.redirect(redir('/painel', { erro: 'O perfil de caminhão é exclusivo para transportadores.' }));
   }
 
-  const { alertas, caminhao } = await contexto(c);
+  const { alertas, caminhao, referencias } = await contexto(c);
   const q = c.req.query();
   return c.html(
     <CaminhaoPage
@@ -43,6 +45,7 @@ truck.get('/caminhao', async (c) => {
       alertas={alertas}
       caminhao={caminhao}
       valores={{}}
+      referencias={referencias}
       mensagem={q.msg || null}
       erro={q.erro || null}
     />,
@@ -63,13 +66,14 @@ truck.post('/caminhao', async (c) => {
 
   const resultado = schemaCaminhao.safeParse(bruto);
   if (!resultado.success) {
-    const { alertas, caminhao } = await contexto(c);
+    const { alertas, caminhao, referencias } = await contexto(c);
     return c.html(
       <CaminhaoPage
         user={user!}
         alertas={alertas}
         caminhao={caminhao}
         valores={bruto}
+        referencias={referencias}
         erro={primeiraMensagemErro(resultado.error)}
       />,
       400,
@@ -79,18 +83,28 @@ truck.post('/caminhao', async (c) => {
 
   await c.env.DB.prepare(
     `INSERT INTO trucks (
-       user_id, nome, tipo, comprimento_cm, largura_cm, altura_cm, capacidade_kg,
-       consumo_km_l, diesel_preco, custo_fixo, margem_percentual
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       user_id, nome, tipo, tipo_combustivel, comprimento_cm, largura_cm, altura_cm,
+       capacidade_kg, consumo_km_l, diesel_preco, pedagio_por_km, manutencao_por_km,
+       arla_por_km, taxa_base, horas_servico, custo_hora, custo_ajudante, custo_fixo,
+       margem_percentual
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT (user_id) DO UPDATE SET
        nome = excluded.nome,
        tipo = excluded.tipo,
+       tipo_combustivel = excluded.tipo_combustivel,
        comprimento_cm = excluded.comprimento_cm,
        largura_cm = excluded.largura_cm,
        altura_cm = excluded.altura_cm,
        capacidade_kg = excluded.capacidade_kg,
        consumo_km_l = excluded.consumo_km_l,
        diesel_preco = excluded.diesel_preco,
+       pedagio_por_km = excluded.pedagio_por_km,
+       manutencao_por_km = excluded.manutencao_por_km,
+       arla_por_km = excluded.arla_por_km,
+       taxa_base = excluded.taxa_base,
+       horas_servico = excluded.horas_servico,
+       custo_hora = excluded.custo_hora,
+       custo_ajudante = excluded.custo_ajudante,
        custo_fixo = excluded.custo_fixo,
        margem_percentual = excluded.margem_percentual,
        atualizado_em = strftime('%Y-%m-%dT%H:%M:%fZ','now')`,
@@ -99,12 +113,20 @@ truck.post('/caminhao', async (c) => {
       user!.id,
       d.nome,
       d.tipo,
+      d.tipo_combustivel,
       Math.round(d.comprimento * 100),
       Math.round(d.largura * 100),
       Math.round(d.altura * 100),
       Math.round(d.capacidade_kg),
       d.consumo_km_l,
-      d.diesel_preco,
+      d.preco_combustivel,
+      d.pedagio_por_km,
+      d.manutencao_por_km,
+      d.tipo_combustivel === 'diesel' ? d.arla_por_km : 0,
+      d.taxa_base,
+      d.horas_servico,
+      d.custo_hora,
+      d.custo_ajudante,
       d.custo_fixo,
       d.margem_percentual,
     )

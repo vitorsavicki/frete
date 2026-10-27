@@ -75,9 +75,9 @@ export const schemaLance = z.object({
   valor: z
     .string()
     .trim()
-    .min(1, 'Informe o valor do lance')
+    .min(1, 'Informe o valor do orçamento')
     .transform((v) => Number(v.replace(/\./g, '').replace(',', '.')))
-    .pipe(z.number({ message: 'Valor inválido' }).positive('Lance deve ser maior que zero').max(1_000_000)),
+    .pipe(z.number({ message: 'Valor inválido' }).positive('O orçamento deve ser maior que zero').max(1_000_000)),
   mensagem: textoOpcional(500),
 });
 
@@ -95,12 +95,22 @@ export const schemaCaminhao = z.object({
   tipo: z.enum(['fiorino', 'van', 'tres_quartos', 'bau', 'carreta', 'outro'], {
     message: 'Escolha o tipo de caminhão',
   }),
+  tipo_combustivel: z.enum(['diesel', 'gasolina'], {
+    message: 'Escolha diesel ou gasolina',
+  }),
   comprimento: numeroCampo('Comprimento inválido (use metros)', 1, 20),
   largura: numeroCampo('Largura inválida (use metros)', 1, 4),
   altura: numeroCampo('Altura inválida (use metros)', 1, 5),
   capacidade_kg: numeroCampo('Capacidade inválida (use kg)', 100, 40_000),
   consumo_km_l: numeroCampo('Consumo inválido (km/L)', 1, 30),
-  diesel_preco: numeroCampo('Preço do diesel inválido', 1, 20),
+  preco_combustivel: numeroCampo('Preço do combustível inválido', 1, 20),
+  pedagio_por_km: numeroCampo('Pedágio por km inválido', 0, 50),
+  manutencao_por_km: numeroCampo('Manutenção por km inválida', 0, 50),
+  arla_por_km: numeroCampo('ARLA por km inválido', 0, 50),
+  taxa_base: numeroCampo('Taxa de saída inválida', 0, 100_000),
+  horas_servico: numeroCampo('Horas de serviço inválidas', 0, 48),
+  custo_hora: numeroCampo('Custo da hora inválido', 0, 10_000),
+  custo_ajudante: numeroCampo('Custo do ajudante inválido', 0, 10_000),
   custo_fixo: numeroCampo('Custo fixo inválido', 0, 100_000),
   margem_percentual: numeroCampo('Margem inválida (0 a 100%)', 0, 100),
 });

@@ -65,7 +65,17 @@ export interface Truck {
   altura_cm: number;
   capacidade_kg: number;
   consumo_km_l: number;
+  /** Preço do litro do combustível escolhido (coluna histórica `diesel_preco`). */
   diesel_preco: number;
+  /** diesel | gasolina */
+  tipo_combustivel: string;
+  pedagio_por_km: number;
+  manutencao_por_km: number;
+  arla_por_km: number;
+  taxa_base: number;
+  horas_servico: number;
+  custo_hora: number;
+  custo_ajudante: number;
   custo_fixo: number;
   margem_percentual: number;
   criado_em: string;

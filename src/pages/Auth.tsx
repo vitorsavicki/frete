@@ -5,6 +5,7 @@ interface AuthProps {
   erro?: string | null;
   valores?: Record<string, string>;
   googleAtivo?: boolean;
+  papelInicial?: 'cliente' | 'transportador';
 }
 
 function GoogleIcon() {
@@ -35,28 +36,28 @@ const AuthAside: FC = () => (
     <img src="/img/casa.webp" alt="" width="900" height="600" />
     <div class="auth__lado-conteudo">
       <span class="eyebrow eyebrow--claro">Mudança sem estresse</span>
-      <h2>O jeito mais simples de encontrar quem transporta.</h2>
+      <h2>De um sofá a uma casa inteira, com quem faz mudança de verdade.</h2>
       <ul class="auth__lista">
-        <li><span>✓</span> Publique seu frete em poucos minutos</li>
-        <li><span>✓</span> Receba lances de transportadores</li>
-        <li><span>✓</span> Pague só o valor combinado, sem taxas</li>
+        <li><span>✓</span> Publique sua mudança em poucos minutos</li>
+        <li><span>✓</span> Receba orçamentos de caminhoneiros</li>
+        <li><span>✓</span> Pague só o valor combinado, sem taxa do site</li>
       </ul>
-      <div class="auth__depoimento">
-        <strong>“Em menos de um dia eu já tinha três lances.”</strong>
-        <span>Cliente do Quero Mudar Já</span>
-      </div>
+      <p class="auth__nota">
+        Publicar é grátis e não cobramos intermediação. Você decide se aceita ou não cada
+        orçamento.
+      </p>
     </div>
   </aside>
 );
 
 export const LoginPage: FC<AuthProps> = ({ erro, googleAtivo }) => (
-  <Layout titulo="Entrar" user={null} erro={erro} descricao="Entre na sua conta do Quero Mudar Já para acompanhar fretes, lances e notificações.">
+  <Layout titulo="Entrar" user={null} erro={erro} descricao="Entre na sua conta do Quero Mudar Já para acompanhar suas mudanças, orçamentos e avisos.">
     <div class="auth">
       <div class="auth__cartao">
         <div class="auth__cabecalho">
           <span class="eyebrow">Bem-vindo de volta</span>
           <h1>Entrar na sua conta</h1>
-          <p class="auxiliar">Acompanhe seus fretes e lances em um só lugar.</p>
+          <p class="auxiliar">Acompanhe suas mudanças e orçamentos em um só lugar.</p>
         </div>
 
         {googleAtivo && (
@@ -115,19 +116,28 @@ export const LoginPage: FC<AuthProps> = ({ erro, googleAtivo }) => (
   </Layout>
 );
 
-export const CadastroPage: FC<AuthProps> = ({ erro, valores = {}, googleAtivo }) => {
-  const papel = valores.papel === 'transportador' ? 'transportador' : 'cliente';
+export const CadastroPage: FC<AuthProps> = ({
+  erro,
+  valores = {},
+  googleAtivo,
+  papelInicial = 'cliente',
+}) => {
+  const papel =
+    valores.papel === 'transportador' ||
+    (valores.papel == null && papelInicial === 'transportador')
+      ? 'transportador'
+      : 'cliente';
   return (
     <Layout
       titulo="Criar conta grátis"
       user={null}
       erro={erro}
-      descricao="Crie sua conta grátis no Quero Mudar Já. Publique fretes ou dê lances como transportador, sem taxa de intermediação."
+      descricao="Crie sua conta grátis no Quero Mudar Já. Publique sua mudança ou encontre mudanças para fazer, sem taxa de intermediação."
     >
       <div class="auth auth--cadastro">
         <div class="auth__cartao">
           <div class="auth__cabecalho">
-            <span class="eyebrow">Grátis para sempre</span>
+            <span class="eyebrow">Grátis para publicar</span>
             <h1>Criar sua conta</h1>
             <p class="auxiliar">Leva menos de dois minutos. Sem cartão de crédito.</p>
           </div>
@@ -145,8 +155,8 @@ export const CadastroPage: FC<AuthProps> = ({ erro, valores = {}, googleAtivo })
                 />
                 <span class="opcao__icone" aria-hidden="true">📦</span>
                 <span>
-                  <strong>Contratar fretes</strong>
-                  <small>Publicar e receber lances</small>
+                  <strong>Mudar de casa</strong>
+                  <small>Publicar e receber orçamentos</small>
                 </span>
               </label>
               <label class={papel === 'transportador' ? 'opcao ativa' : 'opcao'}>
@@ -159,8 +169,8 @@ export const CadastroPage: FC<AuthProps> = ({ erro, valores = {}, googleAtivo })
                 />
                 <span class="opcao__icone" aria-hidden="true">🚛</span>
                 <span>
-                  <strong>Transportar cargas</strong>
-                  <small>Dar lances nos fretes</small>
+                  <strong>Fazer mudanças</strong>
+                  <small>Ver cargas e enviar meus preços</small>
                 </span>
               </label>
             </fieldset>
@@ -301,8 +311,8 @@ export const CadastroPage: FC<AuthProps> = ({ erro, valores = {}, googleAtivo })
             </div>
 
             <p class="campo__dica">
-              Ao criar a conta você concorda em receber avisos sobre seus fretes e lances por e-mail.
-              Nada de spam.
+              Ao criar a conta você concorda em receber avisos sobre suas mudanças e orçamentos por
+              e-mail. Nada de spam.
             </p>
 
             <button type="submit" class="btn btn-primario btn-bloco btn-grande">

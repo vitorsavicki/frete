@@ -5,6 +5,8 @@ export interface AppBindings {
   DB: D1Database;
   ASSETS: Fetcher;
   AI?: Ai;
+  /** Cloudflare Email Sending (opcional). */
+  EMAIL?: SendEmail;
   RESEND_API_KEY?: string;
   EMAIL_FROM?: string;
   GOOGLE_CLIENT_ID?: string;

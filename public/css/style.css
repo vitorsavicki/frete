@@ -4192,6 +4192,1521 @@ legend {
   }
 }
 
+/* ============================================================
+   Home v2 — papéis claros, mascote e simulador do transportador
+   ============================================================ */
+
+/* ---------- hero novo ---------- */
+.hero--novo {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 34px;
+  padding-block: 30px 10px;
+}
+
+.hero--novo h1 {
+  font-size: clamp(2.2rem, 7.4vw, 3.75rem);
+  max-width: 15ch;
+}
+
+.hero--novo .hero__texto {
+  max-width: 58ch;
+}
+
+.hero__papeis {
+  display: grid;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.papel-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 15px;
+  border: 1px solid var(--borda);
+  border-radius: 16px;
+  background: var(--superficie);
+  color: var(--tinta);
+  box-shadow: var(--sombra-sm);
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.papel-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--marca-borda);
+  box-shadow: var(--sombra);
+  color: var(--tinta);
+}
+
+.papel-card--transportador {
+  background: linear-gradient(135deg, #fffbeb, #fff);
+  border-color: #fde68a;
+}
+
+.papel-card--transportador:hover {
+  border-color: var(--ambar);
+}
+
+.papel-card__icone {
+  flex: none;
+  width: 46px;
+  height: 46px;
+}
+
+.papel-card > span:not(.papel-card__seta):not(.papel-card__icone) {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.papel-card strong {
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.papel-card small {
+  color: var(--cinza);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.papel-card__seta {
+  margin-left: auto;
+  color: var(--marca);
+  font-size: 1.1rem;
+  font-weight: 800;
+  transition: transform 0.16s ease;
+}
+
+.papel-card:hover .papel-card__seta {
+  transform: translateX(3px);
+}
+
+.hero--novo .hero__garantias {
+  margin-top: 16px;
+}
+
+.hero__arte {
+  position: relative;
+  min-width: 0;
+}
+
+.cena-mudanca {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 26px;
+  box-shadow: var(--sombra-forte);
+}
+
+.cena-mudanca--hero {
+  border: 1px solid rgba(191, 219, 254, 0.7);
+}
+
+.hero--novo .hero__selo {
+  font-size: 0.72rem;
+}
+
+.hero--novo .hero__selo--preco {
+  top: 14px;
+  right: 12px;
+  max-width: 170px;
+}
+
+.hero--novo .hero__selo--online {
+  right: 12px;
+  bottom: 14px;
+  left: auto;
+  padding: 8px 12px;
+}
+
+/* ---------- mascote e animações leves ---------- */
+.mascote {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  margin-inline: auto;
+  filter: drop-shadow(0 18px 26px rgba(15, 23, 42, 0.16));
+}
+
+.mascote__corpo {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: mascote-respira 4.6s ease-in-out infinite;
+}
+
+.mascote__braco {
+  transform-box: fill-box;
+  transform-origin: 80% 20%;
+  animation: mascote-acena 3.4s ease-in-out infinite;
+}
+
+.cena__van {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: van-rodando 2.8s ease-in-out infinite;
+}
+
+.cena__estrada {
+  animation: estrada-corre 1.1s linear infinite;
+}
+
+.cena__nuvens {
+  animation: nuvens-passam 9s ease-in-out infinite alternate;
+}
+
+.cena__sofa {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: carga-assenta 3.6s ease-in-out infinite;
+}
+
+.cena__balao {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: balao-surge 5.2s ease-in-out infinite;
+}
+
+.mascote--custo {
+  max-width: 250px;
+  animation: mascote-flutua 5.4s ease-in-out infinite;
+}
+
+.mascote--cta {
+  max-width: 215px;
+  animation: mascote-flutua 6s ease-in-out infinite;
+}
+
+@keyframes mascote-respira {
+  0%,
+  100% {
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    transform: scale(1.015) translateY(-2px);
+  }
+}
+
+@keyframes mascote-flutua {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes mascote-acena {
+  0%,
+  70%,
+  100% {
+    transform: rotate(-8deg);
+  }
+  78%,
+  90% {
+    transform: rotate(7deg);
+  }
+}
+
+@keyframes van-rodando {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateY(-2px) rotate(-0.35deg);
+  }
+}
+
+@keyframes estrada-corre {
+  to {
+    stroke-dashoffset: -62;
+  }
+}
+
+@keyframes nuvens-passam {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(12px);
+  }
+}
+
+@keyframes carga-assenta {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.5px);
+  }
+}
+
+@keyframes balao-surge {
+  0%,
+  84%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  88% {
+    transform: scale(1.035);
+  }
+  92% {
+    transform: scale(1);
+  }
+}
+
+/* ---------- papéis: cliente x transportador ---------- */
+.secao--papeis .secao__descricao {
+  max-width: 60ch;
+}
+
+.fluxo-papeis {
+  display: grid;
+  gap: 16px;
+}
+
+.fluxo-papel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px;
+  border: 1px solid var(--borda);
+  border-radius: 22px;
+  background: var(--superficie);
+  box-shadow: var(--sombra-sm);
+}
+
+.fluxo-papel--cliente {
+  background:
+    radial-gradient(340px 180px at 100% 0%, rgba(37, 99, 235, 0.08), transparent 70%),
+    var(--superficie);
+}
+
+.fluxo-papel--transportador {
+  background:
+    radial-gradient(340px 180px at 100% 0%, rgba(245, 158, 11, 0.12), transparent 70%),
+    var(--superficie);
+}
+
+.fluxo-papel__tag {
+  display: inline-block;
+  margin-bottom: 9px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--marca-clara);
+  color: var(--marca-forte);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fluxo-papel--transportador .fluxo-papel__tag {
+  background: var(--ambar-clara);
+  color: #92400e;
+}
+
+.fluxo-papel h3 {
+  margin: 0 0 5px;
+  font-size: 1.2rem;
+}
+
+.fluxo-papel header p {
+  margin: 0;
+  color: var(--cinza);
+  font-size: 0.88rem;
+}
+
+.fluxo-papel ol {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fluxo-papel li {
+  display: flex;
+  gap: 9px;
+  color: var(--tinta-2);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.fluxo-papel li b {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--marca-clara);
+  color: var(--marca-forte);
+  font-size: 0.7rem;
+}
+
+.fluxo-papel--transportador li b {
+  background: var(--ambar-clara);
+  color: #92400e;
+}
+
+.fluxo-papel .btn {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+/* ---------- catálogo em destaque ---------- */
+.catalogo-faixa {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 20px;
+  border: 1px solid #dbeafe;
+  border-radius: 20px;
+  background:
+    radial-gradient(420px 200px at 100% 0%, rgba(37, 99, 235, 0.1), transparent 70%),
+    linear-gradient(135deg, #f8fbff, #fff);
+}
+
+.catalogo-faixa__texto {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.catalogo-faixa__texto strong {
+  font-size: 1rem;
+}
+
+.catalogo-faixa__texto span {
+  color: var(--cinza);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.catalogo-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.catalogo-chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  background: var(--superficie);
+  color: var(--tinta-2);
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.catalogo-chips__mais {
+  border-style: dashed !important;
+  border-color: var(--marca-borda) !important;
+  background: var(--marca-clara) !important;
+  color: var(--marca-forte) !important;
+  font-weight: 700 !important;
+}
+
+/* ---------- veículos ---------- */
+.veiculos-grade {
+  display: grid;
+  gap: 14px;
+}
+
+.veiculo-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--borda);
+  border-radius: 22px;
+  background: var(--superficie);
+  box-shadow: var(--sombra-sm);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.veiculo-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--marca-borda);
+  box-shadow: var(--sombra);
+}
+
+.veiculo-card__arte {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 16px 16px 0;
+  background:
+    radial-gradient(240px 120px at 50% 100%, rgba(37, 99, 235, 0.1), transparent 70%),
+    linear-gradient(180deg, #f8fbff, #fff);
+}
+
+.veiculo-card__conteudo {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 18px 18px;
+}
+
+.veiculo-card__tag {
+  align-self: flex-start;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.veiculo-card__tag--gasolina {
+  background: var(--verde-clara);
+  color: #047857;
+}
+
+.veiculo-card__tag--diesel {
+  background: var(--ambar-clara);
+  color: #92400e;
+}
+
+.veiculo-card h3 {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.3;
+}
+
+.veiculo-card p {
+  margin: 0;
+  color: var(--cinza);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.veiculo-card small {
+  margin-top: auto;
+  padding-top: 4px;
+  color: var(--tinta-2);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* ---------- painel de custo ---------- */
+.custo-painel {
+  display: grid;
+  gap: 22px;
+  padding: 26px 22px;
+  border-radius: 26px;
+  background:
+    radial-gradient(520px 260px at 100% 0%, rgba(59, 130, 246, 0.5), transparent 70%),
+    radial-gradient(420px 220px at 0% 100%, rgba(245, 158, 11, 0.14), transparent 70%),
+    linear-gradient(140deg, #0f172a, #172554 70%, #1e3a8a);
+  color: #fff;
+  overflow: hidden;
+  box-shadow: var(--sombra-forte);
+}
+
+.custo-painel h2 {
+  max-width: 16ch;
+  color: #fff;
+}
+
+.custo-painel p {
+  max-width: 56ch;
+  margin: 10px 0 0;
+  color: #cbd5e1;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.custo-lista {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.custo-lista li {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: #e2e8f0;
+  font-size: 0.87rem;
+  line-height: 1.4;
+}
+
+.custo-lista span {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 0.85rem;
+}
+
+.custo-painel__arte {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+}
+
+.custo-balao {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: -6px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--tinta);
+  text-align: center;
+  box-shadow: 0 14px 30px rgba(2, 6, 23, 0.3);
+}
+
+.custo-balao strong {
+  font-size: 0.85rem;
+}
+
+.custo-balao span {
+  color: var(--cinza);
+  font-size: 0.74rem;
+}
+
+/* ---------- FAQ ---------- */
+.faq {
+  display: grid;
+  gap: 10px;
+  max-width: 860px;
+  margin-inline: auto;
+}
+
+.faq__item {
+  border: 1px solid var(--borda);
+  border-radius: 16px;
+  background: var(--superficie);
+  box-shadow: var(--sombra-sm);
+  overflow: hidden;
+}
+
+.faq__item summary {
+  position: relative;
+  padding: 15px 46px 15px 17px;
+  cursor: pointer;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.4;
+  list-style: none;
+}
+
+.faq__item summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq__item summary::after {
+  content: '+';
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+  color: var(--marca);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.faq__item[open] summary::after {
+  content: '−';
+}
+
+.faq__item[open] summary {
+  background: #f8fbff;
+}
+
+.faq__item p {
+  margin: 0;
+  padding: 0 17px 16px;
+  color: var(--cinza);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+/* ---------- CTA com mascote ---------- */
+.cta-banda__arte--mascote {
+  display: grid;
+  place-items: center;
+}
+
+.cta-banda--novo {
+  align-items: center;
+}
+
+/* ---------- simulador: novidades ---------- */
+.estimador__parametros {
+  min-width: 0;
+}
+
+.estimador__mercado {
+  margin: 4px 0 0;
+  color: #bfdbfe;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.estimador__mercado[data-saida] {
+  font-weight: 600;
+}
+
+.estimador__aviso[data-aviso-mercado] {
+  margin-top: 10px;
+  padding: 9px 11px;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  border-radius: 10px;
+  background: rgba(251, 191, 36, 0.12);
+  color: #fde68a;
+  font-size: 0.76rem;
+}
+
+.estimador__resultado .btn-bloco {
+  margin-bottom: 10px;
+}
+
+.campo--desativado {
+  opacity: 0.55;
+}
+
+.campo--desativado input {
+  cursor: not-allowed;
+}
+
+.link-mini {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--marca);
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.link-mini:hover {
+  color: var(--marca-forte);
+}
+
+.estimador__resultado .link-mini {
+  color: #93c5fd;
+}
+
+.estimador__resultado .link-mini:hover {
+  color: #dbeafe;
+}
+
+/* ============================================================
+   Montagem da carga — cartões de caixas, plano e mascote ajudante
+   ============================================================ */
+
+/* ---------- mascote que explica ---------- */
+.mascote-ajuda {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin: 18px 0 20px;
+  padding: 14px 16px 14px 10px;
+  overflow: hidden;
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  background:
+    radial-gradient(280px 140px at 0% 100%, rgba(37, 99, 235, 0.1), transparent 70%),
+    linear-gradient(135deg, #f8fbff, #fff 62%, #fffbeb);
+}
+
+.mascote-ajuda .mascote--ajuda {
+  flex: none;
+  width: 88px;
+  max-width: 88px;
+  margin: 0;
+  filter: drop-shadow(0 8px 12px rgba(15, 23, 42, 0.14));
+  animation: mascote-flutua 6.4s ease-in-out infinite;
+}
+
+.mascote-ajuda__balao {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.mascote-ajuda__nome {
+  color: var(--marca-forte);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.mascote-ajuda__balao strong {
+  font-size: 0.93rem;
+  line-height: 1.3;
+}
+
+.mascote-ajuda__balao p {
+  margin: 3px 0 0;
+  color: var(--cinza);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.mascote-ajuda--ok {
+  border-color: #a7f3d0;
+  background:
+    radial-gradient(280px 140px at 0% 100%, rgba(5, 150, 105, 0.1), transparent 70%),
+    linear-gradient(135deg, #f0fdf9, #fff 62%);
+}
+
+.mascote-ajuda--atencao {
+  border-color: #fde68a;
+  background:
+    radial-gradient(280px 140px at 0% 100%, rgba(245, 158, 11, 0.14), transparent 70%),
+    linear-gradient(135deg, #fffbeb, #fff 62%);
+}
+
+.mascote-ajuda--atencao .mascote-ajuda__nome {
+  color: #92400e;
+}
+
+.mascote__olhos {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mascote-pisca 6.8s ease-in-out infinite;
+}
+
+.mascote__braco--aceno {
+  transform-box: fill-box;
+  transform-origin: 18% 82%;
+  animation-duration: 2.7s;
+}
+
+@keyframes mascote-pisca {
+  0%,
+  91%,
+  100% {
+    transform: scaleY(1);
+  }
+  94% {
+    transform: scaleY(0.1);
+  }
+  96% {
+    transform: scaleY(1);
+  }
+}
+
+/* ---------- caixas da mudança ---------- */
+.caixas-carga {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #fde68a;
+  border-radius: 16px;
+  background:
+    radial-gradient(260px 130px at 100% 0%, rgba(245, 158, 11, 0.12), transparent 70%),
+    linear-gradient(135deg, #fffbeb, #fff 70%);
+}
+
+.caixas-carga__cabecalho {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin-bottom: 14px;
+}
+
+.caixas-carga__icone {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  background: #fef3c7;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.caixas-carga h3 {
+  margin: 0 0 2px;
+  font-size: 1rem;
+}
+
+.caixas-carga__cabecalho p {
+  margin: 0;
+  color: var(--cinza);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.caixas-carga > .campo__dica {
+  margin: 10px 0 0;
+}
+
+.caixas-medidas {
+  margin-top: 13px;
+  padding: 12px;
+  border: 1px dashed #fcd34d;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.caixas-medidas .campo__dica {
+  margin: 0 0 10px;
+}
+
+.caixas-medidas[hidden] {
+  display: none;
+}
+
+/* ---------- plano de carregamento ---------- */
+.plano-carga {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--borda);
+  border-radius: 20px;
+  background:
+    radial-gradient(420px 220px at 100% 0%, rgba(37, 99, 235, 0.06), transparent 70%),
+    linear-gradient(180deg, #f8fbff, #fff 45%);
+}
+
+.plano-carga__cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 13px;
+}
+
+.plano-carga__cabecalho > div {
+  min-width: 0;
+}
+
+.plano-carga__cabecalho .eyebrow {
+  margin-bottom: 4px;
+}
+
+.plano-carga__cabecalho h3 {
+  margin: 0 0 4px;
+  font-size: 1.12rem;
+}
+
+.plano-carga__cabecalho .auxiliar {
+  max-width: 62ch;
+  margin: 0;
+}
+
+.plano-carga__veiculo {
+  flex-shrink: 0;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.plano-carga__quadro {
+  padding: 12px 10px 8px;
+  overflow-x: auto;
+  border: 1px solid var(--borda);
+  border-radius: 16px;
+  background:
+    linear-gradient(90deg, rgba(148, 163, 184, 0.07) 1px, transparent 1px) 0 0 / 22px 22px,
+    linear-gradient(rgba(148, 163, 184, 0.07) 1px, transparent 1px) 0 0 / 22px 22px,
+    #fbfdff;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.plano-carga__quadro::before {
+  content: 'Deslize para ver o caminhão inteiro';
+  display: none;
+}
+
+.plano-carga__svg {
+  display: block;
+  width: 100%;
+  min-width: 560px;
+  height: auto;
+}
+
+.plano-carga__svg text {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.plano-carga__equipe {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 9px 2px 0;
+  color: var(--cinza);
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.plano-carga__equipe::before {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--marca);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+/* caminhão */
+.plano-caminhao__parede {
+  fill: #e8eef7;
+  stroke: #d3ddec;
+  stroke-width: 1;
+}
+
+.plano-caminhao__interior {
+  fill: #f8fbff;
+  stroke: #94a3b8;
+  stroke-width: 1.5;
+}
+
+.plano-caminhao__cabine-corpo {
+  fill: #1e40af;
+  stroke: #172554;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.plano-caminhao__vidro {
+  fill: #dbeafe;
+  stroke: #93c5fd;
+  stroke-width: 1.4;
+}
+
+.plano-caminhao__para-choque {
+  fill: #f59e0b;
+}
+
+.plano-caminhao__roda {
+  fill: #1e293b;
+  stroke: #0f172a;
+  stroke-width: 2;
+}
+
+.plano-caminhao__aro {
+  fill: #cbd5e1;
+  stroke: #94a3b8;
+  stroke-width: 1;
+}
+
+.plano-caminhao__piso {
+  fill: none;
+  stroke: #475569;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.plano-caminhao__porta {
+  fill: none;
+  stroke: #94a3b8;
+  stroke-width: 2;
+  stroke-dasharray: 5 4;
+}
+
+.plano-caminhao__porta-aberta {
+  fill: none;
+  stroke: #f59e0b;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* régua de altura */
+.plano-regua path {
+  fill: none;
+  stroke: #cbd5e1;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+.plano-regua text {
+  fill: var(--cinza);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.plano-regua .plano-regua__unidade {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+/* caminhão vazio */
+.plano-vazio__caixa {
+  fill: #eff6ff;
+  stroke: #93c5fd;
+  stroke-width: 1.4;
+  stroke-dasharray: 5 4;
+}
+
+.plano-vazio__texto {
+  fill: var(--cinza);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+/* volumes dentro do caminhão */
+.plano-bloco__caixa {
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+}
+
+.plano-bloco--moveis .plano-bloco__caixa {
+  fill: #bfdbfe;
+  stroke: #2563eb;
+}
+
+.plano-bloco--eletrodomesticos .plano-bloco__caixa {
+  fill: #fde68a;
+  stroke: #b45309;
+}
+
+.plano-bloco--caixas .plano-bloco__caixa {
+  fill: #bbf7d0;
+  stroke: #047857;
+}
+
+.plano-bloco--outros .plano-bloco__caixa {
+  fill: #e2e8f0;
+  stroke: #64748b;
+}
+
+.plano-bloco--fragil .plano-bloco__caixa {
+  stroke: #b91c1c;
+  stroke-width: 1.8;
+  stroke-dasharray: 4 3;
+}
+
+.plano-bloco__nome {
+  fill: #0f172a;
+  font-size: 9px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.plano-bloco__fragil {
+  fill: #b91c1c;
+  font-size: 7.5px;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+/* pessoas organizando a carga */
+.plano-pessoa__sombra {
+  fill: rgba(15, 23, 42, 0.12);
+}
+
+.plano-pessoa__braco {
+  fill: none;
+  stroke: #fcd9b6;
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.plano-pessoa__caixa,
+.plano-pessoa__fita {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: plano-pessoa-carrega 2.9s ease-in-out infinite;
+}
+
+.plano-pessoa--motorista .plano-pessoa__caixa,
+.plano-pessoa--motorista .plano-pessoa__fita {
+  animation-delay: 0.35s;
+}
+
+.plano-pessoa--ajudante .plano-pessoa__caixa,
+.plano-pessoa--ajudante .plano-pessoa__fita {
+  animation-delay: 0.7s;
+}
+
+.plano-pessoa__legenda {
+  fill: #475569;
+  font-size: 7.5px;
+  font-weight: 700;
+}
+
+@keyframes plano-pessoa-carrega {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.6px);
+  }
+}
+
+/* legenda e dicas */
+.plano-carga__rodape {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.plano-carga__legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--tinta-2);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.plano-carga__legenda li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.plano-cor {
+  display: inline-block;
+  flex: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+}
+
+.plano-cor--moveis {
+  background: #bfdbfe;
+  border: 1px solid #2563eb;
+}
+
+.plano-cor--eletrodomesticos {
+  background: #fde68a;
+  border: 1px solid #b45309;
+}
+
+.plano-cor--caixas {
+  background: #bbf7d0;
+  border: 1px solid #047857;
+}
+
+.plano-cor--outros {
+  background: #e2e8f0;
+  border: 1px solid #64748b;
+}
+
+.plano-cor--fragil {
+  background: #fff;
+  border: 1.5px dashed #b91c1c;
+}
+
+.plano-carga__numeros {
+  margin: 7px 0 0;
+  color: var(--cinza);
+  font-size: 0.76rem;
+}
+
+.plano-carga__numeros[hidden] {
+  display: none;
+}
+
+/* vista de cima: faixas de largura */
+.plano-faixas {
+  margin: 10px 2px 0;
+  padding-top: 10px;
+  border-top: 1px dashed var(--borda);
+}
+
+.plano-faixas__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 12px;
+}
+
+.plano-faixas__topo strong {
+  font-size: 0.78rem;
+}
+
+.plano-faixas__topo span {
+  color: var(--cinza);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.plano-faixas__svg {
+  display: block;
+  width: 100%;
+  max-width: 380px;
+  height: auto;
+  margin-top: 5px;
+}
+
+.plano-faixas__svg text {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.plano-faixas__contorno {
+  fill: #eef2f7;
+  stroke: #cbd5e1;
+  stroke-width: 1;
+}
+
+.plano-faixas__barra {
+  fill: #bfdbfe;
+  stroke: #2563eb;
+  stroke-width: 1;
+}
+
+.plano-faixas__faixa--1 .plano-faixas__barra {
+  fill: #bbf7d0;
+  stroke: #047857;
+}
+
+.plano-faixas__faixa--2 .plano-faixas__barra {
+  fill: #fde68a;
+  stroke: #b45309;
+}
+
+.plano-faixas__faixa--vista .plano-faixas__barra {
+  fill: #93c5fd;
+  stroke: #1d4ed8;
+  stroke-width: 1.6;
+}
+
+.plano-faixas__numero {
+  fill: #0f172a;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.plano-faixas__sobra {
+  fill: #f8fafc;
+  stroke: #cbd5e1;
+  stroke-width: 1;
+  stroke-dasharray: 3 2;
+}
+
+.plano-faixas__nota {
+  margin: 4px 0 0;
+  color: var(--cinza);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.plano-carga__dicas {
+  padding: 12px 14px;
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.plano-carga__dicas strong {
+  font-size: 0.82rem;
+}
+
+.plano-carga__dicas ul {
+  display: grid;
+  gap: 4px;
+  margin: 6px 0 0;
+  padding-left: 1.1em;
+  color: var(--tinta-2);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.plano-carga__dicas li::marker {
+  color: var(--marca);
+}
+
+@media (min-width: 560px) {
+  .form-grade--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .form-grade--4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .plano-carga__rodape {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    align-items: start;
+  }
+}
+
+@media (max-width: 559px) {
+  .plano-carga__quadro::before {
+    position: sticky;
+    left: 0;
+    display: block;
+    width: max-content;
+    margin: 0 0 7px 2px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: #e0f2fe;
+    color: #075985;
+    font-size: 0.68rem;
+    font-weight: 700;
+  }
+}
+
+@media (max-width: 479px) {
+  .mascote-ajuda {
+    align-items: flex-start;
+    gap: 9px;
+    padding: 12px 13px 12px 8px;
+  }
+
+  .mascote-ajuda .mascote--ajuda {
+    width: 64px;
+    max-width: 64px;
+    margin-top: 2px;
+  }
+
+  .mascote-ajuda__balao strong {
+    font-size: 0.87rem;
+  }
+
+  .caixas-carga {
+    padding: 13px;
+  }
+}
+
+@media (min-width: 560px) {
+  .hero__papeis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .papel-card {
+    align-items: flex-start;
+  }
+
+  .catalogo-faixa {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    align-items: center;
+    padding: 24px;
+  }
+}
+
+@media (min-width: 720px) {
+  .stats {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .stats__item {
+    border-bottom: 0;
+  }
+
+  .stats__item:nth-child(odd) {
+    border-right: 0;
+  }
+
+  .stats__item + .stats__item {
+    border-left: 1px solid var(--borda);
+  }
+
+  .veiculos-grade {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .faq__item summary {
+    font-size: 0.98rem;
+  }
+}
+
+@media (min-width: 900px) {
+  .hero--novo {
+    grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
+    gap: 44px;
+    padding-block: 44px 14px;
+  }
+
+  .fluxo-papeis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .custo-painel {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+    align-items: center;
+    padding: 36px;
+  }
+
+  .estimador__grade {
+    grid-template-columns: minmax(0, 1fr) 360px;
+  }
+
+  .estimador__resultado {
+    position: sticky;
+    top: calc(var(--header-h) + 18px);
+  }
+
+  .cta-banda--novo {
+    grid-template-columns: minmax(0, 1fr) 280px;
+  }
+}
+
+@media (max-width: 719px) {
+  .hero--novo .hero__selo--preco {
+    top: 10px;
+    right: 9px;
+    max-width: 142px;
+    padding: 7px 10px;
+  }
+
+  .hero--novo .hero__selo--online {
+    right: 9px;
+    bottom: 10px;
+    padding: 7px 10px;
+    font-size: 0.68rem;
+  }
+
+  .custo-painel__arte {
+    max-width: 280px;
+    margin-inline: auto;
+  }
+
+  .estimador__resultado {
+    margin-top: 4px;
+  }
+}
+
+@media (max-width: 359px) {
+  .papel-card {
+    padding: 12px;
+  }
+
+  .catalogo-chips li {
+    font-size: 0.72rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

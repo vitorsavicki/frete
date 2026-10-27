@@ -46,7 +46,10 @@ function seguro(c: { req: { url: string } }): boolean {
 
 auth.get('/cadastro', (c) => {
   if (c.get('user')) return c.redirect('/painel');
-  return c.html(<CadastroPage googleAtivo={googleConfigurado(c.env)} />);
+  const papelInicial = c.req.query('papel') === 'transportador' ? 'transportador' : 'cliente';
+  return c.html(
+    <CadastroPage googleAtivo={googleConfigurado(c.env)} papelInicial={papelInicial} />,
+  );
 });
 
 auth.post('/cadastro', async (c) => {

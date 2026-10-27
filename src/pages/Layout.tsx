@@ -9,6 +9,11 @@ interface LayoutProps {
   mensagem?: string | null;
   erro?: string | null;
   descricao?: string;
+  canonical?: string;
+  imagem?: string;
+  jsonLd?: string;
+  robots?: string;
+  tipo?: string;
 }
 
 function iniciais(user: User): string {
@@ -24,25 +29,52 @@ export const Layout: FC<PropsWithChildren<LayoutProps>> = ({
   mapa = false,
   mensagem,
   erro,
-  descricao = 'Marketplace de fretes e mudanças com leilão reverso: transportadores disputam seu frete e o menor lance vence. Publicar e dar lances é 100% grátis.',
+  descricao = 'Publique sua mudança de graça e receba orçamentos de caminhoneiros. Você compara os preços, escolhe e combina direto com quem vai fazer a mudança.',
+  canonical,
+  imagem = '/img/og-mudanca.png',
+  jsonLd,
+  robots,
+  tipo = 'website',
   children,
-}) => (
+}) => {
+  const imagemAbsoluta =
+    /^https?:\/\//i.test(imagem) || !canonical
+      ? imagem
+      : new URL(imagem, canonical).toString();
+  const tituloCompleto = `${titulo} · Quero Mudar Já`;
+
+  return (
   <html lang="pt-BR">
     <head>
       <meta charset="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <title>{`${titulo} · Quero Mudar Já`}</title>
+      <title>{tituloCompleto}</title>
       <meta name="description" content={descricao} />
       <meta name="theme-color" content="#0f172a" />
-      <meta property="og:type" content="website" />
+      <meta name="robots" content={robots ?? 'index, follow, max-image-preview:large'} />
+      {canonical && <link rel="canonical" href={canonical} />}
+      <meta property="og:type" content={tipo} />
+      <meta property="og:locale" content="pt_BR" />
       <meta property="og:site_name" content="Quero Mudar Já" />
-      <meta property="og:title" content={`${titulo} · Quero Mudar Já`} />
+      <meta property="og:title" content={tituloCompleto} />
       <meta property="og:description" content={descricao} />
-      <meta property="og:image" content="/img/hero-truck.webp" />
+      <meta property="og:image" content={imagemAbsoluta} />
+      <meta property="og:image:alt" content="Ilustração de uma mudança com sofá, caixas e uma van" />
+      {canonical && <meta property="og:url" content={canonical} />}
       <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={tituloCompleto} />
+      <meta name="twitter:description" content={descricao} />
+      <meta name="twitter:image" content={imagemAbsoluta} />
       <link rel="stylesheet" href="/css/style.css" />
       {mapa && <link rel="stylesheet" href="/vendor/leaflet/leaflet.css" />}
       <link rel="icon" href="/img/favicon.svg" type="image/svg+xml" />
+      <link rel="manifest" href="/manifest.webmanifest" />
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLd.replace(/</g, '\\u003c') }}
+        />
+      )}
     </head>
     <body>
       <a href="#conteudo" class="pular">
@@ -94,10 +126,10 @@ export const Layout: FC<PropsWithChildren<LayoutProps>> = ({
           </button>
 
           <nav class="site-nav" id="menu-principal" aria-label="Principal" data-nav>
-            <a href="/fretes">Fretes abertos</a>
+            <a href="/fretes">Mudanças e fretes</a>
             {user?.papel === 'cliente' && (
               <a href="/novo-frete" class="nav-destaque">
-                Publicar frete
+                Publicar mudança
               </a>
             )}
             {user?.papel === 'transportador' && <a href="/caminhao">Meu caminhão</a>}
@@ -168,23 +200,23 @@ export const Layout: FC<PropsWithChildren<LayoutProps>> = ({
               <span class="brand-text">Quero <strong>Mudar</strong> Já</span>
             </a>
             <p class="footer-tagline">
-              Leilão reverso de fretes: você publica, os transportadores disputam e o menor lance vence.
+              Para quem vai mudar e para quem faz a mudança. Publique o que precisa levar e
+              combine direto com o caminhoneiro.
             </p>
           </div>
 
           <nav class="footer-links" aria-label="Rodapé">
             <div>
               <h2>Navegar</h2>
-              <a href="/fretes">Fretes abertos</a>
+              <a href="/fretes">Mudanças abertas</a>
               {user?.papel === 'cliente' ? (
-                <a href="/novo-frete">Publicar frete</a>
+                <a href="/novo-frete">Publicar mudança</a>
               ) : (
                 <a href={user ? '/fretes' : '/cadastro'}>
-                  {user ? 'Encontrar fretes' : 'Publicar frete'}
+                  {user ? 'Encontrar mudanças' : 'Publicar mudança'}
                 </a>
               )}
               {user && <a href="/painel">Meu painel</a>}
-              {user?.papel === 'transportador' && <a href="/caminhao">Meu caminhão</a>}
               <a href="/app">App Android (APK)</a>
             </div>
             <div>
@@ -209,8 +241,8 @@ export const Layout: FC<PropsWithChildren<LayoutProps>> = ({
           </nav>
         </div>
         <div class="container footer-base">
-          <p>© {new Date().getFullYear()} Quero Mudar Já · Feito com Cloudflare Workers + D1</p>
-          <p class="footer-mini">Publicar e dar lances é grátis. Sem taxa de intermediação.</p>
+          <p>© {new Date().getFullYear()} Quero Mudar Já</p>
+          <p class="footer-mini">Publicar é grátis. Você paga só o valor combinado com o caminhoneiro.</p>
         </div>
       </footer>
 
@@ -218,4 +250,5 @@ export const Layout: FC<PropsWithChildren<LayoutProps>> = ({
       <script src="/js/app.js" defer></script>
     </body>
   </html>
-);
+  );
+};

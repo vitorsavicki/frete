@@ -15,6 +15,7 @@ import dashboard from './routes/dashboard';
 import truck from './routes/truck';
 import android from './routes/android';
 import api from './routes/api';
+import { processarFilaEmails } from './lib/email';
 
 const app = new Hono<{ Bindings: AppBindings; Variables: Vars }>();
 
@@ -110,4 +111,18 @@ app.onError((err, c) => {
   );
 });
 
-export default app;
+// O cron é opcional: sem gatilho configurado, o Worker continua atendendo
+// normalmente e os e-mails ficam na fila para a próxima execução.
+export default {
+  fetch: app.fetch,
+  scheduled: async (
+    _event: ScheduledController,
+    env: AppBindings,
+    _ctx: ExecutionContext,
+  ): Promise<void> => {
+    const resultado = await processarFilaEmails(env);
+    if (resultado.processados > 0) {
+      console.log('[email:fila]', JSON.stringify(resultado));
+    }
+  },
+};

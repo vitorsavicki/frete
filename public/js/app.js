@@ -269,7 +269,10 @@
   var coordsForm = { origem: null, destino: null };
   var mapaFormEl = $('[data-mapa-form]');
   var mapaForm = null;
-  var camadaForm = null;
+  var camadaPontosForm = null;
+  var camadaRotaForm = null;
+  var rotasForm = {};
+  var sequenciaRotaForm = 0;
   var statusMapaForm = $('[data-mapa-form-status]');
 
   function configurarIconesLeaflet() {
@@ -294,6 +297,126 @@
     return isFinite(lat) && isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
   }
 
+  function chaveRotaForm(origem, destino) {
+    return (
+      origem.lat.toFixed(4) +
+      ',' +
+      origem.lng.toFixed(4) +
+      ';' +
+      destino.lat.toFixed(4) +
+      ',' +
+      destino.lng.toFixed(4)
+    );
+  }
+
+  function tempoDeRota(minutos) {
+    if (!isFinite(minutos) || minutos <= 0) return '';
+    var horas = Math.floor(minutos / 60);
+    var resto = Math.round(minutos % 60);
+    if (horas && resto) return horas + ' h ' + resto + ' min';
+    if (horas) return horas + ' h';
+    return resto + ' min';
+  }
+
+  function geometriaDaRota(rota) {
+    if (!rota || !rota.geometria || !rota.geometria.length) return [];
+    var pontos = [];
+    for (var i = 0; i < rota.geometria.length; i++) {
+      var ponto = rota.geometria[i];
+      if (ponto && ponto.length >= 2) {
+        var lat = Number(ponto[0]);
+        var lng = Number(ponto[1]);
+        if (coordenadaValida(lat, lng)) pontos.push([lat, lng]);
+      }
+    }
+    return pontos.length >= 2 ? pontos : [];
+  }
+
+  function desenharRotaForm(rota, aproximada) {
+    if (!camadaRotaForm) return;
+    camadaRotaForm.clearLayers();
+    var geometria = geometriaDaRota(rota);
+    if (geometria.length < 2) return;
+
+    var real = rota.fonte === 'osrm' && !aproximada;
+    var opcoes = {
+      color: real ? '#1d4ed8' : '#64748b',
+      weight: real ? 4 : 3,
+      opacity: real ? 0.9 : 0.75,
+    };
+    if (!real) opcoes.dashArray = '7 8';
+    L.polyline(geometria, opcoes).addTo(camadaRotaForm);
+
+    if (!statusMapaForm) return;
+    var distancia = Number(rota.distanciaKm);
+    if (!isFinite(distancia) || distancia <= 0) distancia = 0;
+    var km = fmtNumero.format(Math.round(distancia));
+    if (real) {
+      var tempo = tempoDeRota(Number(rota.duracaoMin));
+      statusMapaForm.textContent =
+        'Rota rodoviária: ' +
+        km +
+        ' km' +
+        (tempo ? ' · ' + tempo : '') +
+        '. Traçado real da estrada.';
+    } else {
+      statusMapaForm.textContent =
+        'Prévia aproximada: ' + km + ' km por estrada (linha reta × 1,25).';
+    }
+  }
+
+  function buscarRotaForm(origem, destino) {
+    var chave = chaveRotaForm(origem, destino);
+    var salva = rotasForm[chave];
+    if (salva) {
+      desenharRotaForm(salva, false);
+      return;
+    }
+
+    // Cada pedido novo invalida o anterior: se o usuário trocar um CEP antes da
+    // resposta chegar, o traçado antigo não sobrescreve o novo.
+    sequenciaRotaForm += 1;
+    var sequencia = sequenciaRotaForm;
+    if (statusMapaForm) statusMapaForm.textContent = 'Calculando a rota rodoviária…';
+
+    var params = new URLSearchParams({
+      origem_lat: String(origem.lat),
+      origem_lng: String(origem.lng),
+      destino_lat: String(destino.lat),
+      destino_lng: String(destino.lng),
+    });
+
+    fetch('/api/rota?' + params.toString(), { headers: { Accept: 'application/json' } })
+      .then(function (resposta) {
+        if (!resposta.ok) throw new Error('rota');
+        return resposta.json();
+      })
+      .then(function (rota) {
+        if (sequencia !== sequenciaRotaForm) return;
+        if (geometriaDaRota(rota).length < 2) throw new Error('rota');
+        rotasForm[chave] = rota;
+        desenharRotaForm(rota, false);
+      })
+      .catch(function () {
+        if (sequencia !== sequenciaRotaForm) return;
+        // Fallback local: mesmo traçado e mesmo fator usados pelo servidor
+        // quando o OSRM não responde. O aviso deixa claro que é aproximado.
+        var linhaReta = haversine(origem.lat, origem.lng, destino.lat, destino.lng);
+        desenharRotaForm(
+          {
+            distanciaKm: Math.round(linhaReta * 1.25 * 10) / 10,
+            duracaoMin: null,
+            geometria: [
+              [origem.lat, origem.lng],
+              [destino.lat, destino.lng],
+            ],
+            fonte: 'aproximada',
+          },
+          true
+        );
+      });
+  }
+
   function atualizarMapaForm() {
     if (!mapaFormEl) return;
     var origem = coordsForm.origem;
@@ -313,34 +436,35 @@
         maxZoom: 19,
         attribution: ATRIBUICAO_OSM,
       }).addTo(mapaForm);
-      camadaForm = L.layerGroup().addTo(mapaForm);
+      camadaPontosForm = L.layerGroup().addTo(mapaForm);
+      camadaRotaForm = L.layerGroup().addTo(mapaForm);
     }
 
-    camadaForm.clearLayers();
+    camadaPontosForm.clearLayers();
+    camadaRotaForm.clearLayers();
+    sequenciaRotaForm += 1;
     var pontos = [];
 
     if (origem) {
-      L.marker([origem.lat, origem.lng]).addTo(camadaForm).bindPopup('Origem');
+      L.marker([origem.lat, origem.lng]).addTo(camadaPontosForm).bindPopup('Origem');
       pontos.push([origem.lat, origem.lng]);
     }
     if (destino) {
-      L.marker([destino.lat, destino.lng]).addTo(camadaForm).bindPopup('Destino');
+      L.marker([destino.lat, destino.lng]).addTo(camadaPontosForm).bindPopup('Destino');
       pontos.push([destino.lat, destino.lng]);
     }
     if (origem && destino) {
+      mapaForm.fitBounds(L.latLngBounds(pontos), { padding: [30, 30], maxZoom: 12 });
+      // Prévia imediata em linha reta enquanto a rota real é calculada. Assim o
+      // mapa nunca fica vazio esperando o OSRM.
       L.polyline(
         [
           [origem.lat, origem.lng],
           [destino.lat, destino.lng],
         ],
-        { color: '#1d4ed8', weight: 3, dashArray: '7 8', opacity: 0.85 }
-      ).addTo(camadaForm);
-      mapaForm.fitBounds(L.latLngBounds(pontos), { padding: [30, 30], maxZoom: 12 });
-      var distancia = Math.round(haversine(origem.lat, origem.lng, destino.lat, destino.lng) * 1.25);
-      if (statusMapaForm) {
-        statusMapaForm.textContent =
-          'Prévia da rota: aproximadamente ' + fmtNumero.format(distancia) + ' km por estrada.';
-      }
+        { color: '#64748b', weight: 3, dashArray: '7 8', opacity: 0.75 }
+      ).addTo(camadaRotaForm);
+      buscarRotaForm(origem, destino);
     } else {
       mapaForm.setView(pontos[0], 11);
       if (statusMapaForm) {
@@ -585,6 +709,125 @@
     }
 
     atualizarVolumeCaminhao();
+
+    // ---------- combustível: diesel ou gasolina ----------
+    var referenciasCaminhao = {};
+    var taxasCaminhao = {};
+    try {
+      referenciasCaminhao = JSON.parse(formCaminhao.getAttribute('data-referencias') || '{}') || {};
+    } catch (e) {
+      referenciasCaminhao = {};
+    }
+    try {
+      taxasCaminhao = JSON.parse(formCaminhao.getAttribute('data-taxas') || '{}') || {};
+    } catch (e) {
+      taxasCaminhao = {};
+    }
+
+    // Formato novo: { combustivel: {...}, taxaBasePorTipo: {...} }.
+    // Formato antigo: { diesel, gasolina }. Os dois continuam aceitos.
+    var precosCombustivel = referenciasCaminhao.combustivel || referenciasCaminhao;
+    if (!taxasCaminhao || Object.keys(taxasCaminhao).length === 0) {
+      taxasCaminhao = referenciasCaminhao.taxaBasePorTipo || {};
+    }
+
+    var seletorCombustivel = $('[data-combustivel-tipo]', formCaminhao);
+    var campoPreco = $('[data-combustivel-preco]', formCaminhao);
+    var campoArlaPerfil = $('[data-arla]', formCaminhao);
+    var caixaArlaPerfil = $('[data-campo-arla]', formCaminhao);
+
+    function combustivelDoPerfil() {
+      return seletorCombustivel && seletorCombustivel.value === 'gasolina' ? 'gasolina' : 'diesel';
+    }
+
+    function atualizarCombustivelPerfil() {
+      var tipo = combustivelDoPerfil();
+      var textoReferencia = $('[data-combustivel-referencia-texto]', formCaminhao);
+      if (textoReferencia && precosCombustivel[tipo] != null) {
+        textoReferencia.textContent = String(precosCombustivel[tipo]);
+      }
+
+      if (campoArlaPerfil) {
+        if (tipo === 'diesel') {
+          campoArlaPerfil.disabled = false;
+          if (Number(campoArlaPerfil.value) === 0 && campoArlaPerfil.getAttribute('data-anterior')) {
+            campoArlaPerfil.value = campoArlaPerfil.getAttribute('data-anterior');
+          }
+        } else {
+          if (campoArlaPerfil.value !== '0') {
+            campoArlaPerfil.setAttribute('data-anterior', campoArlaPerfil.value);
+          }
+          campoArlaPerfil.value = '0';
+          campoArlaPerfil.disabled = true;
+        }
+      }
+      if (caixaArlaPerfil) caixaArlaPerfil.classList.toggle('campo--desativado', tipo !== 'diesel');
+    }
+
+    if (seletorCombustivel) {
+      seletorCombustivel.addEventListener('change', atualizarCombustivelPerfil);
+    }
+
+    var botaoReferenciaCombustivel = $('[data-combustivel-referencia]', formCaminhao);
+    if (botaoReferenciaCombustivel && campoPreco) {
+      botaoReferenciaCombustivel.addEventListener('click', function () {
+        var tipo = combustivelDoPerfil();
+        if (precosCombustivel[tipo] != null) {
+          campoPreco.value = String(precosCombustivel[tipo]);
+          campoPreco.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+    }
+
+    var seletorTipoCaminhao = $('[data-veiculo-tipo]', formCaminhao);
+    function atualizarTaxaSugerida() {
+      if (!seletorTipoCaminhao) return;
+      var tipo = seletorTipoCaminhao.value;
+      var taxa = taxasCaminhao[tipo];
+      var dica = $('[data-taxa-sugestao]', formCaminhao);
+      var botao = $('[data-taxa-referencia]', formCaminhao);
+      if (dica && taxa != null) {
+        var opcao = seletorTipoCaminhao.options[seletorTipoCaminhao.selectedIndex];
+        var rotulo = opcao ? opcao.textContent.toLowerCase() : tipo;
+        dica.textContent = 'Sugestão para ' + rotulo + ': ' + fmtMoeda.format(taxa) + '. ';
+        if (botao) {
+          dica.appendChild(botao);
+          botao.hidden = false;
+        }
+      }
+    }
+
+    if (seletorTipoCaminhao) {
+      seletorTipoCaminhao.addEventListener('change', function () {
+        atualizarTaxaSugerida();
+        // A sugestão acompanha o veículo: fiorino tende a gasolina; pesados,
+        // diesel. O transportador continua livre para trocar depois.
+        if (seletorCombustivel) {
+          var sugerido = seletorTipoCaminhao.value === 'fiorino' ? 'gasolina' : 'diesel';
+          seletorCombustivel.value = sugerido;
+          if (campoPreco && precosCombustivel[sugerido] != null) {
+            campoPreco.value = String(precosCombustivel[sugerido]);
+          }
+          atualizarCombustivelPerfil();
+        }
+      });
+    }
+
+    var botaoTaxa = $('[data-taxa-referencia]', formCaminhao);
+    if (botaoTaxa) {
+      botaoTaxa.addEventListener('click', function () {
+        var tipo = seletorTipoCaminhao ? seletorTipoCaminhao.value : '';
+        var taxa = taxasCaminhao[tipo];
+        var campoTaxa = $('input[name="taxa_base"]', formCaminhao);
+        if (taxa != null && campoTaxa) {
+          campoTaxa.value = String(taxa);
+          campoTaxa.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+    }
+
+    atualizarCombustivelPerfil();
+    atualizarTaxaSugerida();
   }
 
   // ---------- montador de carga (opcional no cadastro do frete) ----------
@@ -598,6 +841,21 @@
     }
 
     var fmtPesoCarga = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 });
+    var TAMANHOS_CAIXA = {
+      pequena: { rotulo: 'Caixas pequenas', pesoKg: 8, comprimentoCm: 40, larguraCm: 30, alturaCm: 30 },
+      media: { rotulo: 'Caixas médias', pesoKg: 15, comprimentoCm: 50, larguraCm: 40, alturaCm: 40 },
+      grande: { rotulo: 'Caixas grandes', pesoKg: 25, comprimentoCm: 60, larguraCm: 50, alturaCm: 50 },
+    };
+
+    function numeroDoCampo(campo) {
+      if (!campo) return 0;
+      var n = Number(String(campo.value).replace(',', '.'));
+      return isFinite(n) ? n : 0;
+    }
+
+    function campoNumerico(nome) {
+      return $('input[name="' + nome + '"]', montador);
+    }
 
     function quantidadeDa(linha) {
       var campo = $('[data-qtd]', linha);
@@ -606,9 +864,73 @@
       return Math.min(20, n);
     }
 
+    function lerCaixas() {
+      var campoQtd = $('[data-caixas-qtd]', montador);
+      var quantidade = Math.floor(numeroDoCampo(campoQtd));
+      if (!isFinite(quantidade) || quantidade <= 0) return null;
+      quantidade = Math.min(200, quantidade);
+
+      var select = $('[data-caixas-tamanho]', montador);
+      var escolha = select ? select.value : 'media';
+      var medidas = TAMANHOS_CAIXA[escolha] || TAMANHOS_CAIXA.media;
+      var nomeCaixas = 'Caixas ' + medidas.rotulo.toLowerCase() + 's';
+      var fragil = false;
+      var campoFragil = $('[data-caixas-fragil]', montador);
+      if (campoFragil && campoFragil.value === '1') fragil = true;
+
+      if (escolha === 'personalizada') {
+        var comprimento = numeroDoCampo(campoNumerico('caixas_comprimento'));
+        var largura = numeroDoCampo(campoNumerico('caixas_largura'));
+        var altura = numeroDoCampo(campoNumerico('caixas_altura'));
+        var peso = numeroDoCampo(campoNumerico('caixas_peso'));
+        var valido =
+          comprimento >= 10 &&
+          comprimento <= 250 &&
+          largura >= 10 &&
+          largura <= 200 &&
+          altura >= 10 &&
+          altura <= 200 &&
+          peso > 0 &&
+          peso <= 500;
+        if (valido) {
+          medidas = {
+            rotulo: 'Caixas (medida informada)',
+            pesoKg: peso,
+            comprimentoCm: comprimento,
+            larguraCm: largura,
+            alturaCm: altura,
+          };
+          nomeCaixas = medidas.rotulo;
+        } else {
+          nomeCaixas = 'Caixas médias';
+        }
+      }
+
+      return {
+        id: 'caixas',
+        nome: fragil ? nomeCaixas + ' (frágil)' : nomeCaixas,
+        categoria: 'Caixas e volumes',
+        emoji: '📦',
+        fragil: fragil,
+        empilhavel: true,
+        quantidade: quantidade,
+        pesoKg: medidas.pesoKg,
+        comprimentoCm: medidas.comprimentoCm,
+        larguraCm: medidas.larguraCm,
+        alturaCm: medidas.alturaCm,
+      };
+    }
+
     function coletarCarga() {
       var itens = [];
       var total = 0;
+
+      var caixas = lerCaixas();
+      if (caixas) {
+        itens.push(caixas);
+        total += caixas.quantidade;
+      }
+
       $$('[data-item-carga]', montador).forEach(function (linha) {
         var quantidade = quantidadeDa(linha);
         if (quantidade <= 0) return;
@@ -617,6 +939,12 @@
         quantidade = Math.min(quantidade, restante);
         total += quantidade;
         itens.push({
+          id: linha.getAttribute('data-item-id') || 'item',
+          nome: linha.getAttribute('data-nome') || 'Item',
+          emoji: linha.getAttribute('data-emoji') || '📦',
+          categoria: linha.getAttribute('data-categoria') || 'Outros',
+          fragil: linha.getAttribute('data-fragil') === '1',
+          empilhavel: linha.getAttribute('data-empilhavel') !== '0',
           quantidade: quantidade,
           pesoKg: Number(linha.getAttribute('data-peso')) || 0,
           comprimentoCm: Number(linha.getAttribute('data-comprimento')) || 0,
@@ -669,6 +997,873 @@
         }
       }
       return noLimite;
+    }
+
+    // ----- plano de carregamento: o mesmo desenho do servidor, em versão resumida -----
+    var PASSO_PLANO = 5;
+    var ALTURA_PLANO = 180;
+    var LARGURA_MAXIMA_PLANO = 900;
+    var TOPO_PLANO = 74;
+    var BASE_PLANO = 48;
+    var CARGO_X_PLANO = 88;
+    var ALTURA_PESSOA_PLANO = 170;
+    var ALTURA_PESSOA_DESENHO_PLANO = 110;
+
+    function classeCategoria(categoria) {
+      if (categoria === 'Móveis') return 'moveis';
+      if (categoria === 'Eletrodomésticos') return 'eletrodomesticos';
+      if (categoria === 'Caixas e volumes') return 'caixas';
+      return 'outros';
+    }
+
+    function escaparHtml(texto) {
+      return String(texto).replace(/[&<>"']/g, function (letra) {
+        if (letra === '&') return '&amp;';
+        if (letra === '<') return '&lt;';
+        if (letra === '>') return '&gt;';
+        if (letra === '"') return '&quot;';
+        return '&#39;';
+      });
+    }
+
+    function cortarTexto(texto, limite) {
+      if (limite < 4) return '';
+      if (texto.length <= limite) return texto;
+      return texto.slice(0, limite - 1).replace(/\s+$/, '') + '…';
+    }
+
+    // Nome curto para caber no desenho; o título completo fica no tooltip.
+    function rotuloCurto(nome) {
+      if (!/^caixa/i.test(nome)) return nome;
+      var n = String(nome).toLowerCase();
+      if (n.indexOf('pequen') >= 0) return 'Cx. P';
+      if (n.indexOf('medida') >= 0) return 'Cx. medida';
+      if (n.indexOf('médi') >= 0 || n.indexOf('medi') >= 0) return 'Cx. M';
+      if (n.indexOf('grande') >= 0) return 'Cx. G';
+      if (n.indexOf('livro') >= 0) return 'Cx. livros';
+      if (n.indexOf('cozinha') >= 0) return 'Cx. cozinha';
+      if (n.indexOf('arquivo') >= 0 || n.indexOf('escrit') >= 0) return 'Cx. arquivo';
+      return 'Cx. medida';
+    }
+
+    function orientarItem(item, veiculo) {
+      var opcoes = [
+        { comprimento: item.comprimentoCm, profundidade: item.larguraCm },
+        { comprimento: item.larguraCm, profundidade: item.comprimentoCm },
+      ].filter(function (opcao) {
+        return (
+          opcao.comprimento > 0 &&
+          opcao.profundidade > 0 &&
+          opcao.comprimento <= veiculo.comprimentoCm &&
+          opcao.profundidade <= veiculo.larguraCm &&
+          item.alturaCm <= veiculo.alturaCm
+        );
+      });
+      opcoes.sort(function (a, b) {
+        return a.comprimento - b.comprimento;
+      });
+      return opcoes[0] || null;
+    }
+
+    function montarBlocos(carga, veiculo) {
+      var unidades = [];
+      var fora = 0;
+
+      carga.itens.forEach(function (item) {
+        var quantidade = Math.max(0, Math.floor(item.quantidade));
+        var orientacao = orientarItem(item, veiculo);
+        if (!orientacao) {
+          fora += quantidade;
+          return;
+        }
+        for (var i = 0; i < quantidade; i++) {
+          unidades.push({
+            item: item,
+            comprimento: orientacao.comprimento,
+            profundidade: orientacao.profundidade,
+            altura: item.alturaCm,
+            empilhavel: item.empilhavel !== false && !item.fragil,
+          });
+        }
+      });
+
+      unidades.sort(function (a, b) {
+        var pisoA = a.empilhavel ? 1 : 0;
+        var pisoB = b.empilhavel ? 1 : 0;
+        if (pisoA !== pisoB) return pisoA - pisoB;
+        if (pisoA === 0) {
+          if (b.altura !== a.altura) return b.altura - a.altura;
+          return b.item.pesoKg - a.item.pesoKg;
+        }
+        var volumeA = a.item.comprimentoCm * a.item.larguraCm * a.item.alturaCm;
+        var volumeB = b.item.comprimentoCm * b.item.larguraCm * b.item.alturaCm;
+        if (volumeB !== volumeA) return volumeB - volumeA;
+        return a.item.pesoKg - b.item.pesoKg;
+      });
+
+      var celulas = Math.max(1, Math.ceil(veiculo.comprimentoCm / PASSO_PLANO));
+      var faixas = [];
+      var blocos = [];
+      var larguraOcupada = 0;
+
+      function criarFaixa(profundidade) {
+        var alturas = [];
+        var suporta = [];
+        for (var c = 0; c < celulas; c++) {
+          alturas.push(0);
+          suporta.push(0);
+        }
+        return {
+          indice: faixas.length,
+          profundidade: profundidade,
+          alturas: alturas,
+          suporta: suporta,
+          volumes: 0,
+        };
+      }
+
+      function cabeProfundidade(faixa, unidade) {
+        var novaLargura = Math.max(faixa.profundidade, unidade.profundidade);
+        return larguraOcupada - faixa.profundidade + novaLargura <= veiculo.larguraCm + 0.5;
+      }
+
+      function confirmarProfundidade(faixa, unidade) {
+        var novaLargura = Math.max(faixa.profundidade, unidade.profundidade);
+        if (novaLargura <= faixa.profundidade) return;
+        larguraOcupada += novaLargura - faixa.profundidade;
+        faixa.profundidade = novaLargura;
+      }
+
+      function buscarPosicao(faixa, unidade, modo) {
+        var larguraCelulas = Math.max(1, Math.ceil(unidade.comprimento / PASSO_PLANO));
+        var melhorInicio = -1;
+        var melhorBase = Infinity;
+
+        for (var inicio = 0; inicio + larguraCelulas <= celulas; inicio++) {
+          var base = faixa.alturas[inicio];
+          if (modo === 'piso' ? base > 0.5 : base <= 0.5) continue;
+
+          var plana = true;
+          var i;
+          for (i = inicio + 1; i < inicio + larguraCelulas; i++) {
+            if (Math.abs(faixa.alturas[i] - base) > 0.5) {
+              plana = false;
+              break;
+            }
+          }
+          if (!plana) continue;
+
+          if (modo === 'empilhar') {
+            var apoio = true;
+            for (i = inicio; i < inicio + larguraCelulas; i++) {
+              if (faixa.suporta[i] !== 1) {
+                apoio = false;
+                break;
+              }
+            }
+            if (!apoio) continue;
+          }
+
+          if (base + unidade.altura > veiculo.alturaCm + 0.5) continue;
+
+          if (base < melhorBase - 0.01) {
+            melhorBase = base;
+            melhorInicio = inicio;
+          }
+        }
+
+        if (melhorInicio < 0) return null;
+        return { inicio: melhorInicio, base: melhorBase };
+      }
+
+      function registrarBloco(faixa, unidade, posicao) {
+        var larguraCelulas = Math.max(1, Math.ceil(unidade.comprimento / PASSO_PLANO));
+        var topo = posicao.base + unidade.altura;
+        for (var c = posicao.inicio; c < posicao.inicio + larguraCelulas; c++) {
+          faixa.alturas[c] = topo;
+          faixa.suporta[c] = unidade.empilhavel ? 1 : 0;
+        }
+
+        faixa.volumes += 1;
+        blocos.push({
+          item: unidade.item,
+          faixa: faixa.indice,
+          x: posicao.inicio * PASSO_PLANO,
+          base: posicao.base,
+          comprimento: Math.min(
+            unidade.comprimento,
+            veiculo.comprimentoCm - posicao.inicio * PASSO_PLANO,
+          ),
+          altura: unidade.altura,
+          profundidade: unidade.profundidade,
+          empilhado: posicao.base > 0.5,
+        });
+      }
+
+      unidades.forEach(function (unidade) {
+        var colocado = false;
+
+        // 1. Piso das faixas que já existem.
+        for (var f = 0; f < faixas.length; f++) {
+          var faixa = faixas[f];
+          if (!cabeProfundidade(faixa, unidade)) continue;
+          var posicaoPiso = buscarPosicao(faixa, unidade, 'piso');
+          if (!posicaoPiso) continue;
+          registrarBloco(faixa, unidade, posicaoPiso);
+          confirmarProfundidade(faixa, unidade);
+          colocado = true;
+          break;
+        }
+
+        // 2. Faixa nova no piso, usando a largura que ainda sobra.
+        if (!colocado && larguraOcupada + unidade.profundidade <= veiculo.larguraCm + 0.5) {
+          var novaFaixa = criarFaixa(unidade.profundidade);
+          var posicaoNova = buscarPosicao(novaFaixa, unidade, 'piso');
+          if (posicaoNova) {
+            registrarBloco(novaFaixa, unidade, posicaoNova);
+            faixas.push(novaFaixa);
+            larguraOcupada += novaFaixa.profundidade;
+            colocado = true;
+          }
+        }
+
+        // 3. Só empilha quando o piso de todas as faixas já está ocupado.
+        // Escolhe a faixa com a base mais baixa para distribuir a altura.
+        if (!colocado && unidade.empilhavel) {
+          var escolhida = null;
+          for (var g = 0; g < faixas.length; g++) {
+            var faixaEmpilhar = faixas[g];
+            if (!cabeProfundidade(faixaEmpilhar, unidade)) continue;
+            var posicaoEmpilhar = buscarPosicao(faixaEmpilhar, unidade, 'empilhar');
+            if (!posicaoEmpilhar) continue;
+            if (!escolhida || posicaoEmpilhar.base < escolhida.posicao.base - 0.01) {
+              escolhida = { faixa: faixaEmpilhar, posicao: posicaoEmpilhar };
+            }
+          }
+          if (escolhida) {
+            registrarBloco(escolhida.faixa, unidade, escolhida.posicao);
+            confirmarProfundidade(escolhida.faixa, unidade);
+            colocado = true;
+          }
+        }
+
+        if (!colocado) fora += 1;
+      });
+
+      var alturaUsada = 0;
+      var comprimentoUsado = 0;
+      faixas.forEach(function (faixa) {
+        for (var a = 0; a < celulas; a++) {
+          if (faixa.alturas[a] > alturaUsada) alturaUsada = faixa.alturas[a];
+          if (faixa.alturas[a] > 0) {
+            comprimentoUsado = Math.max(
+              comprimentoUsado,
+              Math.min(veiculo.comprimentoCm, (a + 1) * PASSO_PLANO),
+            );
+          }
+        }
+      });
+
+      var resumoFaixas = faixas.map(function (faixa) {
+        return {
+          indice: faixa.indice,
+          profundidadeCm: Math.round(faixa.profundidade),
+          volumes: faixa.volumes,
+        };
+      });
+      var volumesAtras = 0;
+      resumoFaixas.forEach(function (faixa) {
+        if (faixa.indice > 0) volumesAtras += faixa.volumes;
+      });
+
+      return {
+        blocos: blocos,
+        faixas: resumoFaixas,
+        colocados: blocos.length,
+        fora: fora,
+        volumesAtras: volumesAtras,
+        alturaUsada: alturaUsada,
+        comprimentoUsado: comprimentoUsado,
+        larguraUsada: larguraOcupada,
+      };
+    }
+
+    function temBlocoAbaixo(bloco, blocos) {
+      for (var i = 0; i < blocos.length; i++) {
+        var outro = blocos[i];
+        if (
+          outro !== bloco &&
+          outro.faixa === bloco.faixa &&
+          outro.x === bloco.x &&
+          Math.abs(outro.base + outro.altura - bloco.base) < 0.6 &&
+          outro.item.id === bloco.item.id
+        ) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function pessoaSvg(papel, x, pisoY, escala) {
+      var camisa = papel === 'cliente' ? '#0f766e' : papel === 'motorista' ? '#1d4ed8' : '#f59e0b';
+      var detalhe = papel === 'cliente' ? '#134e4a' : papel === 'motorista' ? '#172554' : '#b45309';
+      var rotulo =
+        papel === 'cliente' ? 'dono da mudança' : papel === 'motorista' ? 'motorista' : 'ajudante';
+      var s = '';
+      s +=
+        '<g class="plano-pessoa plano-pessoa--' +
+        papel +
+        '" transform="translate(' +
+        x.toFixed(1) +
+        ' ' +
+        pisoY.toFixed(1) +
+        ')">';
+      s += '<g transform="scale(' + escala.toFixed(3) + ')">';
+      s += '<ellipse cx="0" cy="2" rx="24" ry="5" class="plano-pessoa__sombra"/>';
+      s += '<path d="M-11 -68l-9 16M11 -68l9 16" class="plano-pessoa__braco"/>';
+      s += '<rect x="-11" y="-78" width="22" height="48" rx="8" fill="' + camisa + '"/>';
+      if (papel === 'ajudante') {
+        s += '<rect x="-8" y="-73" width="16" height="21" rx="4" fill="#fef3c7" opacity=".9"/>';
+        s += '<path d="M-11 -64h22" stroke="#fff" stroke-width="2.2" opacity=".85"/>';
+      }
+      s +=
+        '<rect x="-19" y="-64" width="38" height="34" rx="3" fill="#fbbf24" stroke="#d97706" stroke-width="1.4" class="plano-pessoa__caixa"/>';
+      s += '<path d="M-19 -52h38M0 -64v34" class="plano-pessoa__fita"/>';
+      s += '<circle cx="-21" cy="-50" r="4.5" fill="#fcd9b6"/>';
+      s += '<circle cx="21" cy="-50" r="4.5" fill="#fcd9b6"/>';
+      s += '<circle cx="0" cy="-94" r="13" fill="#fcd9b6"/>';
+      if (papel === 'cliente') {
+        s +=
+          '<path d="M-12 -99c2-7 9-11 16-9 4 1 7 4 8 9-4-3-9-4-14-3-4 0-7 2-10 3Z" fill="#3f2a1d"/>';
+      } else {
+        s += '<path d="M-13 -99a13 13 0 0 1 26 0Z" fill="' + detalhe + '"/>';
+        s += '<path d="M-15 -99h30" stroke="' + detalhe + '" stroke-width="3" stroke-linecap="round"/>';
+      }
+      s += '<rect x="-9" y="-32" width="7" height="32" rx="3.5" fill="#1e293b"/>';
+      s += '<rect x="2" y="-32" width="7" height="32" rx="3.5" fill="#1e293b"/>';
+      s += '</g>';
+      s += '<text x="0" y="24" text-anchor="middle" class="plano-pessoa__legenda">' + rotulo + '</text>';
+      s += '</g>';
+      return s;
+    }
+
+    function faixasHtml(dados, veiculo) {
+      if (!dados.faixas.length) return '';
+      var larguraVeiculo = Math.max(1, veiculo.larguraCm);
+      var escala = 300 / larguraVeiculo;
+      var acumulado = 0;
+      var partes = dados.faixas
+        .map(function (faixa, indice) {
+          var x = acumulado * escala;
+          acumulado += faixa.profundidadeCm;
+          var largura = Math.max(1.5, faixa.profundidadeCm * escala - 2);
+          var html =
+            '<g class="plano-faixas__faixa plano-faixas__faixa--' +
+            (indice % 3) +
+            (indice === 0 ? ' plano-faixas__faixa--vista' : '') +
+            '">';
+          html +=
+            '<title>Faixa ' +
+            (indice + 1) +
+            ': ' +
+            faixa.volumes +
+            (faixa.volumes === 1 ? ' volume' : ' volumes') +
+            ' em ' +
+            Math.round(faixa.profundidadeCm) +
+            ' cm de largura</title>';
+          html +=
+            '<rect x="' +
+            (x + 1).toFixed(1) +
+            '" y="6" width="' +
+            largura.toFixed(1) +
+            '" height="18" rx="3" class="plano-faixas__barra"/>';
+          if (largura >= 16) {
+            html +=
+              '<text x="' +
+              (x + 1 + largura / 2).toFixed(1) +
+              '" y="19" text-anchor="middle" class="plano-faixas__numero">' +
+              faixa.volumes +
+              '</text>';
+          }
+          html += '</g>';
+          return html;
+        })
+        .join('');
+      var sobra = Math.max(0, larguraVeiculo - acumulado);
+      var html = '<div class="plano-faixas" data-plano-faixas>';
+      html +=
+        '<div class="plano-faixas__topo"><strong>Vista de cima</strong><span>' +
+        dados.faixas.length +
+        (dados.faixas.length === 1 ? ' faixa' : ' faixas') +
+        ' · ' +
+        Math.round(dados.larguraUsada) +
+        ' de ' +
+        Math.round(larguraVeiculo) +
+        ' cm de largura</span></div>';
+      html +=
+        '<svg viewBox="0 0 300 34" class="plano-faixas__svg" role="img" aria-label="Vista de cima da carroceria dividida em faixas de largura">';
+      html += '<title>Divisão da carroceria em faixas de largura</title>';
+      html += '<rect x="0" y="4" width="300" height="22" rx="5" class="plano-faixas__contorno"/>';
+      html += partes;
+      if (sobra > 0.5) {
+        html +=
+          '<rect x="' +
+          (acumulado * escala + 1).toFixed(1) +
+          '" y="6" width="' +
+          Math.max(1, sobra * escala - 2).toFixed(1) +
+          '" height="18" rx="3" class="plano-faixas__sobra"/>';
+      }
+      html += '</svg>';
+      html +=
+        '<p class="plano-faixas__nota">' +
+        (dados.faixas.length === 1
+          ? 'Toda a carga está na faixa 1, que aparece no corte lateral.'
+          : 'O corte lateral mostra a faixa 1. As demais completam a largura da carroceria.') +
+        '</p>';
+      html += '</div>';
+      return html;
+    }
+
+    function svgDoPlano(carga, veiculo, ajudantes) {
+      var alturaCm = Math.max(1, veiculo.alturaCm);
+      var comprimentoCm = Math.max(1, veiculo.comprimentoCm);
+      var escala = Math.min(ALTURA_PLANO / alturaCm, LARGURA_MAXIMA_PLANO / comprimentoCm);
+      var internaL = Math.max(40, comprimentoCm * escala);
+      var internaA = Math.max(24, alturaCm * escala);
+      var escalaPessoa = (ALTURA_PESSOA_PLANO * escala) / ALTURA_PESSOA_DESENHO_PLANO;
+      var meiaPessoa = 24 * escalaPessoa;
+      var espacamentoPessoa = 48 * escalaPessoa + 12;
+      var pisoY = TOPO_PLANO + internaA;
+      var totalAjudantes = Math.max(0, Math.floor(ajudantes || 0));
+      var papeis = totalAjudantes === 0 ? ['cliente'] : ['motorista'];
+      var nAjudantes = Math.min(2, totalAjudantes);
+      for (var a = 0; a < nAjudantes; a++) papeis.push('ajudante');
+      var pessoaBaseX = CARGO_X_PLANO + internaL + 14 + meiaPessoa;
+      var dir = 14 + meiaPessoa * 2 + espacamentoPessoa * (papeis.length - 1) + 22;
+      var largura = CARGO_X_PLANO + internaL + Math.max(56, dir);
+      var altura = pisoY + BASE_PLANO;
+      var cabH = Math.min(110, Math.max(48, internaA * 0.62));
+      var cabY = pisoY - cabH;
+      var dados = montarBlocos(carga, veiculo);
+      var visiveis = dados.blocos.filter(function (bloco) {
+        return bloco.faixa === 0;
+      });
+      var svg = [];
+
+      svg.push(
+        '<svg viewBox="0 0 ' +
+          largura.toFixed(1) +
+          ' ' +
+          altura.toFixed(1) +
+          '" class="plano-carga__svg" role="img" aria-label="' +
+          (carga.total === 0
+            ? 'Caminhão vazio, pronto para receber a mudança'
+            : 'Desenho esquemático da carga dentro do veículo') +
+          '">',
+      );
+      svg.push('<title>Plano de carregamento</title>');
+      svg.push(
+        '<rect x="' +
+          (CARGO_X_PLANO - 8) +
+          '" y="' +
+          (TOPO_PLANO - 8) +
+          '" width="' +
+          (internaL + 16) +
+          '" height="' +
+          (internaA + 16) +
+          '" rx="12" class="plano-caminhao__parede"/>',
+      );
+      svg.push(
+        '<rect x="' +
+          CARGO_X_PLANO +
+          '" y="' +
+          TOPO_PLANO +
+          '" width="' +
+          internaL +
+          '" height="' +
+          internaA +
+          '" rx="6" class="plano-caminhao__interior"/>',
+      );
+
+      svg.push('<g class="plano-caminhao__cabine">');
+      svg.push(
+        '<path d="M12 ' +
+          pisoY +
+          'V' +
+          (cabY + 18) +
+          'q0-18 18-18h26q14 0 18 13l8 22v' +
+          (pisoY - cabY - 35) +
+          'H12Z" class="plano-caminhao__cabine-corpo"/>',
+      );
+      svg.push(
+        '<path d="M24 ' +
+          (cabY + 18) +
+          'h36q8 0 11 8l7 19H24V' +
+          (cabY + 18) +
+          'Z" class="plano-caminhao__vidro"/>',
+      );
+      svg.push(
+        '<rect x="24" y="' +
+          (pisoY - 12) +
+          '" width="' +
+          (CARGO_X_PLANO - 34) +
+          '" height="12" rx="3" class="plano-caminhao__para-choque"/>',
+      );
+      svg.push(
+        '<circle cx="' +
+          (CARGO_X_PLANO - 28) +
+          '" cy="' +
+          (pisoY + 10) +
+          '" r="16" class="plano-caminhao__roda"/>',
+      );
+      svg.push(
+        '<circle cx="' +
+          (CARGO_X_PLANO - 28) +
+          '" cy="' +
+          (pisoY + 10) +
+          '" r="6" class="plano-caminhao__aro"/>',
+      );
+      svg.push(
+        '<circle cx="' +
+          (CARGO_X_PLANO + internaL - 28) +
+          '" cy="' +
+          (pisoY + 10) +
+          '" r="16" class="plano-caminhao__roda"/>',
+      );
+      svg.push(
+        '<circle cx="' +
+          (CARGO_X_PLANO + internaL - 28) +
+          '" cy="' +
+          (pisoY + 10) +
+          '" r="6" class="plano-caminhao__aro"/>',
+      );
+      svg.push('</g>');
+
+      svg.push('<path d="M' + CARGO_X_PLANO + ' ' + pisoY + 'h' + internaL + '" class="plano-caminhao__piso"/>');
+      svg.push(
+        '<path d="M' +
+          (CARGO_X_PLANO + internaL) +
+          ' ' +
+          TOPO_PLANO +
+          'v' +
+          internaA +
+          '" class="plano-caminhao__porta"/>',
+      );
+      svg.push(
+        '<path d="M' +
+          (CARGO_X_PLANO + internaL + 7) +
+          ' ' +
+          (TOPO_PLANO + 8) +
+          'l12 18-12 18" class="plano-caminhao__porta-aberta"/>',
+      );
+
+      svg.push('<g class="plano-regua">');
+      svg.push('<path d="M' + (CARGO_X_PLANO - 18) + ' ' + TOPO_PLANO + 'v' + internaA + '"/>');
+      svg.push('<path d="M' + (CARGO_X_PLANO - 23) + ' ' + TOPO_PLANO + 'h9"/>');
+      svg.push('<path d="M' + (CARGO_X_PLANO - 23) + ' ' + (TOPO_PLANO + internaA / 2) + 'h9"/>');
+      svg.push('<path d="M' + (CARGO_X_PLANO - 23) + ' ' + pisoY + 'h9"/>');
+      svg.push(
+        '<text x="' +
+          (CARGO_X_PLANO - 27) +
+          '" y="' +
+          (TOPO_PLANO + 4) +
+          '" text-anchor="end">' +
+          Math.round(alturaCm) +
+          '</text>',
+      );
+      svg.push(
+        '<text x="' +
+          (CARGO_X_PLANO - 27) +
+          '" y="' +
+          (TOPO_PLANO + internaA / 2 + 4) +
+          '" text-anchor="end">' +
+          Math.round(alturaCm / 2) +
+          '</text>',
+      );
+      svg.push(
+        '<text x="' + (CARGO_X_PLANO - 27) + '" y="' + (pisoY + 4) + '" text-anchor="end">0</text>',
+      );
+      svg.push(
+        '<text x="' +
+          (CARGO_X_PLANO - 27) +
+          '" y="' +
+          (TOPO_PLANO - 12) +
+          '" text-anchor="end" class="plano-regua__unidade">cm</text>',
+      );
+      svg.push('</g>');
+
+      if (carga.total === 0) {
+        svg.push('<g class="plano-vazio">');
+        svg.push(
+          '<rect x="' +
+            (CARGO_X_PLANO + 22) +
+            '" y="' +
+            (pisoY - 58) +
+            '" width="86" height="58" rx="6" class="plano-vazio__caixa"/>',
+        );
+        svg.push(
+          '<rect x="' +
+            (CARGO_X_PLANO + 118) +
+            '" y="' +
+            (pisoY - 42) +
+            '" width="58" height="42" rx="6" class="plano-vazio__caixa"/>',
+        );
+        svg.push(
+          '<text x="' +
+            (CARGO_X_PLANO + 26) +
+            '" y="' +
+            (pisoY - 70) +
+            '" class="plano-vazio__texto">escolha os itens para montar o carregamento</text>',
+        );
+        svg.push('</g>');
+      }
+
+      visiveis.forEach(function (bloco) {
+        var larguraBloco = Math.max(2, bloco.comprimento * escala - 1);
+        var alturaBloco = Math.max(2, bloco.altura * escala - 1);
+        var x = CARGO_X_PLANO + bloco.x * escala;
+        var y = TOPO_PLANO + (internaA - (bloco.base + bloco.altura) * escala);
+        var maxChars = Math.floor((larguraBloco - 6) / 5);
+        var rotulo = temBlocoAbaixo(bloco, visiveis)
+          ? ''
+          : cortarTexto(rotuloCurto(bloco.item.nome), maxChars);
+        var fragil = bloco.item.fragil;
+        svg.push(
+          '<g class="plano-bloco plano-bloco--' +
+            classeCategoria(bloco.item.categoria) +
+            (fragil ? ' plano-bloco--fragil' : '') +
+            '">',
+        );
+        svg.push(
+          '<title>' +
+            escaparHtml(bloco.item.nome) +
+            (fragil ? ' (frágil)' : '') +
+            ' · base a ' +
+            Math.round(bloco.base) +
+            ' cm · ' +
+            Math.round(bloco.altura) +
+            ' cm de altura</title>',
+        );
+        svg.push(
+          '<rect x="' +
+            x.toFixed(1) +
+            '" y="' +
+            y.toFixed(1) +
+            '" width="' +
+            larguraBloco.toFixed(1) +
+            '" height="' +
+            alturaBloco.toFixed(1) +
+            '" rx="3" class="plano-bloco__caixa"/>',
+        );
+        if (rotulo && alturaBloco >= 16 && larguraBloco >= 30) {
+          svg.push(
+            '<text x="' +
+              (x + 5).toFixed(1) +
+              '" y="' +
+              (y + Math.min(alturaBloco - 6, 14)).toFixed(1) +
+              '" class="plano-bloco__nome">' +
+              escaparHtml(rotulo) +
+              '</text>',
+          );
+        }
+        if (fragil && larguraBloco >= 42 && alturaBloco >= 26) {
+          svg.push(
+            '<text x="' +
+              (x + larguraBloco - 5).toFixed(1) +
+              '" y="' +
+              (y + alturaBloco - 6).toFixed(1) +
+              '" text-anchor="end" class="plano-bloco__fragil">frágil</text>',
+          );
+        }
+        svg.push('</g>');
+      });
+
+      papeis.forEach(function (papel, indice) {
+        svg.push(pessoaSvg(papel, pessoaBaseX + indice * espacamentoPessoa, pisoY, escalaPessoa));
+      });
+
+      svg.push('</svg>');
+      svg.push(
+        '<p class="plano-carga__equipe">' +
+          (totalAjudantes === 0
+            ? 'Sem ajudante: quem organiza a carga é o dono da mudança.'
+            : 'Com ' +
+              totalAjudantes +
+              (totalAjudantes === 1 ? ' ajudante' : ' ajudantes') +
+              ': o motorista e a equipe organizam a carga.') +
+          '</p>',
+      );
+      svg.push(faixasHtml(dados, veiculo));
+
+      return { html: svg.join(''), dados: dados };
+    }
+
+    function dicasDoPlano(carga, veiculo) {
+      var dados = montarBlocos(carga, veiculo);
+      var nomes = carga.itens
+        .map(function (item) {
+          return String(item.nome).toLowerCase();
+        })
+        .join(' ');
+      var dicas = ['Comece pelos itens pesados e grandes, rente à frente da carroceria e sempre no chão.'];
+      var fragil = carga.itens.some(function (item) {
+        return item.fragil;
+      });
+      if (dados.fora > 0) {
+        dicas.push(
+          dados.fora +
+            (dados.fora === 1 ? ' volume ficou' : ' volumes ficaram') +
+            ' fora do desenho. Confirme as medidas ou pense em duas viagens.',
+        );
+      }
+      if (fragil) {
+        dicas.push('Frágeis por último e por cima, com manta, cantoneira e amarração sem apertar painéis ou portas.');
+      }
+      if (nomes.indexOf('geladeira') >= 0 || nomes.indexOf('freezer') >= 0) {
+        dicas.push('Geladeira em pé e amarrada, longe da porta. Depois da mudança, espere algumas horas antes de ligar.');
+      }
+      if (nomes.indexOf('colch') >= 0) {
+        dicas.push('Colchão em pé ou apoiado em superfície plana. Nunca dobre nem apoie peso em cima.');
+      }
+      if (nomes.indexOf('tv') >= 0 || nomes.indexOf('espelho') >= 0 || nomes.indexOf('vidro') >= 0) {
+        dicas.push('TV, espelhos e vidros na vertical, embalados e presos para não torcerem durante a viagem.');
+      }
+      if (nomes.indexOf('caixa') >= 0) {
+        dicas.push('Numere as caixas por ambiente e deixe as mais leves no topo. Caixas de livros vão no chão.');
+      }
+      if (dados.volumesAtras > 0) {
+        dicas.push(
+          'O corte mostra a faixa 1; as faixas de trás completam a largura. Distribua o peso entre os dois lados.',
+        );
+      }
+      if (dados.alturaUsada > veiculo.alturaCm * 0.85) {
+        dicas.push('A carga chega perto do teto. Deixe folga para amarração e para a suspensão trabalhar.');
+      }
+      if (veiculo.capacidadeKg > 0 && carga.pesoKg / veiculo.capacidadeKg > 0.8) {
+        dicas.push('Peso elevado: distribua a carga sobre o eixo e confira a tara e a lotação antes de viajar.');
+      }
+      if (dicas.length === 1 && carga.itens.length > 0) {
+        dicas.push('Passe uma cinta ou corda de ponta a ponta e confira a amarração antes de fechar a porta.');
+      }
+      return dicas.slice(0, 6);
+    }
+
+    function atualizarMascote(carga, sugestao) {
+      var fala = $('[data-mascote-fala]', montador);
+      var detalhe = $('[data-mascote-detalhe]', montador);
+      var ajuda = $('[data-mascote-ajuda]', montador);
+      if (!fala) return;
+
+      ajuda.classList.remove('mascote-ajuda--atencao', 'mascote-ajuda--ok');
+      if (carga.total === 0) {
+        fala.textContent = 'Comece pelo que é maior.';
+        if (detalhe) {
+          detalhe.textContent =
+            'Geladeira, cama e sofá definem o veículo. As caixas entram depois, nos espaços que sobram.';
+        }
+      } else if (sugestao) {
+        fala.textContent =
+          'Sua mudança tem ' +
+          fmtNumero.format(carga.volumeM3) +
+          ' m³ e ' +
+          fmtPesoCarga.format(Math.round(carga.pesoKg)) +
+          ' kg.';
+        if (detalhe) {
+          detalhe.textContent =
+            'O menor veículo que cabe é ' +
+            sugestao.veiculo.nome +
+            '. O desenho mostra como a carga se organiza.';
+        }
+        if (sugestao.analise.status === 'limite') ajuda.classList.add('mascote-ajuda--atencao');
+        else ajuda.classList.add('mascote-ajuda--ok');
+      } else {
+        fala.textContent = 'Essa carga passa de uma carreta.';
+        if (detalhe) {
+          detalhe.textContent =
+            'Provavelmente serão duas viagens. Vale conversar com o caminhoneiro antes de fechar.';
+        }
+        ajuda.classList.add('mascote-ajuda--atencao');
+      }
+    }
+
+    function atualizarNumerosDoPlano(dados, carga) {
+      var numeros = $('[data-plano-numeros]', montador);
+      if (!numeros) return;
+
+      if (!dados || carga.total === 0) {
+        numeros.hidden = true;
+        numeros.textContent = '';
+        return;
+      }
+
+      var partes = [
+        dados.colocados +
+          ' de ' +
+          carga.total +
+          (carga.total === 1 ? ' volume acomodado' : ' volumes acomodados'),
+      ];
+      if (dados.volumesAtras > 0) {
+        partes.push(
+          dados.volumesAtras +
+            (dados.volumesAtras === 1 ? ' na faixa de trás' : ' nas faixas de trás'),
+        );
+      }
+      if (dados.fora > 0) partes.push(dados.fora + ' fora');
+      partes.push(Math.round(dados.alturaUsada) + ' cm de altura usada');
+      numeros.textContent = partes.join(' · ');
+      numeros.hidden = false;
+    }
+
+    function atualizarPlano(carga, sugestao) {
+      var quadro = $('[data-plano-quadro]', montador);
+      var dicasEl = $('[data-plano-dicas]', montador);
+      var chip = $('[data-plano-veiculo]', montador);
+      var tituloEl = $('[data-plano-titulo]', montador);
+      if (!quadro) return;
+
+      var veiculo = sugestao ? sugestao.veiculo : veiculosCarga[1] || veiculosCarga[0];
+      if (!veiculo) return;
+
+      var form = montador.closest('form');
+      var campoAjudantes = form ? $('input[name="ajudantes"]', form) : null;
+      var ajudantes = campoAjudantes ? Math.max(0, Math.floor(Number(campoAjudantes.value) || 0)) : 0;
+
+      var resultado = svgDoPlano(carga, veiculo, ajudantes);
+      quadro.innerHTML = resultado.html;
+      atualizarNumerosDoPlano(resultado.dados, carga);
+      if (tituloEl) {
+        tituloEl.textContent =
+          carga.total === 0 ? 'Seu caminhão, pronto para a mudança' : 'Como a carga se encaixa';
+      }
+      if (chip) {
+        chip.textContent =
+          (veiculo.emoji ? veiculo.emoji + ' ' : '') +
+          veiculo.nome +
+          ' · ' +
+          veiculo.comprimentoCm +
+          ' × ' +
+          veiculo.larguraCm +
+          ' × ' +
+          veiculo.alturaCm +
+          ' cm';
+      }
+
+      if (dicasEl) {
+        var dicas =
+          carga.total === 0
+            ? [
+                'Monte a lista de itens para o site calcular peso, volume e veículo.',
+                'Itens pesados vão na frente e no chão. Frágeis vão por cima.',
+                'O desenho é uma prévia: a conferência final é feita no local.',
+              ]
+            : dicasDoPlano(carga, veiculo);
+        var html = '<strong>' + (carga.total === 0 ? 'Antes de carregar' : 'Boas práticas para esta carga') + '</strong><ul>';
+        dicas.forEach(function (dica) {
+          html += '<li>' + escaparHtml(dica) + '</li>';
+        });
+        html += '</ul>';
+        dicasEl.innerHTML = html;
+      }
     }
 
     function atualizarMontador() {
@@ -733,6 +1928,9 @@
           obs.textContent = 'Opcional: monte a carga para estimar peso, volume e veículo.';
         }
       }
+
+      atualizarMascote(carga, sugestao);
+      atualizarPlano(carga, sugestao);
     }
 
     $$('[data-item-carga]', montador).forEach(function (linha) {
@@ -766,29 +1964,109 @@
       });
     });
 
+    var campoCaixasQtd = $('[data-caixas-qtd]', montador);
+    var selectCaixasTamanho = $('[data-caixas-tamanho]', montador);
+    var blocoMedidasCaixas = $('[data-caixas-medidas]', montador);
+    function atualizarMedidasCaixas() {
+      if (!selectCaixasTamanho || !blocoMedidasCaixas) return;
+      blocoMedidasCaixas.hidden = selectCaixasTamanho.value !== 'personalizada';
+    }
+
+    var caixasWrap = $('[data-caixas]', montador);
+    if (caixasWrap) {
+      $$('input, select', caixasWrap).forEach(function (campo) {
+        campo.addEventListener('input', atualizarMontador);
+        campo.addEventListener('change', function () {
+          atualizarMedidasCaixas();
+          atualizarMontador();
+        });
+      });
+    }
+    if (campoCaixasQtd) {
+      campoCaixasQtd.addEventListener('blur', function () {
+        var numero = Math.floor(Number(String(campoCaixasQtd.value).replace(',', '.')));
+        if (!isFinite(numero) || numero <= 0) campoCaixasQtd.value = '';
+        else if (numero > 200) campoCaixasQtd.value = '200';
+        atualizarMontador();
+      });
+    }
+
+    var formMontador = montador.closest('form');
+    var campoAjudantesMontador = formMontador ? $('input[name="ajudantes"]', formMontador) : null;
+    if (campoAjudantesMontador) {
+      campoAjudantesMontador.addEventListener('input', atualizarMontador);
+      campoAjudantesMontador.addEventListener('change', atualizarMontador);
+    }
+
+    atualizarMedidasCaixas();
     atualizarMontador();
   }
 
-  // ---------- estimador de custo ----------
+  // ---------- estimador de custo (exclusivo do transportador) ----------
   var estimador = $('[data-estimador]');
   if (estimador) {
-    var CHAVE_CUSTO = 'frete:custo:v1';
+    var CHAVE_CUSTO = 'frete:custo:v2';
     var iniciais = null;
     try {
       iniciais = JSON.parse(estimador.getAttribute('data-inicial') || 'null');
     } catch (e) {
       iniciais = null;
     }
-    var distanciaLinhaReta = Number(estimador.getAttribute('data-distancia'));
+
+    var referencias = null;
+    try {
+      referencias = JSON.parse(estimador.getAttribute('data-referencias') || 'null');
+    } catch (e) {
+      referencias = null;
+    }
+
+    var distanciaRodoviaria = Number(estimador.getAttribute('data-distancia'));
+    if (!isFinite(distanciaRodoviaria) || distanciaRodoviaria <= 0) distanciaRodoviaria = 0;
+
+    var MERCADO_PADRAO = {
+      fiorino: { rotulo: 'Fiorino', piso: 250, localMaximo: 450, porKmMin: 3.5, porKmMax: 5.5 },
+      van: { rotulo: 'Van', piso: 350, localMaximo: 650, porKmMin: 4, porKmMax: 6.5 },
+      tres_quartos: { rotulo: 'Caminhão 3/4', piso: 450, localMaximo: 850, porKmMin: 5, porKmMax: 8.5 },
+      bau: { rotulo: 'Caminhão baú', piso: 650, localMaximo: 1200, porKmMin: 7, porKmMax: 11 },
+      carreta: { rotulo: 'Carreta', piso: 900, localMaximo: 1800, porKmMin: 9, porKmMax: 14 },
+      outro: { rotulo: 'Outro veículo', piso: 300, localMaximo: 800, porKmMin: 4, porKmMax: 8 },
+    };
+    var COMBUSTIVEL_PADRAO = { diesel: 7.37, gasolina: 6.09 };
+
+    function mercadoAtual() {
+      return (referencias && referencias.mercado) || MERCADO_PADRAO;
+    }
+
+    function combustivelAtual() {
+      return (referencias && referencias.combustivel) || COMBUSTIVEL_PADRAO;
+    }
+
+    function taxasAtuais() {
+      return (referencias && referencias.taxaBasePorTipo) || {
+        fiorino: 120,
+        van: 180,
+        tres_quartos: 250,
+        bau: 400,
+        carreta: 600,
+        outro: 180,
+      };
+    }
+
     var padroes = {
       consumoKmL: 8,
-      precoDiesel: 6.3,
+      precoCombustivel: COMBUSTIVEL_PADRAO.diesel,
       pedagioPorKm: 0.1,
-      manutencaoPorKm: 0.35,
-      arlaPorKm: 0.05,
+      manutencaoPorKm: 0.45,
+      arlaPorKm: 0.06,
       custoFixo: 0,
       margemPercentual: 20,
-      fatorRodovia: 1.25,
+      taxaBase: 180,
+      horasServico: 2,
+      custoHora: 45,
+      custoAjudante: 120,
+      ajudantes: 0,
+      tipoCombustivel: 'diesel',
+      tipoVeiculo: 'van',
     };
 
     function numeroDoCampo(valor, padrao, minimo) {
@@ -801,56 +2079,157 @@
       return n;
     }
 
+    function arredondarMoeda(v) {
+      return Math.round(v * 100) / 100;
+    }
+
+    function arredondarDez(v) {
+      return Math.ceil(v / 10) * 10;
+    }
+
     function lerParametros() {
       var p = {};
       Object.keys(padroes).forEach(function (chave) {
         var campo = $('[data-custo="' + chave + '"]', estimador);
-        p[chave] = numeroDoCampo(campo ? campo.value : padroes[chave], padroes[chave], chave === 'consumoKmL' ? 1 : chave === 'precoDiesel' ? 0.01 : chave === 'fatorRodovia' ? 1 : 0);
+        if (!campo) {
+          p[chave] = padroes[chave];
+          return;
+        }
+        if (chave === 'tipoCombustivel') {
+          p[chave] = campo.value === 'gasolina' ? 'gasolina' : 'diesel';
+        } else if (chave === 'tipoVeiculo') {
+          p[chave] = campo.value || 'van';
+        } else {
+          var minimo =
+            chave === 'consumoKmL'
+              ? 1
+              : chave === 'precoCombustivel'
+                ? 0.01
+                : chave === 'margemPercentual'
+                  ? 0
+                  : 0;
+          p[chave] = numeroDoCampo(campo.value, padroes[chave], minimo);
+        }
       });
+
       p.margemPercentual = Math.min(100, p.margemPercentual);
+      p.ajudantes = Math.max(0, Math.min(20, Math.round(p.ajudantes)));
+      // Gasolina não usa ARLA 32: zera para não cobrar um insumo que não existe.
+      if (p.tipoCombustivel !== 'diesel') p.arlaPorKm = 0;
       return p;
     }
 
     function calcular(p) {
-      var distanciaRodoviariaKm = Math.round(distanciaLinhaReta * p.fatorRodovia * 10) / 10;
-      var litros = distanciaRodoviariaKm / p.consumoKmL;
-      var combustivel = litros * p.precoDiesel;
-      var pedagio = distanciaRodoviariaKm * p.pedagioPorKm;
-      var manutencao = distanciaRodoviariaKm * p.manutencaoPorKm;
-      var arla = distanciaRodoviariaKm * p.arlaPorKm;
-      var custoTotal = combustivel + pedagio + manutencao + arla + p.custoFixo;
+      var distancia = Math.round(distanciaRodoviaria * 10) / 10;
+      var litros = p.consumoKmL > 0 ? distancia / p.consumoKmL : 0;
+      var combustivel = litros * p.precoCombustivel;
+      var pedagio = distancia * p.pedagioPorKm;
+      var manutencao = distancia * p.manutencaoPorKm;
+      var arla = p.tipoCombustivel === 'diesel' ? distancia * p.arlaPorKm : 0;
+      var custoHoras = p.horasServico * p.custoHora;
+      var custoAjudantes = p.ajudantes * p.custoAjudante;
+      var custoTotal =
+        combustivel +
+        pedagio +
+        manutencao +
+        arla +
+        p.taxaBase +
+        custoHoras +
+        custoAjudantes +
+        p.custoFixo;
       var margem = custoTotal * (p.margemPercentual / 100);
-      var arredondar = function (v) {
-        return Math.round(v * 100) / 100;
-      };
+
+      var base = mercadoAtual()[p.tipoVeiculo] || mercadoAtual().van;
+      var pisoMercado = arredondarDez(Math.max(base.piso, distancia * base.porKmMin));
+      var tetoMercado = arredondarDez(
+        Math.max(base.localMaximo, distancia * base.porKmMax, pisoMercado + 100)
+      );
+      var precoCusto = arredondarDez(custoTotal + margem);
+      var precoSugerido = Math.max(precoCusto, pisoMercado);
+
       return {
-        distanciaRodoviariaKm: distanciaRodoviariaKm,
-        combustivel: arredondar(combustivel),
-        pedagio: arredondar(pedagio),
-        manutencao: arredondar(manutencao),
-        arla: arredondar(arla),
-        custoFixo: arredondar(p.custoFixo),
-        custoTotal: arredondar(custoTotal),
-        margem: arredondar(margem),
-        precoMinimo: Math.ceil(custoTotal / 10) * 10,
-        precoSugerido: Math.ceil((custoTotal + margem) / 10) * 10,
+        distanciaRodoviariaKm: distancia,
+        combustivel: arredondarMoeda(combustivel),
+        pedagio: arredondarMoeda(pedagio),
+        manutencao: arredondarMoeda(manutencao),
+        arla: arredondarMoeda(arla),
+        taxaBase: arredondarMoeda(p.taxaBase),
+        custoHoras: arredondarMoeda(custoHoras),
+        custoAjudantes: arredondarMoeda(custoAjudantes),
+        custoFixo: arredondarMoeda(p.custoFixo),
+        custoTotal: arredondarMoeda(custoTotal),
+        margem: arredondarMoeda(margem),
+        custoPorKm: distancia > 0 ? arredondarMoeda(custoTotal / distancia) : 0,
+        precoMinimo: arredondarDez(custoTotal),
+        pisoMercado: pisoMercado,
+        tetoMercado: tetoMercado,
+        precoSugerido: precoSugerido,
+        abaixoDoMercado: precoCusto < pisoMercado,
       };
     }
 
+    function textoMercado(resultado, tipo) {
+      var base = mercadoAtual()[tipo] || mercadoAtual().van;
+      return (
+        'Mercado (' +
+        base.rotulo +
+        '): ' +
+        fmtMoeda.format(resultado.pisoMercado) +
+        ' a ' +
+        fmtMoeda.format(resultado.tetoMercado)
+      );
+    }
+
+    function atualizarCombustivelUI() {
+      var seletor = $('[data-custo="tipoCombustivel"]', estimador);
+      var tipo = seletor && seletor.value === 'gasolina' ? 'gasolina' : 'diesel';
+      var campoArla = $('[data-custo="arlaPorKm"]', estimador);
+      var caixaArla = $('[data-campo-arla]', estimador);
+      var linhaArla = $('[data-linha-arla]', estimador);
+
+      if (campoArla) {
+        if (tipo === 'diesel') {
+          campoArla.disabled = false;
+          if (Number(campoArla.value) === 0 && campoArla.getAttribute('data-anterior')) {
+            campoArla.value = campoArla.getAttribute('data-anterior');
+          }
+        } else {
+          if (campoArla.value !== '0') campoArla.setAttribute('data-anterior', campoArla.value);
+          campoArla.value = '0';
+          campoArla.disabled = true;
+        }
+      }
+      if (caixaArla) caixaArla.classList.toggle('campo--desativado', tipo !== 'diesel');
+      if (linhaArla) linhaArla.hidden = tipo !== 'diesel';
+
+      var referencia = $('[data-combustivel-referencia-texto]', estimador);
+      if (referencia) referencia.textContent = fmtMoeda.format(combustivelAtual()[tipo] || 0);
+    }
+
     function atualizarEstimador() {
-      var resultado = calcular(lerParametros());
+      var parametros = lerParametros();
+      var resultado = calcular(parametros);
       $$('[data-saida]', estimador).forEach(function (saida) {
         var chave = saida.getAttribute('data-saida');
         if (chave === 'distanciaRodoviariaKm') {
           saida.textContent = fmtNumero.format(resultado.distanciaRodoviariaKm) + ' km';
+        } else if (chave === 'faixaMercado') {
+          saida.textContent = textoMercado(resultado, parametros.tipoVeiculo);
         } else if (Object.prototype.hasOwnProperty.call(resultado, chave)) {
           saida.textContent = fmtMoeda.format(resultado[chave]);
         }
       });
+
+      var aviso = $('[data-aviso-mercado]', estimador);
+      if (aviso) aviso.hidden = !resultado.abaixoDoMercado;
+
+      var sugestao = $('[data-usar-sugestao]', estimador);
+      if (sugestao) sugestao.setAttribute('data-valor-sugerido', String(resultado.precoSugerido));
+
+      atualizarCombustivelUI();
     }
 
     function salvarParametros() {
-      if (iniciais) return;
       try {
         var dados = {};
         $$('[data-custo]', estimador).forEach(function (campo) {
@@ -878,8 +2257,82 @@
         atualizarEstimador();
         salvarParametros();
       });
-      campo.addEventListener('change', salvarParametros);
+      campo.addEventListener('change', function () {
+        atualizarEstimador();
+        salvarParametros();
+      });
     });
+
+    var seletorVeiculo = $('[data-custo="tipoVeiculo"]', estimador);
+    if (seletorVeiculo) {
+      seletorVeiculo.addEventListener('change', function () {
+        var tipo = seletorVeiculo.value;
+        var taxa = taxasAtuais()[tipo];
+        var campoTaxa = $('[data-custo="taxaBase"]', estimador);
+        if (taxa != null && campoTaxa) campoTaxa.value = String(taxa);
+        var dica = $('[data-taxa-sugestao]', estimador);
+        if (dica && taxa != null) {
+          var opcao = seletorVeiculo.options[seletorVeiculo.selectedIndex];
+          var rotulo = opcao ? opcao.textContent.split(' — ')[0] : tipo;
+          dica.textContent =
+            'Sugestão para ' + rotulo.toLowerCase() + ': ' + fmtMoeda.format(taxa) + '.';
+        }
+        // O combustível acompanha o veículo; o transportador pode trocar.
+        var seletorCombustivel = $('[data-custo="tipoCombustivel"]', estimador);
+        var combustivelSugerido = tipo === 'fiorino' ? 'gasolina' : 'diesel';
+        if (seletorCombustivel) seletorCombustivel.value = combustivelSugerido;
+        var campoPreco = $('[data-custo="precoCombustivel"]', estimador);
+        if (campoPreco) {
+          campoPreco.value = String(combustivelAtual()[combustivelSugerido]);
+        }
+        atualizarEstimador();
+        salvarParametros();
+      });
+    }
+
+    var botaoReferencia = $('[data-combustivel-referencia]', estimador);
+    if (botaoReferencia) {
+      botaoReferencia.addEventListener('click', function () {
+        var seletor = $('[data-custo="tipoCombustivel"]', estimador);
+        var tipo = seletor && seletor.value === 'gasolina' ? 'gasolina' : 'diesel';
+        var preco = $('[data-custo="precoCombustivel"]', estimador);
+        if (preco) preco.value = String(combustivelAtual()[tipo]);
+        atualizarEstimador();
+        salvarParametros();
+      });
+    }
+
+    var botaoSugestao = $('[data-usar-sugestao]', estimador);
+    if (botaoSugestao) {
+      botaoSugestao.addEventListener('click', function () {
+        var valor = Number(botaoSugestao.getAttribute('data-valor-sugerido') || 0);
+        var campoLance = $('[data-lance-valor]');
+        if (!valor || !campoLance) return;
+        campoLance.value = valor.toLocaleString('pt-BR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        });
+        campoLance.dispatchEvent(new Event('input', { bubbles: true }));
+        campoLance.focus();
+        campoLance.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    }
+
+    // Sem referências embutidas (ex.: página antiga em cache), busca a API.
+    if (!referencias) {
+      fetch('/api/referencias', { headers: { Accept: 'application/json' } })
+        .then(function (resposta) {
+          return resposta.ok ? resposta.json() : null;
+        })
+        .then(function (dados) {
+          if (!dados || !dados.combustivel) return;
+          referencias = dados;
+          atualizarEstimador();
+        })
+        .catch(function () {
+          /* segue com os padrões locais */
+        });
+    }
 
     atualizarEstimador();
   }

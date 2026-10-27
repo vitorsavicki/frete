@@ -44,15 +44,15 @@ export const AppAndroidPage: FC<AppAndroidProps> = ({ user, alertas = 0 }) => (
     titulo="App para Android"
     user={user}
     alertas={alertas}
-    descricao="Baixe grátis o APK do Quero Mudar Já para Android. Publique fretes, receba lances e confira a carga com o seu caminhão direto do celular."
+    descricao="Baixe grátis o APK do Quero Mudar Já para Android. Publique mudanças, receba orçamentos e confira a carga com o seu caminhão direto do celular."
   >
     <section class="app-hero">
       <div class="app-hero__texto">
         <span class="eyebrow">Aplicativo para Android</span>
         <h1>O Quero Mudar Já no seu celular</h1>
         <p class="app-hero__linha">
-          Mesmo marketplace, mesmas contas, agora com ícone na tela inicial. Baixe o APK grátis e
-          acompanhe fretes, lances e seu caminhão de qualquer lugar.
+          Mesmas contas, agora com ícone na tela inicial. Baixe o APK grátis e acompanhe mudanças,
+          orçamentos e seu caminhão de qualquer lugar.
         </p>
         <div class="app-hero__acoes">
           <a class="btn btn-primario btn-grande" href={APK.arquivo} download>
@@ -63,9 +63,9 @@ export const AppAndroidPage: FC<AppAndroidProps> = ({ user, alertas = 0 }) => (
           </span>
         </div>
         <ul class="lista-check app-hero__lista">
-          <li>Publicar fretes e receber lances</li>
+          <li>Publicar mudanças e receber orçamentos</li>
           <li>Conferir a carga com o seu caminhão</li>
-          <li>Calcular custo e enviar o lance</li>
+          <li>Calcular custo e enviar o orçamento</li>
           <li>Sem anúncios e sem compras dentro do app</li>
         </ul>
       </div>
@@ -74,7 +74,7 @@ export const AppAndroidPage: FC<AppAndroidProps> = ({ user, alertas = 0 }) => (
           <div class="app-phone__tela">
             <img src="/img/app-icon-512.png" alt="" width="96" height="96" loading="lazy" />
             <strong>Quero Mudar Já</strong>
-            <small>Fretes, lances e caminhão</small>
+            <small>Mudanças, orçamentos e caminhão</small>
             <span class="app-phone__botao">Abrir o app</span>
           </div>
         </div>
@@ -102,8 +102,8 @@ export const AppAndroidPage: FC<AppAndroidProps> = ({ user, alertas = 0 }) => (
         <span class="app-passo__numero">3</span>
         <h2>Entre e use</h2>
         <p class="auxiliar">
-          Abra o app e entre com a mesma conta do site. Seus fretes, lances e caminhão já estarão
-          lá.
+          Abra o app e entre com a mesma conta do site. Suas mudanças, orçamentos e caminhão já
+          estarão lá.
         </p>
       </article>
     </section>
@@ -117,11 +117,11 @@ export const AppAndroidPage: FC<AppAndroidProps> = ({ user, alertas = 0 }) => (
           </div>
         </div>
         <ul class="lista-check">
-          <li>Ver fretes abertos e filtrar por rota, categoria e data</li>
-          <li>Publicar frete com o montador de carga e o mapa da rota</li>
+          <li>Ver mudanças abertas e filtrar por rota, categoria e data</li>
+          <li>Publicar mudança com o montador de carga e o mapa da rota</li>
           <li>Cadastrar o caminhão e conferir se a carga cabe</li>
-          <li>Calcular custo, pedágio, margem e lance sugerido</li>
-          <li>Acompanhar lances, alertas e o painel</li>
+          <li>Calcular custo, pedágio, margem e orçamento sugerido</li>
+          <li>Acompanhar orçamentos, alertas e o painel</li>
         </ul>
       </section>
 

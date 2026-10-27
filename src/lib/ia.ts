@@ -1,5 +1,5 @@
 // Cloudflare Workers AI (plano grátis: cota diária de neurônios).
-// Usado para melhorar a redação de descrições de frete e mensagens de lance.
+// Usado para melhorar a redação de descrições de mudança e mensagens de orçamento.
 // Se o binding AI não estiver disponível, a interface esconde o botão e a API
 // responde 503 — o formulário continua funcionando normalmente.
 
@@ -11,7 +11,7 @@ const PROMPTS: Record<TipoTextoIa, string> = {
   descricao:
     'Você ajuda a escrever anúncios de frete no Brasil. Reescreva o texto do usuário de forma clara, objetiva e útil para transportadores, citando os itens e o tipo de mudança quando existirem. Responda em português do Brasil, em uma única frase corrida, sem aspas, sem markdown, com no máximo 200 caracteres. Não invente informação que não esteja no texto.',
   mensagem:
-    'Você ajuda transportadores a escrever mensagens curtas para o cliente em um leilão de fretes no Brasil. Reescreva o texto de forma educada, profissional e específica (veículo, ajudante, seguro, prazo), sem prometer o que não foi dito. Responda em português do Brasil, sem aspas, sem markdown, com no máximo 180 caracteres.',
+    'Você ajuda caminhoneiros a escrever mensagens curtas para o cliente em um site de mudanças no Brasil. Reescreva o texto de forma educada, profissional e específica (veículo, ajudante, seguro, prazo), sem prometer o que não foi dito. Responda em português do Brasil, sem aspas, sem markdown, com no máximo 180 caracteres.',
 };
 
 function limparSaida(texto: string, limite: number): string {

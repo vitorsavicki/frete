@@ -6,6 +6,7 @@ import {
   medidasDoCaminhao,
   parseItensDb,
   parseItensForm,
+  parseCaixasForm,
   resumoCarga,
   rotuloTipoVeiculo,
   serializarItens,
@@ -183,5 +184,93 @@ describe('Montador de carga', () => {
 
   it('não sugere veículo para carga vazia', () => {
     expect(sugerirVeiculo(resumoCarga([]))).toBeNull();
+  });
+});
+
+describe('Caixas da mudança', () => {
+  it('usa a caixa média quando só a quantidade é informada', () => {
+    const caixa = parseCaixasForm({ caixas_qtd: '4' });
+
+    expect(caixa).not.toBeNull();
+    expect(caixa).toMatchObject({
+      id: 'caixas',
+      nome: 'Caixas médias',
+      categoria: 'Caixas e volumes',
+      quantidade: 4,
+      pesoKg: 15,
+      comprimentoCm: 50,
+      larguraCm: 40,
+      alturaCm: 40,
+      fragil: false,
+      empilhavel: true,
+    });
+    expect(resumoCarga(caixa ? [caixa] : []).pesoKg).toBe(60);
+  });
+
+  it('aceita os tamanhos pequena e grande', () => {
+    const pequena = parseCaixasForm({ caixas_qtd: '2', caixas_tamanho: 'pequena' });
+    expect(pequena).toMatchObject({
+      nome: 'Caixas pequenas',
+      pesoKg: 8,
+      comprimentoCm: 40,
+      larguraCm: 30,
+      alturaCm: 30,
+    });
+
+    const grande = parseCaixasForm({ caixas_qtd: '2', caixas_tamanho: 'grande' });
+    expect(grande).toMatchObject({
+      nome: 'Caixas grandes',
+      pesoKg: 25,
+      comprimentoCm: 60,
+      larguraCm: 50,
+      alturaCm: 50,
+    });
+  });
+
+  it('usa as medidas personalizadas quando são válidas', () => {
+    const caixa = parseCaixasForm({
+      caixas_qtd: '3',
+      caixas_tamanho: 'personalizada',
+      caixas_comprimento: '80',
+      caixas_largura: '60',
+      caixas_altura: '70',
+      caixas_peso: '30',
+      caixas_fragil: '1',
+    });
+
+    expect(caixa).toMatchObject({
+      nome: 'Caixas (medida informada)',
+      quantidade: 3,
+      pesoKg: 30,
+      comprimentoCm: 80,
+      larguraCm: 60,
+      alturaCm: 70,
+      fragil: true,
+    });
+  });
+
+  it('cai para a caixa média quando a medida personalizada é inválida', () => {
+    const caixa = parseCaixasForm({
+      caixas_qtd: '2',
+      caixas_tamanho: 'personalizada',
+      caixas_comprimento: '0',
+      caixas_largura: '999',
+      caixas_altura: '10',
+      caixas_peso: '0',
+    });
+
+    expect(caixa).toMatchObject({
+      nome: 'Caixas médias',
+      pesoKg: 15,
+      comprimentoCm: 50,
+      larguraCm: 40,
+      alturaCm: 40,
+    });
+  });
+
+  it('ignora quantidade zero e limita a 200 caixas', () => {
+    expect(parseCaixasForm({ caixas_qtd: '0' })).toBeNull();
+    expect(parseCaixasForm({ caixas_qtd: '-4' })).toBeNull();
+    expect(parseCaixasForm({ caixas_qtd: '999' })?.quantidade).toBe(200);
   });
 });

@@ -27,9 +27,9 @@ function iniciais(user: User): string {
 }
 
 function rotuloStatus(status: string): string {
-  if (status === 'aberto') return 'Aberto';
-  if (status === 'encerrado') return 'Encerrado';
-  if (status === 'cancelado') return 'Cancelado';
+  if (status === 'aberto') return 'Aberta';
+  if (status === 'encerrado') return 'Encerrada';
+  if (status === 'cancelado') return 'Cancelada';
   return status;
 }
 
@@ -55,7 +55,7 @@ export const DashboardPage: FC<DashboardProps> = ({
       titulo="Meu painel"
       user={user}
       alertas={alertasNaoLidos}
-      descricao="Acompanhe seus fretes, lances e notificações no Quero Mudar Já."
+      descricao="Acompanhe suas mudanças, orçamentos e notificações no Quero Mudar Já."
     >
       <header class="painel-topo">
         <div class="painel-topo__perfil">
@@ -73,19 +73,19 @@ export const DashboardPage: FC<DashboardProps> = ({
             <h1>Olá, {user.nome}!</h1>
             <p class="auxiliar">
               {clientes
-                ? 'Acompanhe seus fretes, lances recebidos e avisos em um só lugar.'
-                : 'Veja seus lances, acompanhe disputas e encontre novas cargas.'}
+                ? 'Acompanhe suas mudanças, os orçamentos recebidos e os avisos em um só lugar.'
+                : 'Veja seus orçamentos, acompanhe as respostas e encontre novas mudanças.'}
             </p>
           </div>
         </div>
         <div class="painel-topo__acoes">
           {clientes ? (
             <a href="/novo-frete" class="btn btn-primario">
-              + Publicar frete
+              + Publicar mudança
             </a>
           ) : (
             <a href="/fretes" class="btn btn-primario">
-              Encontrar fretes <span aria-hidden="true">→</span>
+              Encontrar mudanças <span aria-hidden="true">→</span>
             </a>
           )}
         </div>
@@ -96,15 +96,15 @@ export const DashboardPage: FC<DashboardProps> = ({
           <>
             <div class="painel-stat">
               <strong>{fretesAbertos}</strong>
-              <span>fretes abertos</span>
+              <span>mudanças abertas</span>
             </div>
             <div class="painel-stat">
               <strong>{meusFretes.length}</strong>
-              <span>fretes publicados</span>
+              <span>mudanças publicadas</span>
             </div>
             <div class="painel-stat">
               <strong>{lancesRecebidos}</strong>
-              <span>lances recebidos</span>
+              <span>orçamentos recebidos</span>
             </div>
             <div class="painel-stat painel-stat--destaque">
               <strong>{alertasNaoLidos}</strong>
@@ -115,19 +115,19 @@ export const DashboardPage: FC<DashboardProps> = ({
           <>
             <div class="painel-stat">
               <strong>{meusLances.length}</strong>
-              <span>lances enviados</span>
+              <span>orçamentos enviados</span>
             </div>
             <div class="painel-stat">
               <strong>{lancesEmDisputa}</strong>
-              <span>em disputa</span>
+              <span>aguardando resposta</span>
             </div>
             <div class="painel-stat">
               <strong>{lancesVencidos}</strong>
-              <span>lances vencidos</span>
+              <span>orçamentos aceitos</span>
             </div>
             <div class="painel-stat painel-stat--destaque">
               <strong>{dinheiro(valorVencido)}</strong>
-              <span>em fretes ganhos</span>
+              <span>em mudanças fechadas</span>
             </div>
           </>
         )}
@@ -139,8 +139,8 @@ export const DashboardPage: FC<DashboardProps> = ({
             <section class="cartao">
               <div class="cartao__cabecalho">
                 <div>
-                  <h2>Meus fretes</h2>
-                  <p class="auxiliar">{meusFretes.length === 0 ? 'Publique o primeiro frete para começar.' : 'Acompanhe os lances e escolha o vencedor.'}</p>
+                  <h2>Minhas mudanças</h2>
+                  <p class="auxiliar">{meusFretes.length === 0 ? 'Publique a primeira mudança para começar.' : 'Acompanhe os orçamentos e escolha o melhor.'}</p>
                 </div>
                 <a href="/novo-frete" class="btn btn-fantasma btn-pequeno">
                   Publicar
@@ -150,10 +150,10 @@ export const DashboardPage: FC<DashboardProps> = ({
               {meusFretes.length === 0 ? (
                 <div class="estado-vazio estado-vazio--compacto">
                   <span class="estado-vazio__emoji" aria-hidden="true">📦</span>
-                  <h3>Nenhum frete publicado ainda</h3>
-                  <p class="auxiliar">Descreva sua mudança e receba lances de transportadores.</p>
+                  <h3>Nenhuma mudança publicada ainda</h3>
+                  <p class="auxiliar">Descreva sua mudança e receba orçamentos de caminhoneiros.</p>
                   <a href="/novo-frete" class="btn btn-primario btn-pequeno">
-                    Publicar meu primeiro frete
+                    Publicar minha primeira mudança
                   </a>
                 </div>
               ) : (
@@ -173,9 +173,9 @@ export const DashboardPage: FC<DashboardProps> = ({
                       </p>
                       <div class="item-painel__meta">
                         <span><span aria-hidden="true">📅</span> {dataCurta(f.data_retirada)}</span>
-                        <span><span aria-hidden="true">🤝</span> {f.total_lances} {f.total_lances === 1 ? 'lance' : 'lances'}</span>
+                        <span><span aria-hidden="true">🤝</span> {f.total_lances} {f.total_lances === 1 ? 'orçamento' : 'orçamentos'}</span>
                         <span class="item-painel__preco">
-                          menor lance:{' '}
+                          menor orçamento:{' '}
                           <strong>{f.menor_lance != null ? dinheiro(f.menor_lance) : '—'}</strong>
                         </span>
                       </div>
@@ -189,25 +189,25 @@ export const DashboardPage: FC<DashboardProps> = ({
             <section class="cartao">
               <div class="cartao__cabecalho">
                 <div>
-                  <h2>Meus lances</h2>
+                  <h2>Meus orçamentos</h2>
                   <p class="auxiliar">
                     {meusLances.length === 0
-                      ? 'Encontre um frete na sua rota e envie seu primeiro lance.'
-                      : 'Acompanhe a posição de cada lance em tempo real.'}
+                      ? 'Encontre uma mudança na sua rota e envie seu primeiro orçamento.'
+                      : 'Acompanhe a posição de cada orçamento em tempo real.'}
                   </p>
                 </div>
                 <a href="/fretes" class="btn btn-fantasma btn-pequeno">
-                  Ver fretes
+                  Ver mudanças
                 </a>
               </div>
 
               {meusLances.length === 0 ? (
                 <div class="estado-vazio estado-vazio--compacto">
                   <span class="estado-vazio__emoji" aria-hidden="true">🚛</span>
-                  <h3>Nenhum lance enviado ainda</h3>
-                  <p class="auxiliar">Veja os fretes abertos e comece a disputar cargas.</p>
+                  <h3>Nenhum orçamento enviado ainda</h3>
+                  <p class="auxiliar">Veja as mudanças abertas e comece a enviar orçamentos.</p>
                   <a href="/fretes" class="btn btn-primario btn-pequeno">
-                    Encontrar fretes
+                    Encontrar mudanças
                   </a>
                 </div>
               ) : (
@@ -217,12 +217,12 @@ export const DashboardPage: FC<DashboardProps> = ({
                       <div class="item-painel__topo">
                         {l.frete_status !== 'aberto' ? (
                           l.vencedor === 1 ? (
-                            <span class="tag tag-ok">🏆 venceu</span>
+                            <span class="tag tag-ok">🏆 aceito</span>
                           ) : (
                             <span class="tag">encerrado</span>
                           )
                         ) : l.menor_lance != null && l.valor <= l.menor_lance ? (
-                          <span class="tag tag-ok">ganhando</span>
+                          <span class="tag tag-ok">melhor valor</span>
                         ) : (
                           <span class="tag tag-alerta">superado</span>
                         )}
@@ -231,15 +231,15 @@ export const DashboardPage: FC<DashboardProps> = ({
                       <h3>{l.frete_descricao}</h3>
                       <div class="item-painel__meta item-painel__meta--valores">
                         <span>
-                          <small>Seu lance</small>
+                          <small>Seu orçamento</small>
                           <strong class="preco">{dinheiro(l.valor)}</strong>
                         </span>
                         <span>
-                          <small>Menor atual</small>
+                          <small>Menor orçamento</small>
                           <strong>{l.menor_lance != null ? dinheiro(l.menor_lance) : '—'}</strong>
                         </span>
                         <span>
-                          <small>Situação do frete</small>
+                          <small>Situação da mudança</small>
                           <strong>{rotuloStatus(l.frete_status)}</strong>
                         </span>
                       </div>
@@ -253,14 +253,14 @@ export const DashboardPage: FC<DashboardProps> = ({
 
           <section class="cartao cartao--dica">
             <span class="destaque__icone" aria-hidden="true">{clientes ? '💡' : '⛽'}</span>
-            <h2>{clientes ? 'Dica para receber melhores lances' : 'Dica para montar seu lance'}</h2>
+            <h2>{clientes ? 'Dica para receber melhores orçamentos' : 'Dica para montar seu orçamento'}</h2>
             <p class="auxiliar">
               {clientes
-                ? 'Informe o volume, os itens principais e se precisa de ajudante. Fretes bem descritos recebem mais lances.'
-                : 'Use a calculadora de custo no detalhe do frete para incluir combustível, pedágio, manutenção e margem antes de enviar o lance.'}
+                ? 'Informe o volume, os itens principais e se precisa de ajudante. Mudanças bem descritas recebem mais orçamentos.'
+                : 'Use a calculadora de custo no detalhe da mudança para incluir combustível, pedágio, manutenção e margem antes de enviar o orçamento.'}
             </p>
             <a href={clientes ? '/novo-frete' : '/fretes'} class="btn btn-secundario btn-pequeno">
-              {clientes ? 'Publicar frete' : 'Ver fretes abertos'}
+              {clientes ? 'Publicar mudança' : 'Ver mudanças abertas'}
             </a>
           </section>
         </div>
@@ -327,8 +327,8 @@ export const DashboardPage: FC<DashboardProps> = ({
               ) : (
                 <>
                   <p class="auxiliar">
-                    Cadastre as medidas internas e a capacidade para saber se a carga de cada frete
-                    cabe no seu veículo — e receba um lance sugerido com os seus custos.
+                    Cadastre as medidas internas e a capacidade para saber se a carga de cada
+                    mudança cabe no seu veículo — e receba um orçamento sugerido com os seus custos.
                   </p>
                   <a href="/caminhao" class="btn btn-primario btn-bloco btn-pequeno">
                     Cadastrar meu caminhão
@@ -344,7 +344,7 @@ export const DashboardPage: FC<DashboardProps> = ({
                 <h2>
                   Notificações {alertasNaoLidos > 0 && <span class="badge">{alertasNaoLidos}</span>}
                 </h2>
-                <p class="auxiliar">Avisos de lances e fretes.</p>
+                <p class="auxiliar">Avisos de orçamentos e mudanças.</p>
               </div>
               {alertasNaoLidos > 0 && (
                 <form method="post" action="/alertas/ler">

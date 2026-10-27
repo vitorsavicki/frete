@@ -19,6 +19,14 @@
   "ai": {
     "binding": "AI"
   },
+  "send_email": [
+    {
+      "name": "EMAIL"
+    }
+  ],
+  "triggers": {
+    "crons": ["*/15 * * * *"]
+  },
   "vars": {
     "EMAIL_FROM": "Quero Mudar Já <onboarding@resend.dev>"
   },

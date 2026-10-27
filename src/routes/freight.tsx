@@ -5,10 +5,12 @@ import { exigirLogin, type Vars } from '../lib/session';
 import { schemaFrete, schemaLance, primeiraMensagemErro } from '../lib/validate';
 import { validarLance, podeAceitarLance, podeCancelarFrete } from '../lib/rules';
 import { audit, criarAlerta, type Category, type FreightResumo, type BidComNome, type Truck, type User } from '../lib/db';
-import { consultarCep, geocodificarEndereco, haversineKm } from '../lib/geo';
+import { consultarCep, geocodificarEndereco, haversineKm, distanciaRodoviariaKm } from '../lib/geo';
+import { calcularRota } from '../lib/rota';
 import { previsaoRetirada } from '../lib/clima';
 import { emailLanceVencedor, emailNovoLance } from '../lib/email';
-import { estimarCusto } from '../lib/cost';
+import { estimarCustoRodoviario, type ParametrosCusto } from '../lib/cost';
+import { lerReferencias, parametrosComReferencias } from '../lib/referencias';
 import {
   analisarEncaixe,
   dimensoesTexto,
@@ -123,6 +125,7 @@ freight.get('/fretes', async (c) => {
       totalPaginas={totalPaginas}
       totalResultados={total?.n ?? 0}
       queryString={qsFiltros.toString()}
+      url={c.req.url}
       mensagem={q.msg || null}
       erro={q.erro || null}
     />,
@@ -245,7 +248,7 @@ freight.post('/fretes', async (c) => {
   }
 
   await audit(c.env.DB, user!.id, 'publicar_frete', 'freight', freteId);
-  return c.redirect(redir(`/fretes/${freteId}`, { msg: 'Frete publicado! 🚚 O leilão está aberto.' }));
+  return c.redirect(redir(`/fretes/${freteId}`, { msg: 'Mudança publicada! 🚚 Agora é só esperar os orçamentos.' }));
 });
 
 // ---------------- GET /fretes/:id — detalhe ----------------
@@ -349,21 +352,58 @@ freight.get('/fretes/:id', async (c) => {
       : Promise.resolve(null as Truck | null),
   ]);
 
-  const distanciaKm = haversineKm(frete.origem_lat, frete.origem_lng, frete.destino_lat, frete.destino_lng);
+  const rota = await calcularRota(
+    frete.origem_lat != null && frete.origem_lng != null
+      ? { lat: frete.origem_lat, lng: frete.origem_lng }
+      : null,
+    frete.destino_lat != null && frete.destino_lng != null
+      ? { lat: frete.destino_lat, lng: frete.destino_lng }
+      : null,
+  );
+  const linhaRetaKm = haversineKm(
+    frete.origem_lat,
+    frete.origem_lng,
+    frete.destino_lat,
+    frete.destino_lng,
+  );
+  const distanciaEstradaKm = rota?.distanciaKm ?? distanciaRodoviariaKm(linhaRetaKm);
   const itensCarga = parseItensDb(frete.carga_itens);
   const carga = itensCarga.length > 0 ? resumoCarga(itensCarga) : null;
   const veiculoRecomendado = carga ? sugerirVeiculo(carga) : null;
   const medidasCaminhao = caminhao ? medidasDoCaminhao(caminhao) : null;
   const analiseCaminhao = carga && medidasCaminhao ? analisarEncaixe(carga, medidasCaminhao) : null;
-  const custoInicial = caminhao
-    ? {
-        consumoKmL: caminhao.consumo_km_l,
-        precoDiesel: caminhao.diesel_preco,
-        custoFixo: caminhao.custo_fixo + frete.ajudantes * 120,
-        margemPercentual: caminhao.margem_percentual,
-      }
+
+  // O simulador de custo é exclusivo do transportador. O cliente vê apenas a
+  // rota e os lances — nunca os custos internos de quem transporta.
+  const transportador = user?.papel === 'transportador';
+  const referencias = await lerReferencias(c.env.DB);
+  const custoInicial: Partial<ParametrosCusto> | undefined = transportador
+    ? caminhao
+      ? {
+          consumoKmL: caminhao.consumo_km_l,
+          precoCombustivel: caminhao.diesel_preco,
+          tipoCombustivel:
+            caminhao.tipo_combustivel === 'gasolina' ? 'gasolina' : 'diesel',
+          pedagioPorKm: caminhao.pedagio_por_km,
+          manutencaoPorKm: caminhao.manutencao_por_km,
+          arlaPorKm: caminhao.arla_por_km,
+          custoFixo: caminhao.custo_fixo,
+          margemPercentual: caminhao.margem_percentual,
+          taxaBase: caminhao.taxa_base,
+          horasServico: caminhao.horas_servico,
+          custoHora: caminhao.custo_hora,
+          custoAjudante: caminhao.custo_ajudante,
+          ajudantes: frete.ajudantes,
+          tipoVeiculo: caminhao.tipo as ParametrosCusto['tipoVeiculo'],
+        }
+      : parametrosComReferencias('van', { ajudantes: frete.ajudantes }, referencias)
     : undefined;
-  const estimativaCaminhao = custoInicial ? estimarCusto(distanciaKm, custoInicial) : null;
+  const estimativaCaminhao =
+    transportador && distanciaEstradaKm
+      ? estimarCustoRodoviario(distanciaEstradaKm, custoInicial, {
+          mercado: referencias.mercado,
+        })
+      : null;
 
   const previsao = await previsaoRetirada(frete.origem_lat, frete.origem_lng, frete.data_retirada);
 
@@ -373,8 +413,11 @@ freight.get('/fretes/:id', async (c) => {
       alertas={alertas?.n ?? 0}
       frete={{
         ...frete,
-        distancia_km: distanciaKm,
+        distancia_km: linhaRetaKm,
       }}
+      distanciaRodoviariaKm={distanciaEstradaKm}
+      rotaGeometria={rota?.geometria ?? null}
+      rotaFonte={rota?.fonte ?? null}
       lances={lances.results ?? []}
       meuLance={meuLance}
       donoDoFrete={donoDoFrete}
@@ -386,11 +429,14 @@ freight.get('/fretes/:id', async (c) => {
       veiculoRecomendado={veiculoRecomendado}
       estimativaCaminhao={estimativaCaminhao}
       custoInicial={custoInicial}
+      referencias={transportador ? referencias : null}
+      url={c.req.url}
       mensagem={q.msg || null}
       erro={q.erro || null}
     />,
   );
 });
+
 
 // ---------------- POST /fretes/:id/lances — dar/melhorar lance ----------------
 freight.post('/fretes/:id/lances', async (c) => {
@@ -450,7 +496,7 @@ freight.post('/fretes/:id/lances', async (c) => {
       frete.user_id,
       id,
       'novo_lance',
-      `Novo lance de R$ ${valor.toFixed(2).replace('.', ',')} no seu frete #${id}.`,
+      `Novo orçamento de R$ ${valor.toFixed(2).replace('.', ',')} na sua mudança #${id}.`,
     ),
   ];
   if (menorDosOutros && valor < menorDosOutros.valor) {
@@ -460,7 +506,7 @@ freight.post('/fretes/:id/lances', async (c) => {
         menorDosOutros.transportador_id,
         id,
         'lance_superado',
-        `Seu lance no frete #${id} foi superado. Melhore seu lance!`,
+        `Seu orçamento na mudança #${id} foi superado. Envie um novo valor!`,
       ),
     );
   }
@@ -485,7 +531,7 @@ freight.post('/fretes/:id/lances', async (c) => {
     );
   }
 
-  return c.redirect(redir(`/fretes/${id}`, { msg: 'Lance registrado! Boa sorte 🍀' }));
+  return c.redirect(redir(`/fretes/${id}`, { msg: 'Orçamento enviado! Boa sorte 🍀' }));
 });
 
 // ---------------- POST /fretes/:id/aceitar/:bidId — encerrar leilão ----------------
@@ -508,10 +554,10 @@ freight.post('/fretes/:id/aceitar/:bidId', async (c) => {
     .prepare('SELECT id, transportador_id, valor FROM bids WHERE id = ? AND freight_id = ?')
     .bind(bidId, id)
     .first<{ id: number; transportador_id: number; valor: number } | null>();
-  if (!lance) return voltarErro('Lance não encontrado neste frete.');
+  if (!lance) return voltarErro('Orçamento não encontrado nesta mudança.');
 
   if (!podeAceitarLance(frete.user_id === user!.id, frete.status)) {
-    return voltarErro('Só o dono pode aceitar lances, e apenas em fretes abertos.');
+    return voltarErro('Só o dono pode aceitar orçamentos, e apenas em mudanças abertas.');
   }
 
   // Atômico: marca vencedor e encerra na mesma transação
@@ -532,10 +578,10 @@ freight.post('/fretes/:id/aceitar/:bidId', async (c) => {
       lance.transportador_id,
       id,
       'voce_venceu',
-      `🎉 Seu lance de R$ ${lance.valor.toFixed(2).replace('.', ',')} venceu o frete #${id} (${frete.descricao})!`,
+      `🎉 Seu orçamento de R$ ${lance.valor.toFixed(2).replace('.', ',')} foi aceito para a mudança #${id} (${frete.descricao})!`,
     ),
     ...(perdedores.results ?? []).map((p) =>
-      criarAlerta(c.env.DB, p.transportador_id, id, 'lance_perdido', `O frete #${id} foi encerrado.`),
+      criarAlerta(c.env.DB, p.transportador_id, id, 'lance_perdido', `A mudança #${id} foi fechada.`),
     ),
   ]);
   await audit(c.env.DB, user!.id, 'aceitar_lance', 'freight', id, { bidId });
@@ -558,7 +604,7 @@ freight.post('/fretes/:id/aceitar/:bidId', async (c) => {
     );
   }
 
-  return c.redirect(redir(`/fretes/${id}`, { msg: 'Lance aceito! Leilão encerrado. 🤝' }));
+  return c.redirect(redir(`/fretes/${id}`, { msg: 'Orçamento aceito! Mudança fechada. 🤝' }));
 });
 
 // ---------------- POST /fretes/:id/cancelar — dono cancela ----------------

@@ -43,16 +43,17 @@ export const FreteCard: FC<FreteCardProps> = ({ frete, cta = 'Ver detalhes' }) =
 
     <div class="freight-card__footer">
       <span class="freight-card__bids">
-        <span aria-hidden="true">🤝</span> {frete.total_lances} {frete.total_lances === 1 ? 'lance' : 'lances'}
+        <span aria-hidden="true">🤝</span> {frete.total_lances}{' '}
+        {frete.total_lances === 1 ? 'orçamento' : 'orçamentos'}
       </span>
       <span class="freight-card__price">
         {frete.menor_lance != null ? (
           <>
-            <small>menor lance</small>
+            <small>menor orçamento</small>
             <strong>{dinheiro(frete.menor_lance)}</strong>
           </>
         ) : (
-          <small>sem lances ainda</small>
+          <small>aguardando orçamento</small>
         )}
       </span>
     </div>

@@ -1,11 +1,14 @@
 // APIs internas: CEP (BrasilAPI + ViaCEP + Nominatim), cidades (IBGE) e IA
 // (Cloudflare Workers AI). O front nunca fala com serviços externos.
 import { Hono } from 'hono';
-import { consultarCep, haversineKm } from '../lib/geo';
+import { consultarCep } from '../lib/geo';
+import { calcularRota } from '../lib/rota';
 import { analisarCargaComIa, melhorarTexto } from '../lib/ia';
 import { limiteApi } from '../lib/rate-limit';
 import { schemaIa, schemaIaCarga, primeiraMensagemErro } from '../lib/validate';
-import { estimarCusto } from '../lib/cost';
+import { estimarCustoRodoviario } from '../lib/cost';
+import { lerReferencias } from '../lib/referencias';
+import { statusEmail } from '../lib/email';
 import {
   analisarEncaixe,
   medidasDoCaminhao,
@@ -58,6 +61,54 @@ api.get('/cidades/:uf', async (c) => {
     return c.json({ erro: 'IBGE indisponível' }, 502);
   }
 });
+
+// Referências configuráveis de custo. O simulador do navegador consome este
+// endpoint em vez de carregar números fixos no JavaScript. Público e cacheável:
+// não expõe dado pessoal nem o custo real de nenhum transportador.
+api.get('/referencias', async (c) => {
+  const referencias = await lerReferencias(c.env.DB);
+  c.header('Cache-Control', 'public, max-age=300, stale-while-revalidate=3600');
+  return c.json(referencias);
+});
+
+// Diagnóstico do e-mail: mostra provedores ativos e o tamanho da fila, sem
+// destinatários nem segredos. Útil para conferir o setup gratuito em produção.
+api.get('/email/status', async (c) => {
+  const status = await statusEmail(c.env);
+  c.header('Cache-Control', 'no-store');
+  return c.json(status);
+});
+
+// Rota rodoviária real (OSRM) para o mapa e para a estimativa de custo.
+// O navegador chama só este endpoint interno; o CSP continua fechado.
+api.use('/rota', limiteApi);
+api.get('/rota', async (c) => {
+  const q = c.req.query();
+  const origem = {
+    lat: Number(q.origem_lat),
+    lng: Number(q.origem_lng),
+  };
+  const destino = {
+    lat: Number(q.destino_lat),
+    lng: Number(q.destino_lng),
+  };
+  const valida = (p: { lat: number; lng: number }) =>
+    Number.isFinite(p.lat) &&
+    Number.isFinite(p.lng) &&
+    Math.abs(p.lat) <= 90 &&
+    Math.abs(p.lng) <= 180;
+
+  if (!valida(origem) || !valida(destino)) {
+    return c.json({ erro: 'Coordenadas inválidas' }, 400);
+  }
+
+  const rota = await calcularRota(origem, destino);
+  if (!rota) return c.json({ erro: 'Não foi possível calcular a rota' }, 502);
+
+  c.header('Cache-Control', 'public, max-age=86400');
+  return c.json(rota);
+});
+
 
 api.use('/ia/*', limiteApi);
 
@@ -140,13 +191,32 @@ api.post('/ia/carga', async (c) => {
   const carga = resumoCarga(itens);
   const medidas = medidasDoCaminhao(caminhao);
   const encaixe = analisarEncaixe(carga, medidas);
-  const distanciaKm = haversineKm(frete.origem_lat, frete.origem_lng, frete.destino_lat, frete.destino_lng);
-  const estimativa = estimarCusto(distanciaKm, {
-    consumoKmL: caminhao.consumo_km_l,
-    precoDiesel: caminhao.diesel_preco,
-    custoFixo: caminhao.custo_fixo + frete.ajudantes * 120,
-    margemPercentual: caminhao.margem_percentual,
-  });
+  const rota = await calcularRota(
+    { lat: frete.origem_lat ?? 0, lng: frete.origem_lng ?? 0 },
+    { lat: frete.destino_lat ?? 0, lng: frete.destino_lng ?? 0 },
+  );
+  const distanciaRodoviariaKm = rota?.distanciaKm ?? null;
+  const referencias = await lerReferencias(c.env.DB);
+  const estimativa = estimarCustoRodoviario(
+    distanciaRodoviariaKm,
+    {
+      consumoKmL: caminhao.consumo_km_l,
+      precoCombustivel: caminhao.diesel_preco,
+      tipoCombustivel: caminhao.tipo_combustivel === 'gasolina' ? 'gasolina' : 'diesel',
+      pedagioPorKm: caminhao.pedagio_por_km,
+      manutencaoPorKm: caminhao.manutencao_por_km,
+      arlaPorKm: caminhao.arla_por_km,
+      custoFixo: caminhao.custo_fixo,
+      margemPercentual: caminhao.margem_percentual,
+      taxaBase: caminhao.taxa_base,
+      horasServico: caminhao.horas_servico,
+      custoHora: caminhao.custo_hora,
+      custoAjudante: caminhao.custo_ajudante,
+      ajudantes: frete.ajudantes,
+      tipoVeiculo: caminhao.tipo as never,
+    },
+    { mercado: referencias.mercado },
+  );
   const sugestao = sugerirVeiculo(carga);
 
   if (!c.env.AI) {
@@ -181,7 +251,7 @@ api.post('/ia/carga', async (c) => {
       ocupacaoPeso: encaixe.ocupacaoPeso,
       motivos: encaixe.motivos,
     },
-    distanciaRodoviariaKm: distanciaKm,
+    distanciaRodoviariaKm,
     precoSugerido: estimativa?.precoSugerido ?? null,
     precoMinimo: estimativa?.precoMinimo ?? null,
     ajudantes: frete.ajudantes,

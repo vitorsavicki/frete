@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { validarLance } from '../src/lib/rules';
 
-describe('Regras de negócio do leilão (validarLance)', () => {
-  it('deve impedir que o dono dê lance no próprio frete', () => {
+describe('Regras de negócio dos orçamentos (validarLance)', () => {
+  it('deve impedir que o dono envie orçamento na própria mudança', () => {
     const resultado = validarLance({
       papel: 'transportador',
       statusFrete: 'aberto',
@@ -12,10 +12,10 @@ describe('Regras de negócio do leilão (validarLance)', () => {
       donoDoFrete: true
     });
     expect(resultado.ok).toBe(false);
-    if (!resultado.ok) expect(resultado.erro).toBe('Você não pode dar lance no próprio frete.');
+    if (!resultado.ok) expect(resultado.erro).toBe('Você não pode enviar orçamento para a sua própria mudança.');
   });
 
-  it('deve permitir um lance válido', () => {
+  it('deve permitir um orçamento válido', () => {
     const resultado = validarLance({
       papel: 'transportador',
       statusFrete: 'aberto',
@@ -27,7 +27,7 @@ describe('Regras de negócio do leilão (validarLance)', () => {
     expect(resultado.ok).toBe(true);
   });
 
-  it('deve impedir lance acima do preço máximo', () => {
+  it('deve impedir um orçamento acima do preço máximo', () => {
     const resultado = validarLance({
       papel: 'transportador',
       statusFrete: 'aberto',
@@ -40,7 +40,7 @@ describe('Regras de negócio do leilão (validarLance)', () => {
     if (!resultado.ok) expect(resultado.erro).toBe('Acima do preço máximo definido pelo cliente.');
   });
 
-  it('deve impedir lance que não seja menor que o atual', () => {
+  it('deve impedir orçamento que não seja menor que o atual', () => {
     const resultado = validarLance({
       papel: 'transportador',
       statusFrete: 'aberto',
@@ -50,6 +50,6 @@ describe('Regras de negócio do leilão (validarLance)', () => {
       donoDoFrete: false
     });
     expect(resultado.ok).toBe(false);
-    if (!resultado.ok) expect(resultado.erro).toBe('Seu lance precisa ser menor que o menor lance atual.');
+    if (!resultado.ok) expect(resultado.erro).toBe('Seu orçamento precisa ser menor que o menor orçamento atual.');
   });
 });

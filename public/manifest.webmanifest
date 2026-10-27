@@ -1,0 +1,27 @@
+{
+  "name": "Quero Mudar Já — mudanças e fretes",
+  "short_name": "Quero Mudar Já",
+  "description": "Publique sua mudança grátis e receba lances de transportadores. Sem taxa de intermediação.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f8fafc",
+  "theme_color": "#1d4ed8",
+  "lang": "pt-BR",
+  "categories": ["business", "shopping", "travel"],
+  "icons": [
+    {
+      "src": "/img/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/img/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
