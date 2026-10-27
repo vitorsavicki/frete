@@ -15,10 +15,10 @@ import {
   parseItensDb,
   resumoCarga,
   rotuloTipoVeiculo,
-  sugerirVeiculo,
   dimensoesTexto,
   volumeVeiculoM3,
 } from '../lib/carga';
+import { sugerirVeiculoParaPlano } from '../lib/montagem';
 import type { Truck } from '../lib/db';
 import type { Vars } from '../lib/session';
 import type { AppBindings } from '../lib/bindings';
@@ -217,7 +217,7 @@ api.post('/ia/carga', async (c) => {
     },
     { mercado: referencias.mercado },
   );
-  const sugestao = sugerirVeiculo(carga);
+  const sugestao = sugerirVeiculoParaPlano(carga);
 
   if (!c.env.AI) {
     return c.json(

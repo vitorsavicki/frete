@@ -733,8 +733,6 @@
 
     var seletorCombustivel = $('[data-combustivel-tipo]', formCaminhao);
     var campoPreco = $('[data-combustivel-preco]', formCaminhao);
-    var campoArlaPerfil = $('[data-arla]', formCaminhao);
-    var caixaArlaPerfil = $('[data-campo-arla]', formCaminhao);
 
     function combustivelDoPerfil() {
       return seletorCombustivel && seletorCombustivel.value === 'gasolina' ? 'gasolina' : 'diesel';
@@ -746,22 +744,6 @@
       if (textoReferencia && precosCombustivel[tipo] != null) {
         textoReferencia.textContent = String(precosCombustivel[tipo]);
       }
-
-      if (campoArlaPerfil) {
-        if (tipo === 'diesel') {
-          campoArlaPerfil.disabled = false;
-          if (Number(campoArlaPerfil.value) === 0 && campoArlaPerfil.getAttribute('data-anterior')) {
-            campoArlaPerfil.value = campoArlaPerfil.getAttribute('data-anterior');
-          }
-        } else {
-          if (campoArlaPerfil.value !== '0') {
-            campoArlaPerfil.setAttribute('data-anterior', campoArlaPerfil.value);
-          }
-          campoArlaPerfil.value = '0';
-          campoArlaPerfil.disabled = true;
-        }
-      }
-      if (caixaArlaPerfil) caixaArlaPerfil.classList.toggle('campo--desativado', tipo !== 'diesel');
     }
 
     if (seletorCombustivel) {
@@ -987,16 +969,19 @@
 
     function recomendarVeiculo(carga) {
       if (!carga.total || !veiculosCarga.length) return null;
-      var noLimite = null;
+
+      // A conta de volume sozinha não basta: o veículo precisa acomodar o
+      // plano de carga inteiro, sem deixar volumes fora por comprimento ou
+      // largura. A recomendação nasce do mesmo packer que desenha o plano.
       for (var i = 0; i < veiculosCarga.length; i++) {
         var analise = analisarComVeiculo(carga, veiculosCarga[i]);
-        if (!analise) continue;
-        if (analise.status === 'cabe') return { veiculo: veiculosCarga[i], analise: analise };
-        if (analise.status === 'limite' && !noLimite) {
-          noLimite = { veiculo: veiculosCarga[i], analise: analise };
+        if (!analise || analise.status === 'nao_cabe') continue;
+        var plano = montarBlocos(carga, veiculosCarga[i]);
+        if (plano.fora === 0) {
+          return { veiculo: veiculosCarga[i], analise: analise };
         }
       }
-      return noLimite;
+      return null;
     }
 
     // ----- plano de carregamento: o mesmo desenho do servidor, em versão resumida -----
@@ -1276,11 +1261,47 @@
         if (faixa.indice > 0) volumesAtras += faixa.volumes;
       });
 
+      // Conferência item a item: todos os volumes entram na lista, inclusive
+      // os que não couberam no veículo.
+      var mapaItens = {};
+      carga.itens.forEach(function (item) {
+        var chave = String(item.id) + '|' + String(item.nome);
+        var registro = mapaItens[chave];
+        if (registro) {
+          registro.total += item.quantidade;
+          return;
+        }
+        mapaItens[chave] = {
+          chave: chave,
+          nome: item.nome,
+          emoji: item.emoji,
+          categoria: item.categoria,
+          fragil: Boolean(item.fragil),
+          total: item.quantidade,
+          colocados: 0,
+          fora: 0,
+        };
+      });
+      blocos.forEach(function (bloco) {
+        var chave = String(bloco.item.id) + '|' + String(bloco.item.nome);
+        if (mapaItens[chave]) mapaItens[chave].colocados += 1;
+      });
+      var itens = [];
+      var foraTotal = 0;
+      Object.keys(mapaItens).forEach(function (chave) {
+        var registro = mapaItens[chave];
+        registro.fora = Math.max(0, registro.total - registro.colocados);
+        foraTotal += registro.fora;
+        itens.push(registro);
+      });
+
       return {
         blocos: blocos,
         faixas: resumoFaixas,
+        itens: itens,
+        totalUnidades: carga.total,
         colocados: blocos.length,
-        fora: fora,
+        fora: foraTotal,
         volumesAtras: volumesAtras,
         alturaUsada: alturaUsada,
         comprimentoUsado: comprimentoUsado,
@@ -1347,80 +1368,171 @@
       return s;
     }
 
-    function faixasHtml(dados, veiculo) {
-      if (!dados.faixas.length) return '';
-      var larguraVeiculo = Math.max(1, veiculo.larguraCm);
-      var escala = 300 / larguraVeiculo;
+    function listaHtml(dados) {
+      var itens = dados.itens || [];
+      if (!itens.length) return '';
+      var fora = itens.filter(function (item) {
+        return item.fora > 0;
+      });
+      var html = '<div class="plano-conferencia" data-plano-conferencia>';
+
+      if (fora.length) {
+        html +=
+          '<div class="plano-fora" data-plano-fora><strong>Ficaram fora do plano</strong><ul>';
+        fora.forEach(function (item) {
+          html +=
+            '<li><span aria-hidden="true">' +
+            escaparHtml(item.emoji || '📦') +
+            '</span><span><b>' +
+            escaparHtml(item.nome) +
+            '</b> — ' +
+            item.fora +
+            ' de ' +
+            item.total +
+            (item.total === 1 ? ' volume' : ' volumes') +
+            '</span></li>';
+        });
+        html +=
+          '</ul><p>O veículo escolhido não acomoda tudo. Confira as medidas ou planeje duas viagens com o transportador.</p></div>';
+      }
+
+      html +=
+        '<div class="plano-lista" data-plano-itens><div class="plano-lista__topo"><strong>Conferência dos volumes</strong><span>Todos os itens da lista, inclusive os que ficaram fora</span></div><ul>';
+      itens.forEach(function (item) {
+        var completo = item.fora === 0;
+        html +=
+          '<li class="plano-lista__item' +
+          (completo ? '' : ' plano-lista__item--fora') +
+          '"><span class="plano-lista__emoji" aria-hidden="true">' +
+          escaparHtml(item.emoji || '📦') +
+          '</span><span class="plano-lista__nome">' +
+          escaparHtml(item.nome) +
+          '<small>' +
+          item.total +
+          (item.total === 1 ? ' volume' : ' volumes') +
+          '</small></span><span class="plano-lista__status">' +
+          (completo ? 'No plano' : item.fora + ' fora') +
+          '</span></li>';
+      });
+      html += '</ul></div></div>';
+      return html;
+    }
+
+    function vistaHtml(dados, veiculo) {
+      if (!dados.faixas.length) return listaHtml(dados);
+
+      var comprimento = Math.max(1, veiculo.comprimentoCm);
+      var largura = Math.max(1, veiculo.larguraCm);
+      var escala = Math.min(620 / comprimento, 190 / largura);
+      var vistaLargura = comprimento * escala;
+      var vistaAltura = largura * escala;
+      var padX = 26;
+      var padY = 26;
+      var viewLargura = padX + vistaLargura + 40;
+      var viewAltura = padY + vistaAltura + 34;
+      var offsets = {};
       var acumulado = 0;
-      var partes = dados.faixas
-        .map(function (faixa, indice) {
-          var x = acumulado * escala;
-          acumulado += faixa.profundidadeCm;
-          var largura = Math.max(1.5, faixa.profundidadeCm * escala - 2);
-          var html =
-            '<g class="plano-faixas__faixa plano-faixas__faixa--' +
-            (indice % 3) +
-            (indice === 0 ? ' plano-faixas__faixa--vista' : '') +
-            '">';
-          html +=
-            '<title>Faixa ' +
-            (indice + 1) +
-            ': ' +
-            faixa.volumes +
-            (faixa.volumes === 1 ? ' volume' : ' volumes') +
-            ' em ' +
-            Math.round(faixa.profundidadeCm) +
-            ' cm de largura</title>';
-          html +=
-            '<rect x="' +
-            (x + 1).toFixed(1) +
-            '" y="6" width="' +
-            largura.toFixed(1) +
-            '" height="18" rx="3" class="plano-faixas__barra"/>';
-          if (largura >= 16) {
-            html +=
-              '<text x="' +
-              (x + 1 + largura / 2).toFixed(1) +
-              '" y="19" text-anchor="middle" class="plano-faixas__numero">' +
-              faixa.volumes +
-              '</text>';
-          }
-          html += '</g>';
-          return html;
-        })
-        .join('');
-      var sobra = Math.max(0, larguraVeiculo - acumulado);
-      var html = '<div class="plano-faixas" data-plano-faixas>';
+      dados.faixas.forEach(function (faixa) {
+        offsets[faixa.indice] = acumulado;
+        acumulado += faixa.profundidadeCm;
+      });
+      var sobra = Math.max(0, largura - dados.larguraUsada);
+
+      var html = '<div class="plano-vista" data-plano-vista>';
       html +=
-        '<div class="plano-faixas__topo"><strong>Vista de cima</strong><span>' +
+        '<div class="plano-vista__topo"><strong>Vista de cima real</strong><span>' +
+        Math.round(comprimento) +
+        ' × ' +
+        Math.round(largura) +
+        ' cm · ' +
         dados.faixas.length +
-        (dados.faixas.length === 1 ? ' faixa' : ' faixas') +
-        ' · ' +
-        Math.round(dados.larguraUsada) +
-        ' de ' +
-        Math.round(larguraVeiculo) +
-        ' cm de largura</span></div>';
+        (dados.faixas.length === 1 ? ' faixa de largura' : ' faixas de largura') +
+        '</span></div>';
       html +=
-        '<svg viewBox="0 0 300 34" class="plano-faixas__svg" role="img" aria-label="Vista de cima da carroceria dividida em faixas de largura">';
-      html += '<title>Divisão da carroceria em faixas de largura</title>';
-      html += '<rect x="0" y="4" width="300" height="22" rx="5" class="plano-faixas__contorno"/>';
-      html += partes;
+        '<svg viewBox="0 0 ' +
+        viewLargura.toFixed(1) +
+        ' ' +
+        viewAltura.toFixed(1) +
+        '" class="plano-vista__svg" role="img" aria-label="Vista de cima proporcional da carroceria, com ' +
+        dados.colocados +
+        ' volumes posicionados e ' +
+        dados.fora +
+        ' fora">';
+      html += '<title>Vista de cima da carroceria</title>';
+      html +=
+        '<rect x="' +
+        padX +
+        '" y="' +
+        padY +
+        '" width="' +
+        vistaLargura.toFixed(1) +
+        '" height="' +
+        vistaAltura.toFixed(1) +
+        '" rx="6" class="plano-vista__piso"/>';
+      html +=
+        '<text x="' +
+        padX +
+        '" y="' +
+        (padY - 8) +
+        '" class="plano-vista__rotulo">frente (cabine)</text>';
+      html +=
+        '<text x="' +
+        (padX + vistaLargura).toFixed(1) +
+        '" y="' +
+        (padY - 8) +
+        '" text-anchor="end" class="plano-vista__rotulo">porta</text>';
       if (sobra > 0.5) {
         html +=
           '<rect x="' +
-          (acumulado * escala + 1).toFixed(1) +
-          '" y="6" width="' +
-          Math.max(1, sobra * escala - 2).toFixed(1) +
-          '" height="18" rx="3" class="plano-faixas__sobra"/>';
+          padX +
+          '" y="' +
+          (padY + dados.larguraUsada * escala).toFixed(1) +
+          '" width="' +
+          vistaLargura.toFixed(1) +
+          '" height="' +
+          Math.max(1, sobra * escala).toFixed(1) +
+          '" rx="3" class="plano-vista__sobra"/>';
       }
+      dados.blocos.forEach(function (bloco) {
+        var offset = offsets[bloco.faixa] || 0;
+        var x = padX + bloco.x * escala;
+        var y = padY + offset * escala;
+        var larguraBloco = Math.max(1.4, bloco.comprimento * escala - 0.8);
+        var alturaBloco = Math.max(1.4, bloco.profundidade * escala - 0.8);
+        var fragil = bloco.item.fragil;
+        html +=
+          '<g class="plano-vista__bloco plano-bloco--' +
+          classeCategoria(bloco.item.categoria) +
+          (fragil ? ' plano-bloco--fragil' : '') +
+          '">';
+        html +=
+          '<title>' +
+          escaparHtml(bloco.item.nome) +
+          (fragil ? ' (frágil)' : '') +
+          ' · faixa ' +
+          (bloco.faixa + 1) +
+          ' · base ' +
+          Math.round(bloco.comprimento) +
+          ' × ' +
+          Math.round(bloco.profundidade) +
+          ' cm</title>';
+        html +=
+          '<rect x="' +
+          x.toFixed(1) +
+          '" y="' +
+          y.toFixed(1) +
+          '" width="' +
+          larguraBloco.toFixed(1) +
+          '" height="' +
+          alturaBloco.toFixed(1) +
+          '" rx="2" class="plano-vista__caixa"/>';
+        html += '</g>';
+      });
       html += '</svg>';
       html +=
-        '<p class="plano-faixas__nota">' +
-        (dados.faixas.length === 1
-          ? 'Toda a carga está na faixa 1, que aparece no corte lateral.'
-          : 'O corte lateral mostra a faixa 1. As demais completam a largura da carroceria.') +
-        '</p>';
+        '<p class="plano-vista__nota">Cada retângulo é a base de um volume. Volumes empilhados aparecem na mesma posição; a altura usada está no corte lateral.</p>';
       html += '</div>';
+      html += listaHtml(dados);
       return html;
     }
 
@@ -1693,7 +1805,7 @@
               ': o motorista e a equipe organizam a carga.') +
           '</p>',
       );
-      svg.push(faixasHtml(dados, veiculo));
+      svg.push(vistaHtml(dados, veiculo));
 
       return { html: svg.join(''), dados: dados };
     }
@@ -1780,7 +1892,7 @@
         fala.textContent = 'Essa carga passa de uma carreta.';
         if (detalhe) {
           detalhe.textContent =
-            'Provavelmente serão duas viagens. Vale conversar com o caminhoneiro antes de fechar.';
+            'Provavelmente serão duas viagens. Vale conversar com o transportador antes de fechar.';
         }
         ajuda.classList.add('mascote-ajuda--atencao');
       }
@@ -1821,7 +1933,13 @@
       var tituloEl = $('[data-plano-titulo]', montador);
       if (!quadro) return;
 
-      var veiculo = sugestao ? sugestao.veiculo : veiculosCarga[1] || veiculosCarga[0];
+      var veiculo = sugestao
+        ? sugestao.veiculo
+        : carga.total === 0
+          ? veiculosCarga[1] || veiculosCarga[0]
+          : veiculosCarga.filter(function (candidato) {
+              return candidato.id === 'carreta';
+            })[0] || veiculosCarga[veiculosCarga.length - 1];
       if (!veiculo) return;
 
       var form = montador.closest('form');
@@ -2151,8 +2269,7 @@
         distanciaRodoviariaKm: distancia,
         combustivel: arredondarMoeda(combustivel),
         pedagio: arredondarMoeda(pedagio),
-        manutencao: arredondarMoeda(manutencao),
-        arla: arredondarMoeda(arla),
+        manutencao: arredondarMoeda(manutencao + arla),
         taxaBase: arredondarMoeda(p.taxaBase),
         custoHoras: arredondarMoeda(custoHoras),
         custoAjudantes: arredondarMoeda(custoAjudantes),
@@ -2183,24 +2300,6 @@
     function atualizarCombustivelUI() {
       var seletor = $('[data-custo="tipoCombustivel"]', estimador);
       var tipo = seletor && seletor.value === 'gasolina' ? 'gasolina' : 'diesel';
-      var campoArla = $('[data-custo="arlaPorKm"]', estimador);
-      var caixaArla = $('[data-campo-arla]', estimador);
-      var linhaArla = $('[data-linha-arla]', estimador);
-
-      if (campoArla) {
-        if (tipo === 'diesel') {
-          campoArla.disabled = false;
-          if (Number(campoArla.value) === 0 && campoArla.getAttribute('data-anterior')) {
-            campoArla.value = campoArla.getAttribute('data-anterior');
-          }
-        } else {
-          if (campoArla.value !== '0') campoArla.setAttribute('data-anterior', campoArla.value);
-          campoArla.value = '0';
-          campoArla.disabled = true;
-        }
-      }
-      if (caixaArla) caixaArla.classList.toggle('campo--desativado', tipo !== 'diesel');
-      if (linhaArla) linhaArla.hidden = tipo !== 'diesel';
 
       var referencia = $('[data-combustivel-referencia-texto]', estimador);
       if (referencia) referencia.textContent = fmtMoeda.format(combustivelAtual()[tipo] || 0);
@@ -2451,5 +2550,233 @@
           botao.textContent = rotuloOriginal;
         });
     });
+  });
+  // ---------- tour de primeiro acesso e ajuda fixa ----------
+  var CHAVE_TOUR = 'qm-tour-v1';
+  var tour = $('[data-tour]');
+  var tourCaixa = tour ? $('[data-tour-caixa]', tour) : null;
+  var ajuda = $('[data-ajuda-fixa]');
+  var ajudaPainel = ajuda ? $('#ajuda-painel') : null;
+  var ajudaBotao = ajuda ? $('.ajuda-fixa__botao', ajuda) : null;
+  var ultimoFocoTour = null;
+  var passoAtual = 0;
+
+  function lerTourVisto() {
+    try {
+      return window.localStorage.getItem(CHAVE_TOUR) === '1';
+    } catch (erro) {
+      return false;
+    }
+  }
+
+  function marcarTourVisto() {
+    try {
+      window.localStorage.setItem(CHAVE_TOUR, '1');
+    } catch (erro) {
+      // Sem localStorage (modo privado/bloqueado), o tour só não é lembrado.
+    }
+  }
+
+  function passosDoTour() {
+    return tour ? $$('[data-tour-passo]', tour) : [];
+  }
+
+  function pontosDoTour() {
+    return tour ? $$('[data-tour-ponto]', tour) : [];
+  }
+
+  function focaveisDoTour() {
+    if (!tourCaixa) return [];
+    return $$('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])', tourCaixa).filter(
+      function (elemento) {
+        return !elemento.hidden && elemento.offsetParent !== null;
+      },
+    );
+  }
+
+  function mostrarPassoTour(indice) {
+    var passos = passosDoTour();
+    if (!passos.length) return;
+
+    passoAtual = Math.max(0, Math.min(passos.length - 1, indice));
+    passos.forEach(function (passo, i) {
+      passo.hidden = i !== passoAtual;
+    });
+
+    var atual = passos[passoAtual];
+    var fala = tour ? $('[data-tour-fala]', tour) : null;
+    if (fala && atual) fala.textContent = atual.getAttribute('data-tour-texto') || '';
+
+    var contador = tour ? $('[data-tour-contador]', tour) : null;
+    if (contador) contador.textContent = passoAtual + 1 + ' de ' + passos.length;
+
+    pontosDoTour().forEach(function (ponto, i) {
+      ponto.classList.toggle('tour__ponto--ativo', i === passoAtual);
+      if (i === passoAtual) ponto.setAttribute('aria-current', 'step');
+      else ponto.removeAttribute('aria-current');
+    });
+
+    var voltar = tour ? $('[data-tour-voltar]', tour) : null;
+    var continuar = tour ? $('[data-tour-continuar]', tour) : null;
+    if (voltar) voltar.disabled = passoAtual === 0;
+    if (continuar) {
+      continuar.textContent = passoAtual === passos.length - 1 ? 'Concluir' : 'Continuar';
+    }
+  }
+
+  function abrirTour(forcar) {
+    if (!tour) return;
+    if (!forcar && lerTourVisto()) return;
+
+    ultimoFocoTour = document.activeElement;
+    tour.hidden = false;
+    document.body.classList.add('tour-aberto');
+    marcarTourVisto();
+    mostrarPassoTour(0);
+
+    if (tourCaixa) {
+      window.setTimeout(function () {
+        tourCaixa.focus();
+      }, 30);
+    }
+  }
+
+  function fecharTour() {
+    if (!tour || tour.hidden) return;
+    tour.hidden = true;
+    document.body.classList.remove('tour-aberto');
+    marcarTourVisto();
+
+    if (ultimoFocoTour && typeof ultimoFocoTour.focus === 'function') {
+      ultimoFocoTour.focus();
+    }
+  }
+
+  function abrirAjuda() {
+    if (!ajudaPainel || !ajudaBotao) return;
+    ajudaPainel.hidden = false;
+    ajudaBotao.setAttribute('aria-expanded', 'true');
+    var primeiro = ajudaPainel.querySelector('a, button');
+    if (primeiro) primeiro.focus();
+  }
+
+  function fecharAjuda(devolverFoco) {
+    if (!ajudaPainel || !ajudaBotao) return;
+    if (ajudaPainel.hidden) return;
+    ajudaPainel.hidden = true;
+    ajudaBotao.setAttribute('aria-expanded', 'false');
+    if (devolverFoco) ajudaBotao.focus();
+  }
+
+  if (tour) {
+    mostrarPassoTour(0);
+
+    $$('[data-tour-fechar]', tour).forEach(function (botao) {
+      botao.addEventListener('click', function () {
+        fecharTour();
+      });
+    });
+
+    var botaoContinuar = $('[data-tour-continuar]', tour);
+    if (botaoContinuar) {
+      botaoContinuar.addEventListener('click', function () {
+        var passos = passosDoTour();
+        if (passoAtual >= passos.length - 1) fecharTour();
+        else mostrarPassoTour(passoAtual + 1);
+      });
+    }
+
+    var botaoVoltar = $('[data-tour-voltar]', tour);
+    if (botaoVoltar) {
+      botaoVoltar.addEventListener('click', function () {
+        mostrarPassoTour(passoAtual - 1);
+      });
+    }
+
+    var botaoPular = $('[data-tour-pular]', tour);
+    if (botaoPular) {
+      botaoPular.addEventListener('click', function () {
+        fecharTour();
+      });
+    }
+
+    pontosDoTour().forEach(function (ponto) {
+      ponto.addEventListener('click', function () {
+        mostrarPassoTour(Number(ponto.getAttribute('data-tour-ponto')) || 0);
+      });
+    });
+
+    if (tour.getAttribute('data-tour-auto') === '1' && !lerTourVisto()) {
+      window.setTimeout(function () {
+        abrirTour(false);
+      }, 650);
+    }
+  }
+
+  if (ajuda) {
+    if (ajudaBotao) {
+      ajudaBotao.addEventListener('click', function () {
+        if (ajudaPainel && ajudaPainel.hidden) abrirAjuda();
+        else fecharAjuda(true);
+      });
+    }
+
+    var ajudaFechar = $('.ajuda-fixa__fechar', ajuda);
+    if (ajudaFechar) {
+      ajudaFechar.addEventListener('click', function () {
+        fecharAjuda(true);
+      });
+    }
+
+    $$('[data-tour-abrir]', ajuda).forEach(function (botao) {
+      botao.addEventListener('click', function () {
+        fecharAjuda(false);
+        abrirTour(true);
+      });
+    });
+
+    document.addEventListener('click', function (evento) {
+      if (!ajudaPainel || ajudaPainel.hidden) return;
+      if (!ajuda.contains(evento.target)) fecharAjuda(false);
+    });
+  }
+
+  document.addEventListener('keydown', function (evento) {
+    if (tour && !tour.hidden) {
+      if (evento.key === 'Escape') {
+        evento.preventDefault();
+        fecharTour();
+        return;
+      }
+      if (evento.key === 'ArrowRight') {
+        evento.preventDefault();
+        if (passoAtual < passosDoTour().length - 1) mostrarPassoTour(passoAtual + 1);
+        return;
+      }
+      if (evento.key === 'ArrowLeft') {
+        evento.preventDefault();
+        mostrarPassoTour(passoAtual - 1);
+        return;
+      }
+      if (evento.key === 'Tab') {
+        var focaveis = focaveisDoTour();
+        if (!focaveis.length) return;
+        var primeiro = focaveis[0];
+        var ultimo = focaveis[focaveis.length - 1];
+        if (!tourCaixa.contains(document.activeElement)) {
+          evento.preventDefault();
+          primeiro.focus();
+        } else if (evento.shiftKey && document.activeElement === primeiro) {
+          evento.preventDefault();
+          ultimo.focus();
+        } else if (!evento.shiftKey && document.activeElement === ultimo) {
+          evento.preventDefault();
+          primeiro.focus();
+        }
+      }
+      return;
+    }
+
+    if (evento.key === 'Escape') fecharAjuda(false);
   });
 })();

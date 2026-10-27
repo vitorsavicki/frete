@@ -373,7 +373,7 @@ export async function emailBoasVindas(
   const papel =
     dados.papel === 'transportador'
       ? 'Encontre mudanças, envie orçamentos e acompanhe seus resultados pelo painel.'
-      : 'Publique sua primeira mudança e receba orçamentos de caminhoneiros.';
+      : 'Publique sua primeira mudança e receba propostas de transportadores.';
   const html = layout(
     `Boas-vindas, ${nome}!`,
     `<p style="margin:0 0 12px;color:#334155">Sua conta no Quero Mudar Já está pronta. ${papel}</p>
@@ -399,7 +399,7 @@ export async function emailNovoLance(
   const descricao = escapar(dados.descricao);
   const html = layout(
     'Novo orçamento na sua mudança',
-    `<p style="margin:0 0 12px;color:#334155">Olá, ${escapar(dados.nomeDono)}! Um caminhoneiro enviou um orçamento de <strong>${dinheiro(dados.valor)}</strong> para a mudança <strong>${descricao}</strong> (#${dados.freteId}).</p>
+    `<p style="margin:0 0 12px;color:#334155">Olá, ${escapar(dados.nomeDono)}! Um transportador enviou um orçamento de <strong>${dinheiro(dados.valor)}</strong> para a mudança <strong>${descricao}</strong> (#${dados.freteId}).</p>
      ${botao(`${dados.baseUrl}/fretes/${dados.freteId}`, 'Ver o orçamento')}
      <p style="margin:16px 0 0;color:#64748b;font-size:13px">Você decide quando aceitar. A mudança segue aberta até você escolher.</p>`,
     'Você recebeu este e-mail porque é o dono desta mudança.',

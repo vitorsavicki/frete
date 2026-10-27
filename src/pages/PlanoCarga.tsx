@@ -166,16 +166,24 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
       )
       .map((bloco) => bloco.chave),
   );
-  const escalaFaixa = 300 / Math.max(1, larguraCm);
-  let acumuladoFaixa = 0;
-  const faixasDesenho = montagem.faixas.map((faixa) => {
-    const x = acumuladoFaixa * escalaFaixa;
-    const larguraFaixa = Math.max(1.5, faixa.profundidadeCm * escalaFaixa - 2);
-    acumuladoFaixa += faixa.profundidadeCm;
-    return { ...faixa, x, largura: larguraFaixa };
-  });
-  const sobraLargura = Math.max(0, larguraCm - acumuladoFaixa);
-  const sobraDesenho = sobraLargura * escalaFaixa;
+
+  // Vista de cima: proporcional ao piso real do veículo. Cada retângulo é a
+  // base de um volume; a lista abaixo confere o que ficou fora.
+  const vistaX = 26;
+  const vistaY = 26;
+  const vistaEscala = Math.min(620 / comprimentoCm, 190 / larguraCm);
+  const vistaLargura = comprimentoCm * vistaEscala;
+  const vistaAltura = larguraCm * vistaEscala;
+  const vistaViewLargura = vistaX + vistaLargura + 40;
+  const vistaViewAltura = vistaY + vistaAltura + 34;
+  const faixaOffset = new Map<number, number>();
+  let acumuladoVista = 0;
+  for (const faixa of montagem.faixas) {
+    faixaOffset.set(faixa.indice, acumuladoVista);
+    acumuladoVista += faixa.profundidadeCm;
+  }
+  const itensFora = montagem.itens.filter((item) => item.fora > 0);
+  const sobraLarguraCm = Math.max(0, larguraCm - montagem.larguraUsadaCm);
 
   return (
     <section
@@ -190,8 +198,8 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
             {vazio ? 'Seu caminhão, pronto para a mudança' : 'Como a carga se encaixa'}
           </h3>
           <p class="auxiliar">
-            Corte lateral do veículo. Pesados na frente, frágeis por cima e caixas numeradas no
-            fundo.
+            Corte lateral e vista de cima proporcionais ao veículo. Pesados na frente, frágeis por
+            cima e todos os volumes conferidos na lista.
           </p>
         </div>
         <span class="chip plano-carga__veiculo" data-plano-veiculo>
@@ -373,78 +381,135 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
         </p>
 
         {!vazio && montagem.faixas.length > 0 && (
-          <div class="plano-faixas" data-plano-faixas>
-            <div class="plano-faixas__topo">
-              <strong>Vista de cima</strong>
+          <div class="plano-vista" data-plano-vista>
+            <div class="plano-vista__topo">
+              <strong>Vista de cima real</strong>
               <span>
-                {montagem.faixas.length} {montagem.faixas.length === 1 ? 'faixa' : 'faixas'} ·{' '}
-                {numero(montagem.larguraUsadaCm)} de {numero(larguraCm)} cm de largura
+                {numero(comprimentoCm)} × {numero(larguraCm)} cm · {montagem.faixas.length}{' '}
+                {montagem.faixas.length === 1 ? 'faixa de largura' : 'faixas de largura'}
               </span>
             </div>
             <svg
-              viewBox="0 0 300 34"
-              class="plano-faixas__svg"
+              viewBox={`0 0 ${vistaViewLargura.toFixed(1)} ${vistaViewAltura.toFixed(1)}`}
+              class="plano-vista__svg"
               role="img"
-              aria-label={`Vista de cima da carroceria dividida em ${montagem.faixas.length} ${
-                montagem.faixas.length === 1 ? 'faixa de largura' : 'faixas de largura'
-              }`}
+              aria-label={`Vista de cima proporcional da carroceria, com ${montagem.colocados} volumes posicionados e ${montagem.fora} fora`}
             >
-              <title>Divisão da carroceria em faixas de largura</title>
+              <title>Vista de cima da carroceria</title>
               <rect
-                x="0"
-                y="4"
-                width="300"
-                height="22"
-                rx="5"
-                class="plano-faixas__contorno"
+                x={vistaX}
+                y={vistaY}
+                width={vistaLargura}
+                height={vistaAltura}
+                rx="6"
+                class="plano-vista__piso"
               />
-              {faixasDesenho.map((faixa, indice) => (
-                <g
-                  class={`plano-faixas__faixa plano-faixas__faixa--${indice % 3}${
-                    indice === 0 ? ' plano-faixas__faixa--vista' : ''
-                  }`}
-                >
-                  <title>
-                    {`Faixa ${indice + 1}: ${faixa.volumes} ${
-                      faixa.volumes === 1 ? 'volume' : 'volumes'
-                    } em ${numero(faixa.profundidadeCm)} cm de largura`}
-                  </title>
-                  <rect
-                    x={faixa.x + 1}
-                    y="6"
-                    width={faixa.largura}
-                    height="18"
-                    rx="3"
-                    class="plano-faixas__barra"
-                  />
-                  {faixa.largura >= 16 && (
-                    <text
-                      x={faixa.x + 1 + faixa.largura / 2}
-                      y="19"
-                      text-anchor="middle"
-                      class="plano-faixas__numero"
-                    >
-                      {faixa.volumes}
-                    </text>
-                  )}
-                </g>
-              ))}
-              {sobraDesenho > 1 && (
+              <text x={vistaX} y={vistaY - 8} class="plano-vista__rotulo">
+                frente (cabine)
+              </text>
+              <text
+                x={vistaX + vistaLargura}
+                y={vistaY - 8}
+                text-anchor="end"
+                class="plano-vista__rotulo"
+              >
+                porta
+              </text>
+              {sobraLarguraCm > 0.5 && (
                 <rect
-                  x={acumuladoFaixa * escalaFaixa + 1}
-                  y="6"
-                  width={Math.max(1, sobraDesenho - 2)}
-                  height="18"
+                  x={vistaX}
+                  y={vistaY + montagem.larguraUsadaCm * vistaEscala}
+                  width={vistaLargura}
+                  height={Math.max(1, sobraLarguraCm * vistaEscala)}
                   rx="3"
-                  class="plano-faixas__sobra"
+                  class="plano-vista__sobra"
                 />
               )}
+              {montagem.blocos.map((bloco) => {
+                const offset = faixaOffset.get(bloco.faixa) ?? 0;
+                const x = vistaX + bloco.x * vistaEscala;
+                const y = vistaY + offset * vistaEscala;
+                return (
+                  <g
+                    class={`plano-vista__bloco plano-bloco--${classeCategoria(bloco.categoria)}${
+                      bloco.fragil ? ' plano-bloco--fragil' : ''
+                    }`}
+                  >
+                    <title>
+                      {bloco.nome}
+                      {bloco.fragil ? ' (frágil)' : ''} · faixa {bloco.faixa + 1} · base{' '}
+                      {numero(bloco.comprimento)} × {numero(bloco.profundidade)} cm
+                    </title>
+                    <rect
+                      x={x}
+                      y={y}
+                      width={Math.max(1.4, bloco.comprimento * vistaEscala - 0.8)}
+                      height={Math.max(1.4, bloco.profundidade * vistaEscala - 0.8)}
+                      rx="2"
+                      class="plano-vista__caixa"
+                    />
+                  </g>
+                );
+              })}
             </svg>
-            <p class="plano-faixas__nota">
-              {montagem.faixas.length === 1
-                ? 'Toda a carga está na faixa 1, que aparece no corte lateral.'
-                : 'O corte lateral mostra a faixa 1. As demais completam a largura da carroceria.'}
+            <p class="plano-vista__nota">
+              Cada retângulo é a base de um volume. Volumes empilhados aparecem na mesma posição; a
+              altura usada está no corte lateral.
             </p>
+          </div>
+        )}
+
+        {!vazio && montagem.itens.length > 0 && (
+          <div class="plano-conferencia" data-plano-conferencia>
+            {itensFora.length > 0 && (
+              <div class="plano-fora" data-plano-fora>
+                <strong>Ficaram fora do plano</strong>
+                <ul>
+                  {itensFora.map((item) => (
+                    <li>
+                      <span aria-hidden="true">{item.emoji}</span>
+                      <span>
+                        <b>{item.nome}</b> — {item.fora} de {item.total}{' '}
+                        {item.total === 1 ? 'volume' : 'volumes'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p>
+                  O veículo escolhido não acomoda tudo. Confira as medidas ou planeje duas viagens
+                  com o transportador.
+                </p>
+              </div>
+            )}
+
+            <div class="plano-lista" data-plano-itens>
+              <div class="plano-lista__topo">
+                <strong>Conferência dos volumes</strong>
+                <span>Todos os itens da lista, inclusive os que ficaram fora</span>
+              </div>
+              <ul>
+                {montagem.itens.map((item) => (
+                  <li
+                    class={`plano-lista__item${
+                      item.fora > 0 ? ' plano-lista__item--fora' : ''
+                    }`}
+                  >
+                    <span class="plano-lista__emoji" aria-hidden="true">
+                      {item.emoji}
+                    </span>
+                    <span class="plano-lista__nome">
+                      {item.nome}
+                      <small>
+                        {item.total} {item.total === 1 ? 'volume' : 'volumes'}
+                      </small>
+                    </span>
+                    <span class="plano-lista__status">
+                      {item.fora === 0 ? 'No plano' : `${item.fora} fora`}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         )}
       </div>

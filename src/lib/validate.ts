@@ -106,7 +106,6 @@ export const schemaCaminhao = z.object({
   preco_combustivel: numeroCampo('Preço do combustível inválido', 1, 20),
   pedagio_por_km: numeroCampo('Pedágio por km inválido', 0, 50),
   manutencao_por_km: numeroCampo('Manutenção por km inválida', 0, 50),
-  arla_por_km: numeroCampo('ARLA por km inválido', 0, 50),
   taxa_base: numeroCampo('Taxa de saída inválida', 0, 100_000),
   horas_servico: numeroCampo('Horas de serviço inválidas', 0, 48),
   custo_hora: numeroCampo('Custo da hora inválido', 0, 10_000),

@@ -4,7 +4,7 @@ export interface ContextoLance {
   papel: string;
   statusFrete: string;
   valor: number;
-  menorLanceDosOutros: number | null; // menor orçamento de OUTROS caminhoneiros
+  menorLanceDosOutros: number | null; // menor orçamento de OUTROS transportadores
   precoMaximo: number | null;
   donoDoFrete: boolean;
 }
@@ -16,7 +16,7 @@ export function validarLance(ctx: ContextoLance): ResultadoRegra {
     return { ok: false, erro: 'Você não pode enviar orçamento para a sua própria mudança.' };
   }
   if (ctx.papel !== 'transportador') {
-    return { ok: false, erro: 'Apenas caminhoneiros podem enviar orçamentos.' };
+    return { ok: false, erro: 'Apenas transportadores podem enviar orçamentos.' };
   }
   if (ctx.statusFrete !== 'aberto') {
     return { ok: false, erro: 'Esta mudança não está mais recebendo orçamentos.' };

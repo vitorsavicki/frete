@@ -2,7 +2,7 @@
   "name": "frete",
   "version": "2.0.0",
   "private": true,
-  "description": "Quero Mudar Já v2 — site de mudanças e fretes em que os caminhoneiros enviam seus próprios orçamentos. Cloudflare Workers + Hono + D1.",
+  "description": "Quero Mudar Já v2 — site de mudanças e fretes em que os transportadores enviam suas próprias propostas. Cloudflare Workers + Hono + D1.",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",

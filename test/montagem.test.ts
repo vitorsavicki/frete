@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { CATALOGO_CARGA, parseCaixasForm, resumoCarga, veiculoPorTipo, type ItemCarga } from '../src/lib/carga';
-import { dicasCarregamento, montarPlanoCarga } from '../src/lib/montagem';
+import {
+  dicasCarregamento,
+  montarPlanoCarga,
+  sugerirVeiculoParaPlano,
+} from '../src/lib/montagem';
 
 function item(id: string, quantidade: number): ItemCarga {
   const base = CATALOGO_CARGA.find((candidato) => candidato.id === id);
@@ -28,6 +32,28 @@ function caixasPersonalizadas(
   });
   if (!caixa) throw new Error('Caixas personalizadas de teste não criadas');
   return caixa;
+}
+
+/**
+ * Carga parecida com o frete 3 de produção: 11 volumes de móveis, 528 kg e
+ * 9,492 m³. O 3/4 tem volume suficiente no papel, mas o packer deixa 6 volumes
+ * fora; o baú acomoda tudo.
+ */
+function mudancaDeMoveis(): ItemCarga[] {
+  const ids = [
+    'sofa_2',
+    'sofa_3',
+    'cama_solteiro',
+    'cama_casal',
+    'guarda_roupa',
+    'mesa_jantar',
+    'cadeira',
+    'mesa_escritorio',
+    'colchao_casal',
+    'colchao_solteiro',
+    'armario',
+  ];
+  return ids.map((id) => item(id, 1));
 }
 
 describe('Plano de carregamento', () => {
@@ -147,5 +173,40 @@ describe('Plano de carregamento', () => {
     expect(dicasCarregamento(carga, plano).some((dica) => /fora do desenho/i.test(dica))).toBe(
       true,
     );
+  });
+
+  it('não recomenda veículo quando não há carga', () => {
+    expect(sugerirVeiculoParaPlano(resumoCarga([]))).toBeNull();
+  });
+
+  it('recomenda o menor veículo que acomoda todos os volumes', () => {
+    const sugestao = sugerirVeiculoParaPlano(resumoCarga([caixas(5)]));
+    expect(sugestao?.veiculo.id).toBe('fiorino');
+  });
+
+  it('prefere o baú quando o 3/4 tem volume, mas deixa volumes fora', () => {
+    const carga = resumoCarga(mudancaDeMoveis());
+    expect(carga.totalItens).toBe(11);
+    expect(carga.pesoKg).toBe(528);
+    expect(carga.volumeM3).toBeCloseTo(9.492, 3);
+
+    const tresQuartos = veiculoPorTipo('tres_quartos');
+    const bau = veiculoPorTipo('bau');
+    expect(tresQuartos).not.toBeNull();
+    expect(bau).not.toBeNull();
+    if (!tresQuartos || !bau) return;
+
+    // O volume do 3/4 (11,97 m³) é maior que a carga, mas o encaixe real
+    // deixa volumes fora por causa do comprimento e da largura das peças.
+    const plano3q = montarPlanoCarga(carga, tresQuartos);
+    expect(plano3q.fora).toBe(6);
+    expect(plano3q.colocados + plano3q.fora).toBe(plano3q.totalUnidades);
+
+    const planoBau = montarPlanoCarga(carga, bau);
+    expect(planoBau.fora).toBe(0);
+    expect(planoBau.itens.every((registro) => registro.fora === 0)).toBe(true);
+
+    const sugestao = sugerirVeiculoParaPlano(carga);
+    expect(sugestao?.veiculo.id).toBe('bau');
   });
 });

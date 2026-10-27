@@ -19,8 +19,8 @@ import {
   parseItensForm,
   resumoCarga,
   serializarItens,
-  sugerirVeiculo,
 } from '../lib/carga';
+import { sugerirVeiculoParaPlano } from '../lib/montagem';
 import { ListaFretesPage, DetalheFretePage, NovoFretePage } from '../pages/Freight';
 import type { AppBindings } from '../lib/bindings';
 
@@ -369,7 +369,7 @@ freight.get('/fretes/:id', async (c) => {
   const distanciaEstradaKm = rota?.distanciaKm ?? distanciaRodoviariaKm(linhaRetaKm);
   const itensCarga = parseItensDb(frete.carga_itens);
   const carga = itensCarga.length > 0 ? resumoCarga(itensCarga) : null;
-  const veiculoRecomendado = carga ? sugerirVeiculo(carga) : null;
+  const veiculoRecomendado = carga ? sugerirVeiculoParaPlano(carga) : null;
   const medidasCaminhao = caminhao ? medidasDoCaminhao(caminhao) : null;
   const analiseCaminhao = carga && medidasCaminhao ? analisarEncaixe(carga, medidasCaminhao) : null;
 

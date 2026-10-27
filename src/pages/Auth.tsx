@@ -39,7 +39,7 @@ const AuthAside: FC = () => (
       <h2>De um sofá a uma casa inteira, com quem faz mudança de verdade.</h2>
       <ul class="auth__lista">
         <li><span>✓</span> Publique sua mudança em poucos minutos</li>
-        <li><span>✓</span> Receba orçamentos de caminhoneiros</li>
+        <li><span>✓</span> Receba propostas de transportadores</li>
         <li><span>✓</span> Pague só o valor combinado, sem taxa do site</li>
       </ul>
       <p class="auth__nota">

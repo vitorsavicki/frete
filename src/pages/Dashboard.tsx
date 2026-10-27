@@ -151,7 +151,7 @@ export const DashboardPage: FC<DashboardProps> = ({
                 <div class="estado-vazio estado-vazio--compacto">
                   <span class="estado-vazio__emoji" aria-hidden="true">📦</span>
                   <h3>Nenhuma mudança publicada ainda</h3>
-                  <p class="auxiliar">Descreva sua mudança e receba orçamentos de caminhoneiros.</p>
+                  <p class="auxiliar">Descreva sua mudança e receba propostas de transportadores.</p>
                   <a href="/novo-frete" class="btn btn-primario btn-pequeno">
                     Publicar minha primeira mudança
                   </a>

@@ -9,15 +9,19 @@
 // faixa 1; as demais completam a largura e aparecem na vista de cima.
 
 import {
+  VEICULOS,
+  analisarEncaixe,
   volumeItemM3,
   type CargaResumo,
   type CategoriaCarga,
   type ItemCarga,
   type MedidasVeiculo,
+  type SugestaoVeiculo,
 } from './carga';
 
 export interface BlocoMontagem {
   chave: string;
+  itemId: string;
   nome: string;
   emoji: string;
   categoria: CategoriaCarga;
@@ -35,6 +39,17 @@ export interface BlocoMontagem {
   empilhado: boolean;
 }
 
+export interface ItemMontagem {
+  chave: string;
+  nome: string;
+  emoji: string;
+  categoria: CategoriaCarga;
+  fragil: boolean;
+  total: number;
+  colocados: number;
+  fora: number;
+}
+
 export interface FaixaMontagem {
   indice: number;
   profundidadeCm: number;
@@ -45,6 +60,8 @@ export interface MontagemCarga {
   veiculo: MedidasVeiculo;
   blocos: BlocoMontagem[];
   faixas: FaixaMontagem[];
+  /** Um registro por tipo de item, para conferir todos os volumes. */
+  itens: ItemMontagem[];
   totalUnidades: number;
   colocados: number;
   fora: number;
@@ -250,6 +267,7 @@ export function montarPlanoCarga(carga: CargaResumo, veiculo: MedidasVeiculo): M
     faixa.volumes += 1;
     blocos.push({
       chave: `${unidade.item.id}-${faixa.indice}-${blocos.length}`,
+      itemId: unidade.item.id,
       nome: unidade.item.nome,
       emoji: unidade.item.emoji,
       categoria: unidade.item.categoria,
@@ -341,6 +359,37 @@ export function montarPlanoCarga(carga: CargaResumo, veiculo: MedidasVeiculo): M
     0,
   );
 
+  // Conferência item a item: cada unidade aparece como "colocada" ou "fora".
+  // Isso evita a leitura de que o desenho simplesmente esqueceu volumes.
+  const mapaItens = new Map<string, ItemMontagem>();
+  for (const item of carga.itens) {
+    const chave = `${item.id}|${item.nome}`;
+    const registro = mapaItens.get(chave);
+    if (registro) {
+      registro.total += item.quantidade;
+    } else {
+      mapaItens.set(chave, {
+        chave,
+        nome: item.nome,
+        emoji: item.emoji,
+        categoria: item.categoria,
+        fragil: Boolean(item.fragil),
+        total: item.quantidade,
+        colocados: 0,
+        fora: 0,
+      });
+    }
+  }
+  for (const bloco of blocos) {
+    const registro = mapaItens.get(`${bloco.itemId}|${bloco.nome}`);
+    if (registro) registro.colocados += 1;
+  }
+  for (const registro of mapaItens.values()) {
+    registro.fora = Math.max(0, registro.total - registro.colocados);
+  }
+  const itens = [...mapaItens.values()];
+  const foraTotal = itens.reduce((total, item) => total + item.fora, 0);
+
   const nomes = carga.itens.map((item) => item.nome.toLowerCase()).join(' ');
   const ocupacaoPeso = veiculo.capacidadeKg > 0 ? carga.pesoKg / veiculo.capacidadeKg : 0;
 
@@ -353,9 +402,10 @@ export function montarPlanoCarga(carga: CargaResumo, veiculo: MedidasVeiculo): M
     },
     blocos,
     faixas: resumoFaixas,
+    itens,
     totalUnidades: carga.totalItens,
     colocados: blocos.length,
-    fora,
+    fora: foraTotal,
     volumesAtras,
     alturaUsadaCm: Math.round(alturaUsadaCm),
     comprimentoUsadoCm: Math.round(comprimentoUsadoCm),
@@ -424,4 +474,24 @@ export function dicasCarregamento(carga: CargaResumo, montagem: MontagemCarga): 
   }
 
   return dicas.slice(0, 6);
+}
+
+/**
+ * Menor veículo padrão em que o plano de carga realmente acomoda todos os
+ * volumes. A conta de volume sozinha não basta: um 3/4 pode ter espaço de
+ * sobra e, mesmo assim, deixar itens fora por causa do comprimento e da
+ * largura de cada peça. Aqui a recomendação nasce do mesmo desenho que o
+ * transportador vê.
+ */
+export function sugerirVeiculoParaPlano(carga: CargaResumo): SugestaoVeiculo | null {
+  if (carga.totalItens === 0) return null;
+
+  for (const veiculo of VEICULOS) {
+    const analise = analisarEncaixe(carga, veiculo);
+    if (analise.status === 'nao_cabe') continue;
+    const plano = montarPlanoCarga(carga, veiculo);
+    if (plano.fora === 0) return { veiculo, analise };
+  }
+
+  return null;
 }

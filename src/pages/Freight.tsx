@@ -19,11 +19,12 @@ import {
   dimensoesTexto,
   parseItensForm,
   resumoCarga,
-  sugerirVeiculo,
+  veiculoPorTipo,
   type AnaliseEncaixe,
   type CargaResumo,
   type SugestaoVeiculo,
 } from '../lib/carga';
+import { sugerirVeiculoParaPlano } from '../lib/montagem';
 import { PlanoCarga } from './PlanoCarga';
 import { MascoteAjuda } from './Ilustracoes';
 import type { Previsao } from '../lib/clima';
@@ -302,7 +303,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
           nome: caminhao.nome,
           emoji: '🚛',
         }
-      : (veiculoRecomendado?.veiculo ?? null)
+      : (veiculoRecomendado?.veiculo ?? veiculoPorTipo('carreta'))
     : null;
   // Canônico próprio para cada frete; encerrados/cancelados saem do índice
   // para não competir com os fretes realmente abertos.
@@ -340,7 +341,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
           </p>
         </div>
         {aberto && donoDoFrete && (
-          <form method="post" action={`/fretes/${frete.id}/cancelar`} data-confirm="Cancelar esta mudança? Os caminhoneiros que enviaram orçamento serão avisados.">
+          <form method="post" action={`/fretes/${frete.id}/cancelar`} data-confirm="Cancelar esta mudança? Os transportadores que enviaram orçamento serão avisados.">
             <button type="submit" class="btn btn-perigo btn-pequeno">
               Cancelar frete
             </button>
@@ -605,7 +606,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
                         <strong>{dinheiro(estimativaCaminhao.precoSugerido)}</strong>
                         <p>
                           Custo mínimo {dinheiro(estimativaCaminhao.precoMinimo)} · combustível,
-                          pedágio, manutenção, ARLA, custo fixo e margem de{' '}
+                          pedágio, manutenção e insumos, custo fixo e margem de{' '}
                           {Math.round(caminhao.margem_percentual)}%.
                         </p>
                       </div>
@@ -672,7 +673,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
               lances.length === 0 ? (
                 <div class="estado-vazio estado-vazio--compacto">
                   <span class="estado-vazio__emoji" aria-hidden="true">📨</span>
-                  <p>Nenhum orçamento ainda. Os caminhoneiros foram avisados da sua mudança!</p>
+                  <p>Nenhuma proposta ainda. Sua mudança está publicada e visível para os transportadores.</p>
                 </div>
               ) : (
                 <div class="tabela-wrapper">
@@ -800,7 +801,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
                   <div class="convite">
                     <p>
                       <strong>Quer enviar um orçamento para esta mudança?</strong>
-                      <span>Crie sua conta de caminhoneiro grátis ou entre na sua conta.</span>
+                      <span>Crie sua conta de transportador grátis ou entre na sua conta.</span>
                     </p>
                     <div class="convite__acoes">
                       <a href="/cadastro" class="btn btn-primario btn-pequeno">Criar conta grátis</a>
@@ -809,7 +810,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
                   </div>
                 )}
                 {aberto && user?.papel === 'cliente' && !donoDoFrete && (
-                  <p class="auxiliar">Só caminhoneiros podem enviar orçamentos.</p>
+                  <p class="auxiliar">Só transportadores podem enviar orçamentos.</p>
                 )}
               </>
             )}
@@ -866,7 +867,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
                       <span class="campo__rotulo">Combustível</span>
                       <select data-custo="tipoCombustivel" data-combustivel-tipo>
                         <option value="diesel" selected={parametrosBase.tipoCombustivel === 'diesel'}>
-                          Diesel (usa ARLA 32)
+                          Diesel
                         </option>
                         <option
                           value="gasolina"
@@ -937,19 +938,11 @@ export const DetalheFretePage: FC<DetalheProps> = ({
                         data-custo="manutencaoPorKm"
                       />
                     </label>
-                    <label class="campo" data-campo-arla>
-                      <span class="campo__rotulo">ARLA 32 (R$/km)</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        inputmode="decimal"
-                        value={valorParametro(parametrosBase.arlaPorKm)}
-                        data-custo="arlaPorKm"
-                        data-arla
-                      />
-                      <span class="campo__dica">Só no diesel; na gasolina fica zerado.</span>
-                    </label>
+                    <input
+                      type="hidden"
+                      data-custo="arlaPorKm"
+                      value={valorParametro(parametrosBase.arlaPorKm)}
+                    />
                     <label class="campo">
                       <span class="campo__rotulo">Custo fixo (R$)</span>
                       <input
@@ -1070,12 +1063,10 @@ export const DetalheFretePage: FC<DetalheProps> = ({
                       <dd data-saida="pedagio">{dinheiro(estimativa.pedagio)}</dd>
                     </div>
                     <div>
-                      <dt>Manutenção</dt>
-                      <dd data-saida="manutencao">{dinheiro(estimativa.manutencao)}</dd>
-                    </div>
-                    <div data-linha-arla>
-                      <dt>ARLA 32</dt>
-                      <dd data-saida="arla">{dinheiro(estimativa.arla)}</dd>
+                      <dt>Manutenção e insumos</dt>
+                      <dd data-saida="manutencao">
+                        {dinheiro(estimativa.manutencao + estimativa.arla)}
+                      </dd>
                     </div>
                     <div>
                       <dt>Taxa de saída</dt>
@@ -1211,8 +1202,11 @@ export const NovoFretePage: FC<NovoFreteProps> = ({
   const hoje = new Date().toISOString().slice(0, 10);
   const itensSelecionados = parseItensForm(valores);
   const resumo = resumoCarga(itensSelecionados);
-  const sugestao = sugerirVeiculo(resumo);
-  const veiculoPlano = sugestao?.veiculo ?? VEICULOS[1]!;
+  const sugestao = sugerirVeiculoParaPlano(resumo);
+  const veiculoPlano =
+    sugestao?.veiculo ??
+    (resumo.totalItens === 0 ? veiculoPorTipo('van') : veiculoPorTipo('carreta')) ??
+    VEICULOS[1]!;
   const caixasTamanho = v('caixas_tamanho') || 'media';
   const caixasPersonalizada = caixasTamanho === 'personalizada';
   const caixasFragil = v('caixas_fragil') === '1';
@@ -1228,8 +1222,8 @@ export const NovoFretePage: FC<NovoFreteProps> = ({
     resumo.totalItens === 0
       ? 'Geladeira, cama e sofá definem o veículo. As caixas entram depois, nos espaços que sobram.'
       : sugestao
-        ? `O menor veículo que cabe é ${sugestao.veiculo.nome}. O desenho abaixo mostra como a carga se organiza.`
-        : 'Provavelmente serão duas viagens. Vale conversar com o caminhoneiro antes de fechar.';
+        ? `O menor veículo que acomoda todos os volumes é ${sugestao.veiculo.nome}. O desenho abaixo mostra como a carga se organiza.`
+        : 'Provavelmente serão duas viagens. Vale conversar com o transportador antes de fechar.';
 
   return (
     <Layout
@@ -1238,15 +1232,15 @@ export const NovoFretePage: FC<NovoFreteProps> = ({
       alertas={alertas}
       mapa
       erro={erro}
-      descricao="Publique sua mudança grátis, monte a lista de móveis e receba orçamentos de caminhoneiros."
+      descricao="Publique sua mudança grátis, monte a lista de móveis e receba propostas de transportadores."
     >
       <header class="pagina-cabecalho pagina-cabecalho--form">
         <div>
           <span class="eyebrow">Leva poucos minutos</span>
           <h1>Publicar minha mudança</h1>
           <p class="pagina-cabecalho__texto">
-            Conte o que vai levar. Quanto mais detalhes, mais fácil para o caminhoneiro entender a
-            mudança e mandar um preço justo.
+            Conte o que vai levar. Quanto mais detalhes, mais fácil para o transportador entender a
+            mudança e enviar uma proposta justa.
           </p>
         </div>
         <a href="/painel" class="btn btn-fantasma btn-pequeno">
@@ -1718,14 +1712,14 @@ export const NovoFretePage: FC<NovoFreteProps> = ({
               data-moeda
             />
             <span class="campo__dica">
-              Use como referência interna. Os caminhoneiros não veem esse valor.
+              Use como referência interna. Os transportadores não veem esse valor.
             </span>
           </label>
         </section>
 
         <div class="form-publicar__acoes">
           <p class="auxiliar">
-            Ao publicar, sua mudança fica visível para caminhoneiros, que enviam orçamentos. Você
+            Ao publicar, sua mudança fica visível para transportadores, que enviam orçamentos. Você
             escolhe quando aceitar e pode cancelar enquanto estiver aberta.
           </p>
           <button type="submit" class="btn btn-primario btn-grande">

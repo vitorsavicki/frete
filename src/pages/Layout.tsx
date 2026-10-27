@@ -1,5 +1,6 @@
 import type { FC, PropsWithChildren } from 'hono/jsx';
 import type { User } from '../lib/db';
+import { AjudaFixa, TourMascote } from './Tour';
 
 interface LayoutProps {
   titulo: string;
@@ -14,6 +15,7 @@ interface LayoutProps {
   jsonLd?: string;
   robots?: string;
   tipo?: string;
+  tour?: boolean;
 }
 
 function iniciais(user: User): string {
@@ -29,12 +31,13 @@ export const Layout: FC<PropsWithChildren<LayoutProps>> = ({
   mapa = false,
   mensagem,
   erro,
-  descricao = 'Publique sua mudança de graça e receba orçamentos de caminhoneiros. Você compara os preços, escolhe e combina direto com quem vai fazer a mudança.',
+  descricao = 'Publique sua mudança de graça e receba propostas de transportadores. Você compara, escolhe e combina direto com quem vai fazer a mudança.',
   canonical,
   imagem = '/img/og-mudanca.png',
   jsonLd,
   robots,
   tipo = 'website',
+  tour = false,
   children,
 }) => {
   const imagemAbsoluta =
@@ -201,7 +204,7 @@ export const Layout: FC<PropsWithChildren<LayoutProps>> = ({
             </a>
             <p class="footer-tagline">
               Para quem vai mudar e para quem faz a mudança. Publique o que precisa levar e
-              combine direto com o caminhoneiro.
+              combine direto com o transportador.
             </p>
           </div>
 
@@ -242,9 +245,12 @@ export const Layout: FC<PropsWithChildren<LayoutProps>> = ({
         </div>
         <div class="container footer-base">
           <p>© {new Date().getFullYear()} Quero Mudar Já</p>
-          <p class="footer-mini">Publicar é grátis. Você paga só o valor combinado com o caminhoneiro.</p>
+          <p class="footer-mini">Publicar é grátis. Você paga só o valor combinado com o transportador.</p>
         </div>
       </footer>
+
+      <TourMascote auto={tour} user={user} />
+      <AjudaFixa user={user} />
 
       {mapa && <script src="/vendor/leaflet/leaflet.js" defer></script>}
       <script src="/js/app.js" defer></script>

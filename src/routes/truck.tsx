@@ -85,9 +85,9 @@ truck.post('/caminhao', async (c) => {
     `INSERT INTO trucks (
        user_id, nome, tipo, tipo_combustivel, comprimento_cm, largura_cm, altura_cm,
        capacidade_kg, consumo_km_l, diesel_preco, pedagio_por_km, manutencao_por_km,
-       arla_por_km, taxa_base, horas_servico, custo_hora, custo_ajudante, custo_fixo,
+       taxa_base, horas_servico, custo_hora, custo_ajudante, custo_fixo,
        margem_percentual
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT (user_id) DO UPDATE SET
        nome = excluded.nome,
        tipo = excluded.tipo,
@@ -100,7 +100,6 @@ truck.post('/caminhao', async (c) => {
        diesel_preco = excluded.diesel_preco,
        pedagio_por_km = excluded.pedagio_por_km,
        manutencao_por_km = excluded.manutencao_por_km,
-       arla_por_km = excluded.arla_por_km,
        taxa_base = excluded.taxa_base,
        horas_servico = excluded.horas_servico,
        custo_hora = excluded.custo_hora,
@@ -122,7 +121,6 @@ truck.post('/caminhao', async (c) => {
       d.preco_combustivel,
       d.pedagio_por_km,
       d.manutencao_por_km,
-      d.tipo_combustivel === 'diesel' ? d.arla_por_km : 0,
       d.taxa_base,
       d.horas_servico,
       d.custo_hora,

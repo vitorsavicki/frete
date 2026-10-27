@@ -226,7 +226,7 @@ export const CaminhaoPage: FC<CaminhaoProps> = ({
                 <span class="campo__rotulo">Combustível</span>
                 <select name="tipo_combustivel" data-combustivel-tipo>
                   <option value="diesel" selected={combustivel === 'diesel'}>
-                    Diesel (usa ARLA 32)
+                    Diesel
                   </option>
                   <option value="gasolina" selected={combustivel === 'gasolina'}>
                     Gasolina / etanol
@@ -318,23 +318,6 @@ export const CaminhaoPage: FC<CaminhaoProps> = ({
                       : String(padroes.manutencaoPorKm),
                   )}
                 />
-              </label>
-              <label class="campo" data-campo-arla>
-                <span class="campo__rotulo">ARLA 32 (R$/km)</span>
-                <input
-                  name="arla_por_km"
-                  type="number"
-                  min="0"
-                  max="50"
-                  step="0.01"
-                  inputmode="decimal"
-                  value={v(
-                    'arla_por_km',
-                    caminhao ? String(caminhao.arla_por_km) : String(padroes.arlaPorKm),
-                  )}
-                  data-arla
-                />
-                <span class="campo__dica">Só para diesel. Na gasolina o campo é ignorado.</span>
               </label>
               <label class="campo">
                 <span class="campo__rotulo">Custo fixo por frete (R$)</span>
@@ -469,6 +452,20 @@ export const CaminhaoPage: FC<CaminhaoProps> = ({
         </div>
 
         <aside class="painel-lateral">
+          <section class="cartao custo-transportador">
+            <span class="eyebrow">Custo e decisão</span>
+            <h2>Você vê o custo. Você decide o preço.</h2>
+            <p>
+              O simulador soma combustível, pedágio, manutenção, horas de serviço e ajudantes. A
+              partir dessa referência, o valor da proposta é sempre você quem define.
+            </p>
+            <ul class="lista-check">
+              <li>Nenhuma taxa por proposta enviada.</li>
+              <li>As referências são editáveis no seu perfil.</li>
+              <li>O cliente compara as propostas e escolhe com calma.</li>
+            </ul>
+          </section>
+
           {caminhao && (
             <section class="cartao">
               <div class="cartao__cabecalho">
