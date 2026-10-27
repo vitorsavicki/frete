@@ -61,10 +61,43 @@ O binding já está declarado no `wrangler.json`:
 "send_email": [{ "name": "EMAIL" }]
 ```
 
-No plano gratuito do Workers, o envio pelo Cloudflare costuma ficar restrito a
-**endereços de destino verificados** no Email Routing. Ou seja: funciona bem
-para avisos internos e para o dono do projeto, mas não substitui o Resend para
-mandar e-mail a qualquer cliente. Para entregar a qualquer destinatário é
+**Pré-requisito:** um domínio (zona) na mesma conta Cloudflare. O endereço
+`*.workers.dev` não serve como remetente e não pode receber registros MX. Sem
+uma zona, o binding existe, mas todo envio falha — inclusive para o dono da
+conta.
+
+1. Adicione o domínio à Cloudflare e aponte os nameservers no registrador.
+2. Ative o Email Routing e o Email Sending:
+
+```bash
+npx wrangler email routing enable seu-dominio.com.br
+npx wrangler email sending enable seu-dominio.com.br
+npx wrangler email routing dns get seu-dominio.com.br
+npx wrangler email sending dns get seu-dominio.com.br
+```
+
+Crie no DNS da zona os registros que os dois comandos `dns get` mostrarem.
+Para envio restrito a destinos verificados, cadastre o endereço de teste:
+
+```bash
+npx wrangler email routing addresses create voce@exemplo.com
+```
+
+O endereço recebe uma confirmação por e-mail; só depois de confirmar ele passa
+a receber as mensagens.
+
+3. Troque o remetente e publique:
+
+```bash
+npx wrangler secret put EMAIL_FROM
+# Quero Mudar Já <no-reply@seu-dominio.com.br>
+npx wrangler deploy
+```
+
+Dependendo do plano e da configuração do binding, o envio pode ficar restrito a
+**endereços de destino verificados** no Email Routing. Nesse caso ele funciona
+bem para avisos internos e para o dono do projeto, mas não substitui o Resend
+para mandar e-mail a qualquer cliente. Para entregar a qualquer destinatário é
 necessário um domínio verificado na Cloudflare e, normalmente, o Workers Paid.
 
 Para usar os dois, o código tenta o Cloudflare primeiro e cai no Resend se o
