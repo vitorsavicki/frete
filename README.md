@@ -273,7 +273,7 @@ D1 remoto, smoke test e rollback.
 ## Estado atual
 
 - **Produção:** `https://frete.vitorsavicki.workers.dev`.
-- **Último deploy registrado:** `3b3a6a3a-e10a-4b30-a09d-329ac861ea9f`
+- **Último deploy registrado:** `cff1d59a-559b-4def-9c15-2010db2f1d93`
   (plano de carga 3D com abas, volume por categoria, cálculo de viagens,
   imagens 3D dos veículos e prazo do leilão).
 - **Publicado neste deploy:** migração `0007`, `situacao`/`encerra_em`/
