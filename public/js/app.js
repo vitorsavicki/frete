@@ -1698,7 +1698,7 @@
     }
 
     function viagensHtml(viagens) {
-      if (!viagens) return '';
+      if (!viagens || viagens.volumes === 0) return '';
       var icone = viagens.cabeEmUma ? '✅' : viagens.viavel ? '🔁' : '⚠️';
       var titulo = viagens.cabeEmUma
         ? 'Tudo cabe em 1 viagem'
