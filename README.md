@@ -273,15 +273,16 @@ D1 remoto, smoke test e rollback.
 ## Estado atual
 
 - **Produção:** `https://frete.vitorsavicki.workers.dev`.
-- **Último deploy registrado:** `79d5e460-2c55-4a24-9dfa-feebadb69ec5`
-  (home nova, tour de primeiro acesso, ajuda fixa, vista de cima do plano e
-  remoção do ARLA da interface).
-- **Aguardando publicação:** plano de carga 3D com abas (3D/Lado/Cima), volume
-  por categoria, cálculo de viagens, imagens 3D dos veículos, prazo do leilão
-  (migração `0007`) e cron a cada 5 minutos.
-- **Validação local:** `npm run typecheck`, `node --check public/js/app.js` e
-  `npm test` passam; home, `/fretes`, `/fretes/3`, 404 em `/fretes/4` e
-  `/sitemap.xml` conferidos no Wrangler.
+- **Último deploy registrado:** `3b3a6a3a-e10a-4b30-a09d-329ac861ea9f`
+  (plano de carga 3D com abas, volume por categoria, cálculo de viagens,
+  imagens 3D dos veículos e prazo do leilão).
+- **Publicado neste deploy:** migração `0007`, `situacao`/`encerra_em`/
+  `prazo_escolha_em`, cron a cada 5 minutos, plano 3D/Lado/Cima, viagens e
+  imagens locais dos veículos.
+- **Validação:** `npm run typecheck`, `node --check public/js/app.js` e
+  `npm test` passam (71 testes). Smoke test em produção: home com imagens,
+  `/fretes`, `/sitemap.xml` e imagens 200; os fretes antigos venceram e saíram
+  da lista pública como `sem_lances`.
 - **Pendências conhecidas:** domínio próprio, envio real de e-mail (depende de
   domínio na Cloudflare), tipo de veículo Kombi e leitura dos textos por alguém
   de fora do projeto.
