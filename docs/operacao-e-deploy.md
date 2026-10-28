@@ -83,7 +83,7 @@ Ordem de envio:
 2. Resend;
 3. fila `email_outbox` no D1.
 
-O cron do Worker roda a cada 15 minutos e reprocessa até 20 mensagens. Cada
+O cron do Worker roda a cada 5 minutos e reprocessa até 20 mensagens. Cada
 mensagem tem até 8 tentativas, com espera crescente; depois vira `descartado`.
 
 Configuração detalhada: [email.md](email.md).
@@ -97,11 +97,17 @@ serve para teste, não para produção.
 `wrangler.json` declara:
 
 ```json
-"triggers": { "crons": ["*/15 * * * *"] }
+"triggers": { "crons": ["*/5 * * * *"] }
 ```
 
-O `scheduled` do Worker chama `processarFilaEmails`. Se o cron falhar, a fila
-continua no D1 e tenta de novo no próximo ciclo.
+O `scheduled` do Worker chama, nesta ordem:
+
+1. `aplicarPrazos` — fecha recebimento (`sem_lances`/`em_escolha`) e expira a
+   janela de escolha (`expirado`);
+2. `processarFilaEmails` — reprocessa até 20 mensagens.
+
+Se o cron falhar, a fila continua no D1 e os prazos são aplicados na próxima
+visita a `/fretes`, `/fretes/:id`, `/painel` ou `/sitemap.xml`.
 
 ## Deploy
 
@@ -115,14 +121,15 @@ npm run deploy
 
 O deploy publica o Worker, os assets e o cron. Depois de publicar:
 
-1. abra a home e confira o tour (primeiro acesso e “Rever o passo a passo”);
-2. abra `/fretes`, um frete com carga e o plano de carga;
-3. confira a vista de cima e a lista de fora;
-4. entre como transportador e abra `/caminhao`;
-5. teste o simulador e o envio de uma proposta em ambiente de teste;
-6. confira `/api/email/status`;
-7. confira `/robots.txt` e `/sitemap.xml`;
-8. baixe o APK em `/app`.
+1. abra a home e confira a cena com imagens 3D e o tour;
+2. abra `/fretes`, um frete com carga e o formulário `/novo-frete`;
+3. confira as abas 3D/Lado/Cima, o volume por categoria e a lista de viagens;
+4. confira o prazo de propostas e os status escritos na listagem e no detalhe;
+5. entre como transportador e abra `/caminhao`;
+6. teste o simulador e o envio de uma proposta em ambiente de teste;
+7. confira `/api/email/status`;
+8. confira `/robots.txt` e `/sitemap.xml`;
+9. baixe o APK em `/app`.
 
 ## APK Android
 
@@ -151,6 +158,9 @@ O build precisa de JDK, Android SDK e da keystore configurada em
 | Tour não abre | `data-tour-auto` na home, `localStorage` (`qm-tour-v1`), console do navegador |
 | Ajuda não abre | `data-ajuda-fixa`, `aria-expanded`, `hidden` do painel |
 | Plano não atualiza | `data-montador-carga`, `data-veiculos`, `node --check public/js/app.js` |
+| Abas não alternam | `data-plano-abas`, classe `plano-abas--js`, painel `--ativo` |
+| Imagem de veículo quebrada | `/img/veiculos/*.png`, CSP `'self'`, créditos em `CREDITOS.md` |
+| Mudança não some da lista | `situacao`, `encerra_em`, `aplicarPrazos`, cron `*/5` |
 | Custo estranho | perfil do caminhão, `/api/referencias`, `configuracoes` no D1 |
 | E-mail não sai | `/api/email/status`, `wrangler tail`, domínio verificado |
 | CEP não preenche | `/api/cep/:cep`, rate limit, BrasilAPI/ViaCEP |

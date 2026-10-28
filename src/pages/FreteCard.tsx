@@ -1,5 +1,5 @@
 import type { FC } from 'hono/jsx';
-import { dataCurta, dinheiro, distanciaAproximada, tempoRelativo } from '../lib/format';
+import { dataCurta, dataHora, dinheiro, distanciaAproximada, tempoRelativo } from '../lib/format';
 import type { FreightResumo } from '../lib/db';
 
 interface FreteCardProps {
@@ -37,6 +37,11 @@ export const FreteCard: FC<FreteCardProps> = ({ frete, cta = 'Ver detalhes' }) =
       {frete.distancia_km != null && (
         <span>
           <span aria-hidden="true">🛣️</span> {distanciaAproximada(frete.distancia_km)}
+        </span>
+      )}
+      {frete.encerra_em && (
+        <span>
+          <span aria-hidden="true">⏳</span> Propostas até {dataHora(frete.encerra_em)}
         </span>
       )}
     </div>

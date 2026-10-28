@@ -19,15 +19,20 @@ e o item deve ser atualizado ou removido daqui.
   `localStorage` (`qm-tour-v1`).
 - O tour pode ser revisto pelo botão **“Rever o passo a passo”** na ajuda fixa.
 - A ajuda fixa fica no canto da tela e não cobre os botões principais no celular.
-- Os veículos têm desenhos diferentes entre si: Fiorino, Kombi, van, 3/4, baú e
-  carreta. A ideia é que a diferença de tamanho seja percebida sem ler.
-- O plano de carga mostra **todas as faixas**, com vista de cima proporcional e
-  uma lista explícita do que ficou fora.
+- Os veículos usam **imagens 3D do Microsoft Fluent Emoji** (licença MIT),
+  copiadas para `public/img/veiculos/`. A troca de desenhos por imagens foi
+  pedida para deixar a vitrine mais concreta. O crédito fica em
+  `public/img/veiculos/CREDITOS.md`. Nada é carregado de CDN: a CSP continua
+  `'self'`.
+- O plano de carga mostra **todas as faixas**, com vista de cima proporcional,
+  **vista 3D isométrica**, volume por categoria e uma lista explícita do que
+  ficou fora.
+- As três vistas ficam em **abas (3D, Lado, Cima)**. Sem JavaScript, os três
+  painéis aparecem abertos; o cliente só alterna quando o JS está ativo.
 - A recomendação de veículo usa o **packer** (`sugerirVeiculoParaPlano`), não só
-  a conta de volume/peso. Um veículo com volume sobrando pode deixar volumes
-  fora por causa de comprimento e largura.
-- Se nenhum veículo padrão acomoda tudo, a interface usa a **carreta** como
-  fallback e avisa que podem ser necessárias duas viagens.
+  a conta de volume/peso, e respeita a capacidade de peso.
+- Quando a carga não cabe de uma vez, `planejarViagens` calcula **quantas
+  viagens** são necessárias, o que vai em cada uma e o que não entra em nenhuma.
 - O bloco **“Você vê o custo. Você decide o preço.”** pertence só à área do
   transportador. A home fala de benefícios ao cliente.
 - “Caminhoneiro” foi substituído por **“transportador”** na interface.
@@ -78,56 +83,49 @@ estimativa com um termo técnico. A decisão foi:
 O cliente nunca vê custo. O transportador vê o total, sem precisar entender o
 nome do insumo.
 
-## 3. Prazo do leilão ⏳
+## 3. Prazo do leilão ✅
 
-### Problema
+### Decisão
 
-Hoje o frete nasce `aberto` e fica assim até o dono aceitar uma proposta ou
-cancelar. Isso tem três efeitos ruins:
+O leilão tem **dois relógios**:
 
-- propostas podem chegar dias depois, quando o cliente já resolveu de outro
-  jeito;
-- não existe fechamento automático quando ninguém propõe;
-- o cliente pode deixar o frete aberto para sempre, sem prazo para escolher.
+1. **Recebimento de propostas** — o cliente escolhe 24, 48 ou 72 horas no
+   formulário (padrão 48). O fim fica em `freight.encerra_em`.
+2. **Escolha do cliente** — 48 horas depois do fim do recebimento. O fim fica
+   em `freight.prazo_escolha_em`.
 
-### Regra proposta
+Transições:
 
-1. Ao publicar, o cliente escolhe **por quanto tempo quer receber propostas**
-   (24 h, 48 h, 72 h ou data/hora personalizada).
-2. O frete guarda `encerra_em` em UTC.
-3. Enquanto `agora < encerra_em` e o status for `aberto`, o transportador pode
-   enviar ou melhorar a proposta.
-4. Quando `encerra_em` chega, o recebimento fecha:
-   - **com propostas** → status `em_escolha`;
-   - **sem propostas** → status `sem_lances`.
-5. Em `em_escolha`, o cliente tem outro prazo para escolher (sugestão: 48 h).
-   - aceitou → `encerrado` com vencedor;
-   - não escolheu → `expirado`, com opção de republicar.
-6. O cliente pode cancelar enquanto estiver `aberto` ou `em_escolha`; quem
-   propôs recebe aviso.
-7. A tela mostra o prazo e a contagem regressiva em lista, detalhe e painel.
-8. Alertas e e-mails: “recebimento encerrado”, “você tem até X para escolher” e
-   “frete expirado”.
+- fim do recebimento **com propostas** → `em_escolha`;
+- fim do recebimento **sem propostas** → `sem_lances`;
+- aceite do dono em `em_escolha` → `encerrado` com vencedor;
+- fim da escolha sem aceite → `expirado`;
+- cancelamento do dono em `aberto` ou `em_escolha` → `cancelado`.
 
-### O que precisa mudar
+### Por que dois momentos
 
-- migração com `freight.encerra_em` e `freight.prazo_escolha_em`;
-- novos status `em_escolha`, `sem_lances` e `expirado`, com atualização de
-  `StatusFrete`, checks do D1, rótulos e filtros;
-- `validarLance` comparando o horário atual com `encerra_em`;
-- cron fechando fretes vencidos e mudando para `em_escolha` ou `sem_lances`;
-- regra de aceite exigindo `status = 'em_escolha'` (ou `aberto`, durante a
-  transição);
-- alertas e e-mails dos novos eventos;
-- testes de regra, transição de estado e prazo;
-- textos da home, listagem, detalhe e painel.
+- O transportador precisa de um prazo claro para investir tempo na proposta.
+- O cliente precisa de tempo para comparar depois que as propostas param de
+  mudar. Aceitar no meio do recebimento premiava quem chegasse por último.
+- Sem propostas, o cliente não fica com um frete aberto para sempre: ele sai das
+  listagens e pode ser republicado.
 
-### Enquanto não estiver implementado 🚫
+### O que foi aplicado
 
-- **não prometer prazo automático** na interface;
-- não mostrar contagem regressiva;
-- o texto continua dizendo que o cliente escolhe com calma e que o frete fica
-  aberto até o aceite ou o cancelamento.
+- migração `0007_prazo_leilao.sql` com `situacao`, `encerra_em` e
+  `prazo_escolha_em`;
+- `src/lib/prazos.ts` com cálculo, rótulos e `aplicarPrazos`;
+- `validarLance`, `podeAceitarLance` e `podeCancelarFrete` usando `situacao` e o
+  relógio;
+- cron a cada 5 minutos, além das rotas;
+- telas com prazo escrito e status sem depender de cor;
+- testes de regra, prazo e viagens.
+
+### O que não existe ainda
+
+- e-mail específico de “recebimento encerrado” e “prazo de escolha acabando”;
+- contagem regressiva em tempo real (o prazo é mostrado como data e hora);
+- republicar com um clique (hoje é preciso criar uma mudança nova).
 
 ## 4. Kombi na home, mas não no cadastro ⏳
 
@@ -189,8 +187,10 @@ regras de prazo.
 | Memória do tour | `localStorage`, chave `qm-tour-v1` |
 | Tour sem JavaScript | conteúdo renderizado no servidor; JS só abre, fecha e avança |
 | Movimento reduzido | animações desligadas com `prefers-reduced-motion` |
-| Fallback de veículo | carreta, com aviso de possível segunda viagem |
+| Fallback de veículo | carreta, com o número de viagens calculado pelo packer |
 | Plano de carga | referência de carregamento, não promessa de encaixe milimétrico |
+| Plano 3D | isométrico, gerado dos mesmos blocos do packer |
+| Abas do plano | 3D, Lado e Cima; abertas sem JavaScript |
 | Custo do transportador | visível só para transportador logado |
 | ARLA | fora da interface, dentro do cálculo |
 | Copy da home | benefícios ao cliente, sem “leilão” ou “marketplace” |
@@ -203,5 +203,6 @@ regras de prazo.
 1. Completar a validação do redesign em 360 px, 768 px e com leitores de fora.
 2. Resolver a Kombi (tipo real ou remover da home).
 3. Decidir a privacidade do endereço.
-4. Implementar o prazo do leilão com migração, cron e testes.
-5. Configurar domínio e e-mail quando fizer sentido para o negócio.
+4. Configurar domínio e e-mail quando fizer sentido para o negócio.
+5. Criar e-mails de “recebimento encerrado” e “prazo de escolha acabando”.
+6. Avaliar um botão de republicar a partir de `sem_lances`/`expirado`.

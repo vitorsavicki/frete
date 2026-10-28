@@ -4,6 +4,7 @@ import { HomePage } from '../pages/Home';
 import type { Category } from '../lib/db';
 import type { Vars } from '../lib/session';
 import type { AppBindings } from '../lib/bindings';
+import { aplicarPrazos } from '../lib/prazos';
 
 const home = new Hono<{ Bindings: AppBindings; Variables: Vars }>();
 
@@ -61,9 +62,10 @@ function xmlEscape(valor: string): string {
 
 home.get('/sitemap.xml', async (c) => {
   const origem = new URL(c.req.url).origin;
+  await aplicarPrazos(c.env.DB);
   const abertos = await c.env.DB.prepare(
     `SELECT id, criado_em FROM freight
-     WHERE status = 'aberto'
+     WHERE situacao = 'aberto'
      ORDER BY criado_em DESC
      LIMIT 500`,
   ).all<{ id: number; criado_em: string }>();

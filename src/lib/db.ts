@@ -1,7 +1,16 @@
 // Tipos das tabelas (espelham migrations/0001_init.sql) + helpers de banco.
 
 export type Papel = 'cliente' | 'transportador' | 'admin';
+/** Campo legado: continua aceitando apenas os três valores do CHECK original. */
 export type StatusFrete = 'aberto' | 'encerrado' | 'cancelado';
+/** Fluxo novo com o prazo do leilão. É a fonte de verdade das telas. */
+export type SituacaoFrete =
+  | 'aberto'
+  | 'em_escolha'
+  | 'sem_lances'
+  | 'expirado'
+  | 'encerrado'
+  | 'cancelado';
 
 export interface User {
   id: number;
@@ -32,6 +41,9 @@ export interface Freight {
   ajudantes: number;
   preco_maximo: number | null;
   status: StatusFrete;
+  situacao: SituacaoFrete;
+  encerra_em: string | null;
+  prazo_escolha_em: string | null;
   motivo_cancelamento: string | null;
   data_retirada: string;
   hora_retirada: string | null;

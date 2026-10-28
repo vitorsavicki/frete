@@ -2,14 +2,25 @@
 
 export interface ContextoLance {
   papel: string;
-  statusFrete: string;
+  /** Situação atual do frete: aberto, em_escolha, sem_lances... */
+  situacaoFrete: string;
   valor: number;
   menorLanceDosOutros: number | null; // menor orçamento de OUTROS transportadores
   precoMaximo: number | null;
   donoDoFrete: boolean;
+  /** Defesa extra: mesmo que o banco ainda não tenha virado, o relógio manda. */
+  encerraEm?: string | null;
+  agora?: Date | string | number;
 }
 
 export type ResultadoRegra = { ok: true } | { ok: false; erro: string };
+
+function prazoVenceu(encerraEm: string | null | undefined, agora: Date | string | number): boolean {
+  if (!encerraEm) return false;
+  const fim = new Date(encerraEm).getTime();
+  const momento = agora instanceof Date ? agora.getTime() : new Date(agora).getTime();
+  return Number.isFinite(fim) && Number.isFinite(momento) && fim <= momento;
+}
 
 export function validarLance(ctx: ContextoLance): ResultadoRegra {
   if (ctx.donoDoFrete) {
@@ -18,8 +29,17 @@ export function validarLance(ctx: ContextoLance): ResultadoRegra {
   if (ctx.papel !== 'transportador') {
     return { ok: false, erro: 'Apenas transportadores podem enviar orçamentos.' };
   }
-  if (ctx.statusFrete !== 'aberto') {
+  if (ctx.situacaoFrete === 'em_escolha') {
+    return {
+      ok: false,
+      erro: 'O prazo de propostas terminou. O cliente está escolhendo o transportador.',
+    };
+  }
+  if (ctx.situacaoFrete !== 'aberto') {
     return { ok: false, erro: 'Esta mudança não está mais recebendo orçamentos.' };
+  }
+  if (prazoVenceu(ctx.encerraEm, ctx.agora ?? Date.now())) {
+    return { ok: false, erro: 'O prazo para enviar orçamentos terminou.' };
   }
   if (!(ctx.valor > 0)) {
     return { ok: false, erro: 'O orçamento precisa ser maior que zero.' };
@@ -33,10 +53,22 @@ export function validarLance(ctx: ContextoLance): ResultadoRegra {
   return { ok: true };
 }
 
-export function podeAceitarLance(donoDoFrete: boolean, statusFrete: string): boolean {
-  return donoDoFrete && statusFrete === 'aberto';
+/**
+ * O cliente escolhe depois que as propostas terminam. A janela é de 48 h;
+ * se ela vencer, o frete fica `expirado` e o aceite tardio é bloqueado.
+ */
+export function podeAceitarLance(
+  donoDoFrete: boolean,
+  situacaoFrete: string,
+  prazoEscolhaEm: string | null = null,
+  agora: Date | string | number = Date.now(),
+): boolean {
+  if (!donoDoFrete || situacaoFrete !== 'em_escolha') return false;
+  if (!prazoEscolhaEm) return true;
+  return !prazoVenceu(prazoEscolhaEm, agora);
 }
 
-export function podeCancelarFrete(donoDoFrete: boolean, statusFrete: string): boolean {
-  return donoDoFrete && statusFrete === 'aberto';
+/** O dono pode desistir enquanto o frete ainda está em andamento. */
+export function podeCancelarFrete(donoDoFrete: boolean, situacaoFrete: string): boolean {
+  return donoDoFrete && (situacaoFrete === 'aberto' || situacaoFrete === 'em_escolha');
 }

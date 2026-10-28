@@ -99,10 +99,14 @@ Rota: `POST /fretes` (somente `cliente`).
 
 ### Estado inicial
 
-- Todo frete nasce com `status = 'aberto'`.
-- **Não existe prazo de encerramento automático hoje.** O frete fica aberto até
-  o dono aceitar uma proposta ou cancelar. Veja a proposta de prazo na seção 13
-  e em [decisoes-e-pendencias.md](decisoes-e-pendencias.md).
+- Todo frete nasce com `situacao = 'aberto'` e `status = 'aberto'` (campo legado
+  mantido em sincronia).
+- O cliente escolhe o prazo de recebimento: **24, 48 ou 72 horas** (padrão 48).
+- O servidor grava `encerra_em` (fim das propostas) e `prazo_escolha_em`
+  (48 horas depois do fim das propostas).
+- Depois de `encerra_em`, o frete sai da listagem pública mesmo que a rotina de
+  prazos ainda não tenha rodado: a listagem filtra `situacao = 'aberto'` e
+  `validarLance` confere o relógio.
 
 ## 4. Propostas (leilão reverso) ✅
 
@@ -114,13 +118,15 @@ Rota: `POST /fretes/:id/lances` (somente `transportador` logado).
 
 1. O dono do frete não pode propor na própria mudança.
 2. Só `transportador` pode propor.
-3. O frete precisa estar `aberto`.
-4. O valor precisa ser maior que zero.
-5. Se o cliente definiu `preco_maximo`, a proposta não pode passar dele.
-6. A proposta precisa ser **estritamente menor** que o menor orçamento dos
+3. O frete precisa estar em `situacao = 'aberto'`.
+4. O relógio precisa estar antes de `encerra_em`. O horário é conferido no
+   servidor, não só na tela.
+5. O valor precisa ser maior que zero.
+6. Se o cliente definiu `preco_maximo`, a proposta não pode passar dele.
+7. A proposta precisa ser **estritamente menor** que o menor orçamento dos
    outros transportadores. Se ainda não há proposta de outro, qualquer valor
    positivo dentro do teto vale.
-7. Cada transportador tem **uma proposta por frete**. Enviar de novo atualiza a
+8. Cada transportador tem **uma proposta por frete**. Enviar de novo atualiza a
    mesma linha (`ON CONFLICT ... DO UPDATE`), inclusive mensagem e data.
 
 ### Ordem e visibilidade
@@ -145,13 +151,14 @@ Rota: `POST /fretes/:id/aceitar/:bidId`.
 Regras (`podeAceitarLance`):
 
 - somente o dono do frete;
-- somente com `status = 'aberto'`;
+- somente com `situacao = 'em_escolha'` (o prazo de recebimento já terminou);
+- o relógio precisa estar antes de `prazo_escolha_em`;
 - a proposta precisa pertencer ao frete.
 
 Efeitos:
 
 1. `bids.vencedor = 1` na proposta escolhida.
-2. `freight.status = 'encerrado'`.
+2. `freight.situacao = 'encerrado'` e `status = 'encerrado'`.
 3. Alerta `voce_venceu` para o vencedor.
 4. Alerta `lance_perdido` para os demais que enviaram proposta.
 5. E-mail para o vencedor (se o provedor estiver configurado).
@@ -168,35 +175,48 @@ Rota: `POST /fretes/:id/cancelar`.
 Regras (`podeCancelarFrete`):
 
 - somente o dono;
-- somente com `status = 'aberto'`.
+- somente com `situacao = 'aberto'` ou `'em_escolha'`.
 
 Efeitos:
 
-- `freight.status = 'cancelado'`;
+- `freight.situacao = 'cancelado'` e `status = 'cancelado'`;
 - alerta `frete_cancelado` para todos os transportadores que enviaram proposta;
 - registro em `audit_log`.
 
-Não há multa, taxa ou penalidade. Depois de encerrado ou cancelado, o frete não
-aceita novas propostas nem novo aceite.
+Não há multa, taxa ou penalidade. Depois de encerrado, sem propostas, expirado
+ou cancelado, o frete não aceita novas propostas nem novo aceite.
 
 ## 7. Estados do frete
 
 ```text
-                 aceite do dono
-  aberto ─────────────────────────► encerrado
-     │
-     │ cancelamento do dono
-     └────────────────────────────► cancelado
+                  fim do prazo, sem propostas
+  aberto ─────────────────────────────────────► sem_lances
+    │
+    │ fim do prazo, com propostas
+    ▼
+  em_escolha ─── aceite do dono ──────────────► encerrado
+    │
+    │ prazo de escolha vence
+    ▼
+  expirado
+
+  aberto ou em_escolha ─── cancelamento ──────► cancelado
 ```
 
-| Estado | Recebe propostas? | Aceita proposta? | Pode cancelar? |
-| --- | --- | --- | --- |
-| `aberto` | ✅ | ✅ | ✅ |
-| `encerrado` | ❌ | ❌ | ❌ |
-| `cancelado` | ❌ | ❌ | ❌ |
+| Situação | Recebe propostas? | Aceita proposta? | Pode cancelar? | Aparece na lista? | Detalhe público? |
+| --- | --- | --- | --- | --- | --- |
+| `aberto` | ✅ (até `encerra_em`) | ❌ | ✅ | ✅ | ✅ |
+| `em_escolha` | ❌ | ✅ (até `prazo_escolha_em`) | ✅ | ❌ | ✅ |
+| `sem_lances` | ❌ | ❌ | ❌ | ❌ | ❌ (só o dono) |
+| `expirado` | ❌ | ❌ | ❌ | ❌ | ❌ (só o dono) |
+| `encerrado` | ❌ | ❌ | ❌ | ❌ | ✅ |
+| `cancelado` | ❌ | ❌ | ❌ | ❌ | ❌ (só o dono) |
 
-**Lacuna atual:** não há estados `sem_lances`, `em_escolha` ou `expirado`, nem
-prazo automático. A seção 13 propõe o fluxo com prazo.
+O relógio é aplicado por `aplicarPrazos` (`src/lib/prazos.ts`), chamado na
+listagem, no detalhe, no painel, no sitemap e pelo cron a cada 5 minutos. A
+atualização é idempotente: rodar duas vezes não muda nada. O campo legado
+`status` continua existindo e é atualizado junto para não quebrar consultas
+antigas.
 
 ## 8. Alertas ✅
 
@@ -290,7 +310,7 @@ O perfil antigo que tinha um valor de ARLA salvo continua usando esse valor; o
 campo apenas não é mais editável. Perfis novos usam o padrão do banco
 (`arla_por_km = 0.06`). Na gasolina, o cálculo zera o ARLA.
 
-## 11. Carga, plano e veículo ✅/🟡
+## 11. Carga, plano e veículo ✅
 
 ### Catálogo e resumo
 
@@ -312,15 +332,40 @@ O packer usa uma grade de **5 cm** no comprimento da carroceria:
    em toda a extensão.
 5. Respeita a altura interna do veículo.
 6. Itens que não cabem em nenhuma posição ficam “fora” e são contados.
-7. A conferência item a item mostra `total`, `colocados` e `fora` por tipo.
+7. O peso é conferido antes do encaixe: a soma dos volumes não pode passar da
+   `capacidadeKg` do veículo. O que passa vira “fora por peso”.
+8. A conferência item a item mostra `total`, `colocados`, `fora`, o volume e o
+   peso de cada tipo.
 
-O desenho tem duas vistas:
+O desenho tem três vistas, em abas:
 
+- **3D**: vista isométrica gerada a partir dos mesmos blocos do packer, com
+  topo, frente e lateral de cada volume;
 - **corte lateral** da faixa 0 (a primeira faixa de largura);
 - **vista de cima** proporcional ao piso, com o footprint de todos os blocos.
 
+As abas funcionam sem JavaScript: os três painéis são renderizados e ficam
+visíveis um abaixo do outro. O cliente adiciona a classe `plano-abas--js` e
+alterna os painéis. A vista 3D também mostra o volume total por categoria
+(Móveis, Eletrodomésticos, Caixas e volumes, Outros), com peso e quantidade.
+
 O plano é uma **referência de carregamento**, não uma promessa de encaixe
 milimétrico. A conferência final é no local.
+
+### Viagens quando a carga não cabe
+
+`planejarViagens` reaproveita o packer em cada leva, em vez de estimar por
+volume:
+
+1. Unidades maiores que a carroceria viram `impossiveis`, com o motivo escrito.
+2. Cada viagem recebe o que o packer consegue colocar no veículo vazio.
+3. O que sobrou vira a carga da viagem seguinte.
+4. O processo para em **12 viagens**. Se ainda sobrar carga, ela aparece em
+   `impossiveis` com o motivo “passa do limite de 12 viagens”.
+5. O resultado informa `cabeEmUma`, `viavel`, `totalViagens`, a lista de itens
+   por viagem e o motivo em texto.
+
+Uma carga só é `viavel` quando todas as unidades entram em uma ou mais viagens.
 
 ### Recomendação de veículo
 
@@ -332,7 +377,8 @@ primeiro em que:
 
 Isso evita recomendar um veículo que tem volume sobrando mas deixa volumes fora
 por causa de comprimento/largura. Se nenhum veículo padrão acomodar tudo, a UI
-usa a carreta como fallback e avisa que podem ser necessárias duas viagens.
+usa a carreta como fallback e `planejarViagens` mostra quantas viagens serão
+necessárias e o que não entra de jeito nenhum.
 
 ### Veículos do sistema
 
@@ -362,66 +408,53 @@ Isso está registrado como pendência de consistência.
 - O rate limit em memória é best-effort; a proteção forte deve ser configurada
   na borda da Cloudflare.
 
-## 13. Prazo do leilão — lacuna e proposta ⏳
+## 13. Prazo do leilão ✅
 
-### Como é hoje
+### Como funciona
 
-Não há campo de prazo. O frete nasce `aberto` e permanece assim até:
-
-- o dono aceitar uma proposta → `encerrado`; ou
-- o dono cancelar → `cancelado`.
-
-Consequências:
-
-- propostas podem chegar a qualquer momento, inclusive dias depois;
-- não há “fechamento sem lances”;
-- não há prazo para o cliente escolher depois que o recebimento termina;
-- o cliente pode deixar o frete aberto indefinidamente.
-
-### Proposta de regra
-
-1. No formulário de publicação, o cliente escolhe por quanto tempo quer receber
-   propostas (ex.: 24 h, 48 h, 72 h ou data/hora personalizada).
-2. O frete guarda `encerra_em` (timestamp UTC).
-3. Enquanto `agora < encerra_em` e `status = 'aberto'`, os transportadores podem
-   enviar/melhorar propostas.
-4. Ao chegar `encerra_em`, o cron (ou a primeira requisição após o horário)
-   fecha o recebimento:
+1. No formulário de publicação, o cliente escolhe **24, 48 ou 72 horas** para
+   receber propostas. O padrão é 48 horas.
+2. `calcularPrazos` grava `encerra_em` e `prazo_escolha_em` em UTC.
+3. Enquanto `situacao = 'aberto'` e `agora < encerra_em`, os transportadores
+   podem enviar ou melhorar propostas.
+4. `aplicarPrazos` fecha o recebimento, na primeira requisição após o horário ou
+   pelo cron:
    - com propostas → `em_escolha`;
    - sem propostas → `sem_lances`.
-5. Em `em_escolha`, o cliente tem um prazo (ex.: 48 h) para aceitar uma proposta.
+5. Em `em_escolha`, o cliente tem **48 horas** para aceitar uma proposta:
    - aceitou → `encerrado` + vencedor;
-   - não aceitou até o prazo → `expirado` (ou reabrir, se o cliente quiser).
-6. O cliente pode cancelar enquanto estiver `aberto` ou `em_escolha`; o
-   cancelamento avisa todos que propuseram.
-7. A UI mostra contagem regressiva e o prazo em todos os lugares relevantes.
-8. E-mails/alertas: “recebimento encerrado”, “você tem até X para escolher”,
-   “frete expirado”.
+   - não aceitou → `expirado`.
+6. O cliente pode cancelar em `aberto` ou `em_escolha`; o cancelamento avisa
+   todos que propuseram.
+7. Mudanças em `aberto` aparecem na listagem, no sitemap e na home. `em_escolha`
+   e `encerrado` continuam acessíveis pelo link direto; `sem_lances`,
+   `expirado` e `cancelado` retornam 404 para quem não é dono.
+8. As telas mostram o prazo em texto e o status escrito, sem depender de cor.
+9. A rotina é idempotente e roda no cron a cada 5 minutos, além das rotas.
 
-### Impacto técnico
+### Impacto técnico aplicado
 
-- migração para `freight.encerra_em` e `freight.prazo_escolha_em`;
-- novos status (`em_escolha`, `sem_lances`, `expirado`) e atualização de
-  `StatusFrete`, checks do D1 e rótulos;
-- regra `validarLance` precisa comparar o horário atual com `encerra_em`;
-- cron precisa fechar fretes vencidos;
-- testes de regra e de transição de estado;
-- textos e telas de listagem/detalhe/painel.
-
-Enquanto essa regra não for implementada, **não prometa prazo automático na
-interface**. A home e o detalhe devem continuar dizendo que o cliente escolhe
-com calma e que o frete fica aberto até o aceite/cancelamento.
+- migração `0007_prazo_leilao.sql` com `situacao`, `encerra_em` e
+  `prazo_escolha_em` (mais backfill e índice);
+- `src/lib/prazos.ts` centraliza o relógio, os rótulos e a visibilidade;
+- `validarLance` compara o horário atual com `encerra_em`;
+- `podeAceitarLance` e `podeCancelarFrete` usam `situacao`;
+- cron e rotas chamam `aplicarPrazos`;
+- testes em `test/rules.test.ts`, `test/prazos.test.ts` e
+  `test/montagem.test.ts`.
 
 ## 14. Privacidade e o que é público
 
 - A listagem pública mostra descrição, categoria, cidade/UF, data, distância,
-  quantidade de propostas e menor valor.
+  prazo de propostas, quantidade de propostas e menor valor.
 - O detalhe público mostra rua, bairro e CEP de origem e destino.
 - O dono vê todas as propostas e os nomes dos transportadores.
 - O transportador vê apenas a própria proposta.
 - O simulador de custo e os dados do caminhão são exclusivos do transportador.
 - O e-mail de clientes nunca aparece em listagens públicas.
 - O `audit_log` não guarda senhas nem tokens.
+- Mudanças `sem_lances`, `expiradas` ou `canceladas` não são indexadas nem
+  abertas por visitantes; nem o sitemap as lista.
 
 **Ponto em aberto:** o detalhe mostra o endereço completo para qualquer visitante.
 Se isso for um problema, a regra futura pode esconder rua/número até o aceite e

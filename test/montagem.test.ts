@@ -3,6 +3,7 @@ import { CATALOGO_CARGA, parseCaixasForm, resumoCarga, veiculoPorTipo, type Item
 import {
   dicasCarregamento,
   montarPlanoCarga,
+  planejarViagens,
   sugerirVeiculoParaPlano,
 } from '../src/lib/montagem';
 
@@ -208,5 +209,101 @@ describe('Plano de carregamento', () => {
 
     const sugestao = sugerirVeiculoParaPlano(carga);
     expect(sugestao?.veiculo.id).toBe('bau');
+  });
+
+  it('respeita o limite de peso do veículo', () => {
+    const van = veiculoPorTipo('van');
+    expect(van).not.toBeNull();
+    if (!van) return;
+
+    const carga = resumoCarga([caixas(5, 'media')]);
+    expect(carga.pesoKg).toBe(75);
+
+    const apertado = montarPlanoCarga(carga, van, { pesoMaximoKg: 20 });
+    expect(apertado.colocados).toBe(1);
+    expect(apertado.foraPorPeso).toBe(4);
+    expect(apertado.fora).toBe(4);
+    expect(apertado.pesoColocadoKg).toBe(15);
+  });
+
+  it('mostra o volume e o peso de cada grupo de carga', () => {
+    const truck = veiculoPorTipo('tres_quartos');
+    expect(truck).not.toBeNull();
+    if (!truck) return;
+
+    const carga = resumoCarga([item('geladeira_1p', 1), caixas(2)]);
+    const plano = montarPlanoCarga(carga, truck);
+    const eletro = plano.categorias.find((c) => c.categoria === 'Eletrodomésticos');
+    const caixasCategoria = plano.categorias.find((c) => c.categoria === 'Caixas e volumes');
+
+    expect(eletro?.volumes).toBe(1);
+    expect(caixasCategoria?.volumes).toBe(2);
+    expect(plano.categorias.reduce((total, c) => total + c.volumeM3, 0)).toBeCloseTo(
+      carga.volumeM3,
+      3,
+    );
+  });
+
+  it('a carga inteira cabe em uma viagem', () => {
+    const van = veiculoPorTipo('van');
+    expect(van).not.toBeNull();
+    if (!van) return;
+
+    const viagens = planejarViagens(resumoCarga([caixas(5)]), van);
+    expect(viagens.cabeEmUma).toBe(true);
+    expect(viagens.viavel).toBe(true);
+    expect(viagens.totalViagens).toBe(1);
+    expect(viagens.viagens[0]?.itens[0]?.quantidade).toBe(5);
+    expect(viagens.motivo).toMatch(/1 viagem/);
+  });
+
+  it('divide a carga em várias viagens quando não cabe de uma vez', () => {
+    const fiorino = veiculoPorTipo('fiorino');
+    expect(fiorino).not.toBeNull();
+    if (!fiorino) return;
+
+    const carga = resumoCarga([caixas(40, 'grande')]);
+    const viagens = planejarViagens(carga, fiorino);
+
+    expect(viagens.cabeEmUma).toBe(false);
+    expect(viagens.viavel).toBe(true);
+    expect(viagens.totalViagens).toBeGreaterThan(1);
+    expect(viagens.totalViagens).toBeLessThanOrEqual(viagens.limiteViagens);
+    expect(viagens.restantes).toBe(0);
+    expect(viagens.impossiveis).toEqual([]);
+
+    const unidades = viagens.viagens.reduce(
+      (total, viagem) =>
+        total + viagem.itens.reduce((soma, item) => soma + item.quantidade, 0),
+      0,
+    );
+    expect(unidades).toBe(40);
+    const ultima = viagens.viagens[viagens.viagens.length - 1];
+    expect(ultima?.montagem.fora).toBe(0);
+    expect(viagens.motivo).toMatch(/viagens/);
+  });
+
+  it('explica o que não entra no veículo de jeito nenhum', () => {
+    const fiorino = veiculoPorTipo('fiorino');
+    expect(fiorino).not.toBeNull();
+    if (!fiorino) return;
+
+    const viagens = planejarViagens(resumoCarga([item('sofa_3', 1), caixas(3)]), fiorino);
+    expect(viagens.viavel).toBe(false);
+    expect(viagens.impossiveis).toHaveLength(1);
+    expect(viagens.impossiveis[0]?.nome).toBe('Sofá 3 lugares');
+    expect(viagens.impossiveis[0]?.motivo).toMatch(/medidas/);
+    expect(viagens.totalViagens).toBe(1);
+  });
+
+  it('não planeja viagens sem carga', () => {
+    const van = veiculoPorTipo('van');
+    expect(van).not.toBeNull();
+    if (!van) return;
+
+    const viagens = planejarViagens(resumoCarga([]), van);
+    expect(viagens.totalViagens).toBe(0);
+    expect(viagens.viavel).toBe(true);
+    expect(viagens.motivo).toMatch(/Sem volumes/);
   });
 });

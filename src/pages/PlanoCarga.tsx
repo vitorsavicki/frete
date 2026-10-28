@@ -5,7 +5,13 @@ import {
   type CategoriaCarga,
   type MedidasVeiculo,
 } from '../lib/carga';
-import { dicasCarregamento, montarPlanoCarga } from '../lib/montagem';
+import { peso, volume } from '../lib/format';
+import {
+  dicasCarregamento,
+  montarPlanoCarga,
+  planejarViagens,
+  type MontagemCarga,
+} from '../lib/montagem';
 
 interface PlanoCargaProps {
   carga: CargaResumo;
@@ -117,6 +123,217 @@ function numero(valor: number): string {
   return String(Math.round(valor));
 }
 
+/** Cores das três faces de cada volume na vista 3D. */
+function coresCategoria(categoria: CategoriaCarga): { topo: string; frente: string; lado: string; traco: string } {
+  if (categoria === 'Móveis') {
+    return { topo: '#dbeafe', frente: '#93c5fd', lado: '#60a5fa', traco: '#2563eb' };
+  }
+  if (categoria === 'Eletrodomésticos') {
+    return { topo: '#fef3c7', frente: '#fcd34d', lado: '#f59e0b', traco: '#b45309' };
+  }
+  if (categoria === 'Caixas e volumes') {
+    return { topo: '#dcfce7', frente: '#86efac', lado: '#4ade80', traco: '#047857' };
+  }
+  return { topo: '#f1f5f9', frente: '#cbd5e1', lado: '#94a3b8', traco: '#64748b' };
+}
+
+const ISO_COSSENO = Math.cos(Math.PI / 6);
+const ISO_SENO = 0.5;
+
+interface PontoIso {
+  x: number;
+  y: number;
+}
+
+function pontoIso(
+  x: number,
+  y: number,
+  z: number,
+  origem: PontoIso,
+  escala: number,
+): PontoIso {
+  return {
+    x: origem.x + (x - z) * ISO_COSSENO * escala,
+    y: origem.y + (x + z) * ISO_SENO * escala - y * escala,
+  };
+}
+
+function pontosPoly(pontos: PontoIso[]): string {
+  return pontos.map((ponto) => `${ponto.x.toFixed(1)},${ponto.y.toFixed(1)}`).join(' ');
+}
+
+interface VistaIsoProps {
+  montagem: MontagemCarga;
+  veiculo: MedidasVeiculo & { nome?: string };
+  vazio: boolean;
+}
+
+/**
+ * Vista isométrica: cada volume vira um cubo com topo, frente e lateral.
+ * O desenho mantém as proporções do veículo e usa a mesma montagem do packer,
+ * para o cliente enxergar a carga como ela realmente ficaria.
+ */
+const VistaIso: FC<VistaIsoProps> = ({ montagem, veiculo, vazio }) => {
+  const comprimento = Math.max(1, veiculo.comprimentoCm);
+  const largura = Math.max(1, veiculo.larguraCm);
+  const altura = Math.max(1, veiculo.alturaCm);
+  const larguraView = 880;
+  const margem = 46;
+  const escala = Math.max(
+    0.05,
+    Math.min(
+      (larguraView - margem * 2) / ((comprimento + largura) * ISO_COSSENO),
+      430 / ((comprimento + largura) * ISO_SENO + altura),
+    ),
+  );
+  const larguraDesenho = (comprimento + largura) * ISO_COSSENO * escala;
+  const alturaDesenho = (comprimento + largura) * ISO_SENO * escala + altura * escala;
+  const alturaView = margem * 2 + alturaDesenho;
+  const origem: PontoIso = {
+    x: (larguraView - larguraDesenho) / 2 + largura * ISO_COSSENO * escala,
+    y: (alturaView - alturaDesenho) / 2 + altura * escala,
+  };
+
+  const p = (x: number, y: number, z: number) => pontoIso(x, y, z, origem, escala);
+
+  const faixaOffset = new Map<number, number>();
+  let acumulado = 0;
+  for (const faixa of montagem.faixas) {
+    faixaOffset.set(faixa.indice, acumulado);
+    acumulado += faixa.profundidadeCm;
+  }
+
+  const blocosOrdenados = [...montagem.blocos].sort((a, b) => {
+    const za = faixaOffset.get(a.faixa) ?? 0;
+    const zb = faixaOffset.get(b.faixa) ?? 0;
+    return a.x + za - (b.x + zb);
+  });
+
+  const piso = [p(0, 0, 0), p(comprimento, 0, 0), p(comprimento, 0, largura), p(0, 0, largura)];
+  const paredeFundo = [
+    p(comprimento, 0, 0),
+    p(comprimento, altura, 0),
+    p(comprimento, altura, largura),
+    p(comprimento, 0, largura),
+  ];
+  const paredeLado = [
+    p(0, 0, 0),
+    p(comprimento, 0, 0),
+    p(comprimento, altura, 0),
+    p(0, altura, 0),
+  ];
+  const frente = p(0, 0, 0);
+  const porta = p(comprimento, 0, largura);
+
+  return (
+    <svg
+      class="plano-iso"
+      viewBox={`0 0 ${larguraView.toFixed(0)} ${alturaView.toFixed(0)}`}
+      role="img"
+      aria-label={
+        vazio
+          ? 'Vista 3D de um veículo vazio, pronto para receber a mudança'
+          : `Vista 3D da carga dentro de ${veiculo.nome ?? 'um veículo'}, com ${montagem.colocados} volumes`
+      }
+    >
+      <title>Vista 3D do carregamento</title>
+      <desc>
+        Cada caixa representa um volume. A frente fica na parte de cima do desenho e a porta na
+        parte de baixo. As faces mais claras são o topo dos volumes.
+      </desc>
+
+      <polygon points={pontosPoly(paredeFundo)} class="plano-iso__parede" />
+      <polygon points={pontosPoly(paredeLado)} class="plano-iso__parede plano-iso__parede--lado" />
+      <polygon points={pontosPoly(piso)} class="plano-iso__piso" />
+
+      {montagem.faixas.map((faixa) => {
+        const z = faixaOffset.get(faixa.indice) ?? 0;
+        if (z <= 0) return null;
+        return (
+          <path
+            d={`M${p(0, 0, z).x.toFixed(1)} ${p(0, 0, z).y.toFixed(1)}L${p(comprimento, 0, z).x.toFixed(1)} ${p(comprimento, 0, z).y.toFixed(1)}`}
+            class="plano-iso__faixa"
+          />
+        );
+      })}
+
+      {blocosOrdenados.map((bloco) => {
+        const z0 = faixaOffset.get(bloco.faixa) ?? 0;
+        const z1 = z0 + bloco.profundidade;
+        const x0 = bloco.x;
+        const x1 = bloco.x + bloco.comprimento;
+        const y0 = bloco.base;
+        const y1 = bloco.base + bloco.altura;
+        const cores = coresCategoria(bloco.categoria);
+        const topo = [p(x0, y1, z0), p(x1, y1, z0), p(x1, y1, z1), p(x0, y1, z1)];
+        const faceFrente = [p(x1, y0, z0), p(x1, y0, z1), p(x1, y1, z1), p(x1, y1, z0)];
+        const faceLado = [p(x0, y0, z1), p(x1, y0, z1), p(x1, y1, z1), p(x0, y1, z1)];
+
+        return (
+          <g
+            class={`plano-iso__bloco plano-bloco--${classeCategoria(bloco.categoria)}${
+              bloco.fragil ? ' plano-bloco--fragil' : ''
+            }`}
+          >
+            <title>
+              {bloco.nome}
+              {bloco.fragil ? ' (frágil)' : ''} · {numero(bloco.comprimento)} ×{' '}
+              {numero(bloco.profundidade)} × {numero(bloco.altura)} cm · base a{' '}
+              {numero(bloco.base)} cm
+            </title>
+            <polygon
+              points={pontosPoly(faceLado)}
+              fill={cores.lado}
+              stroke={cores.traco}
+              class="plano-iso__face plano-iso__face--lado"
+            />
+            <polygon
+              points={pontosPoly(faceFrente)}
+              fill={cores.frente}
+              stroke={cores.traco}
+              class="plano-iso__face plano-iso__face--frente"
+            />
+            <polygon
+              points={pontosPoly(topo)}
+              fill={cores.topo}
+              stroke={cores.traco}
+              class="plano-iso__face plano-iso__face--topo"
+            />
+          </g>
+        );
+      })}
+
+      <path
+        d={`M${p(0, altura, 0).x.toFixed(1)} ${p(0, altura, 0).y.toFixed(1)}L${p(comprimento, altura, 0).x.toFixed(1)} ${p(comprimento, altura, 0).y.toFixed(1)}L${p(comprimento, altura, largura).x.toFixed(1)} ${p(comprimento, altura, largura).y.toFixed(1)}`}
+        class="plano-iso__contorno"
+      />
+
+      <text x={frente.x} y={frente.y - 12} text-anchor="middle" class="plano-iso__rotulo">
+        frente (cabine)
+      </text>
+      <text x={porta.x} y={porta.y + 20} text-anchor="middle" class="plano-iso__rotulo">
+        porta
+      </text>
+
+      {vazio && (
+        <g class="plano-iso__vazio">
+          <rect
+            x={origem.x - 95}
+            y={origem.y - 28}
+            width="190"
+            height="52"
+            rx="8"
+            class="plano-iso__vazio-caixa"
+          />
+          <text x={origem.x} y={origem.y + 4} text-anchor="middle" class="plano-iso__vazio-texto">
+            escolha os itens para montar a carga em 3D
+          </text>
+        </g>
+      )}
+    </svg>
+  );
+};
+
 export const PlanoCarga: FC<PlanoCargaProps> = ({
   carga,
   veiculo,
@@ -124,7 +341,8 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
   compacto = false,
   idPrefixo = 'plano',
 }) => {
-  const montagem = montarPlanoCarga(carga, veiculo);
+  const montagem = montarPlanoCarga(carga, veiculo, { pesoMaximoKg: veiculo.capacidadeKg });
+  const viagens = planejarViagens(carga, veiculo);
   const dicas = dicasCarregamento(carga, montagem);
   const vazio = carga.totalItens === 0;
   const totalAjudantes = Math.max(0, Math.floor(ajudantes));
@@ -198,7 +416,7 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
             {vazio ? 'Seu caminhão, pronto para a mudança' : 'Como a carga se encaixa'}
           </h3>
           <p class="auxiliar">
-            Corte lateral e vista de cima proporcionais ao veículo. Pesados na frente, frágeis por
+            Veja a carga em 3D, no corte lateral e na vista de cima. Pesados na frente, frágeis por
             cima e todos os volumes conferidos na lista.
           </p>
         </div>
@@ -209,6 +427,46 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
       </header>
 
       <div class="plano-carga__quadro" data-plano-quadro>
+        <div class="plano-abas" data-plano-abas>
+          <div class="plano-abas__botoes" role="tablist" aria-label="Formas de ver o carregamento">
+            <button
+              type="button"
+              class="plano-aba plano-aba--ativo"
+              data-plano-aba="3d"
+              role="tab"
+              aria-selected="true"
+            >
+              <span aria-hidden="true">🧊</span> 3D
+            </button>
+            <button
+              type="button"
+              class="plano-aba"
+              data-plano-aba="lado"
+              role="tab"
+              aria-selected="false"
+            >
+              <span aria-hidden="true">📐</span> Lado
+            </button>
+            <button
+              type="button"
+              class="plano-aba"
+              data-plano-aba="cima"
+              role="tab"
+              aria-selected="false"
+            >
+              <span aria-hidden="true">🗺️</span> Cima
+            </button>
+          </div>
+
+          <div class="plano-abas__painel" data-plano-painel="3d">
+            <VistaIso montagem={montagem} veiculo={veiculo} vazio={vazio} />
+            <p class="plano-abas__nota">
+              Gire a cabeça, não a tela: a frente do veículo fica em cima e a porta embaixo. Cada
+              cubo é um volume da lista.
+            </p>
+          </div>
+
+          <div class="plano-abas__painel" data-plano-painel="lado">
         <svg
           class="plano-carga__svg"
           viewBox={`0 0 ${largura} ${altura}`}
@@ -379,7 +637,9 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
                 totalAjudantes === 1 ? 'ajudante' : 'ajudantes'
               }: o motorista e a equipe organizam a carga.`}
         </p>
+          </div>
 
+          <div class="plano-abas__painel" data-plano-painel="cima">
         {!vazio && montagem.faixas.length > 0 && (
           <div class="plano-vista" data-plano-vista>
             <div class="plano-vista__topo">
@@ -458,12 +718,93 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
             </p>
           </div>
         )}
+          </div>
+        </div>
+
+        {!vazio && (
+          <div class="plano-categorias" data-plano-categorias>
+            <div class="plano-categorias__topo">
+              <strong>Quanto espaço cada grupo ocupa</strong>
+              <span>Volume total: {volume(carga.volumeM3)}</span>
+            </div>
+            <ul class="plano-categorias__lista">
+              {montagem.categorias.map((categoria) => (
+                <li class={`plano-categoria plano-categoria--${classeCategoria(categoria.categoria)}`}>
+                  <span class="plano-categoria__nome">{categoria.categoria}</span>
+                  <strong>{volume(categoria.volumeM3)}</strong>
+                  <small>
+                    {categoria.volumes} {categoria.volumes === 1 ? 'volume' : 'volumes'} ·{' '}
+                    {peso(categoria.pesoKg)}
+                  </small>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {!vazio && (
+          <div class={`plano-viagens${viagens.cabeEmUma ? ' plano-viagens--ok' : ''}`} data-plano-viagens>
+            <div class="plano-viagens__topo">
+              <span class="plano-viagens__icone" aria-hidden="true">
+                {viagens.cabeEmUma ? '✅' : viagens.viavel ? '🔁' : '⚠️'}
+              </span>
+              <div>
+                <strong>
+                  {viagens.cabeEmUma
+                    ? 'Tudo cabe em 1 viagem'
+                    : viagens.viavel
+                      ? `São necessárias ${viagens.totalViagens} viagens`
+                      : 'Este veículo não leva tudo'}
+                </strong>
+                <p>{viagens.motivo}</p>
+              </div>
+            </div>
+
+            {viagens.totalViagens > 1 && (
+              <ol class="plano-viagens__lista">
+                {viagens.viagens.map((viagem) => (
+                  <li class="plano-viagem">
+                    <div class="plano-viagem__titulo">
+                      <strong>Viagem {viagem.numero}</strong>
+                      <span>
+                        {volume(viagem.volumeM3)} · {peso(viagem.pesoKg)}
+                      </span>
+                    </div>
+                    <p>
+                      {viagem.itens
+                        .map((item) => `${item.quantidade}× ${item.emoji} ${item.nome}`)
+                        .join(' · ')}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            )}
+
+            {viagens.impossiveis.length > 0 && (
+              <div class="plano-viagens__impossiveis">
+                <strong>O que não entra neste veículo</strong>
+                <ul>
+                  {viagens.impossiveis.map((item) => (
+                    <li>
+                      <span aria-hidden="true">{item.emoji}</span> {item.quantidade}× {item.nome} —{' '}
+                      {item.motivo}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
 
         {!vazio && montagem.itens.length > 0 && (
           <div class="plano-conferencia" data-plano-conferencia>
             {itensFora.length > 0 && (
               <div class="plano-fora" data-plano-fora>
-                <strong>Ficaram fora do plano</strong>
+                <strong>
+                  {viagens.totalViagens > 1 && viagens.viavel
+                    ? 'Vão nas próximas viagens'
+                    : 'Ficaram fora do plano'}
+                </strong>
                 <ul>
                   {itensFora.map((item) => (
                     <li>
@@ -476,8 +817,11 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
                   ))}
                 </ul>
                 <p>
-                  O veículo escolhido não acomoda tudo. Confira as medidas ou planeje duas viagens
-                  com o transportador.
+                  {viagens.cabeEmUma
+                    ? 'O veículo escolhido não acomoda tudo. Confira as medidas ou escolha um veículo maior.'
+                    : viagens.viavel
+                      ? 'Estes volumes não couberam na primeira viagem e entram nas próximas. A lista de viagens mostra a divisão.'
+                      : 'Estes volumes não entram neste veículo. Confira as medidas ou escolha um veículo maior.'}
                 </p>
               </div>
             )}
@@ -500,11 +844,16 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
                     <span class="plano-lista__nome">
                       {item.nome}
                       <small>
-                        {item.total} {item.total === 1 ? 'volume' : 'volumes'}
+                        {item.total} {item.total === 1 ? 'volume' : 'volumes'} ·{' '}
+                        {volume(item.volumeM3)}
                       </small>
                     </span>
                     <span class="plano-lista__status">
-                      {item.fora === 0 ? 'No plano' : `${item.fora} fora`}
+                      {item.fora === 0
+                        ? 'No plano'
+                        : viagens.viavel && viagens.totalViagens > 1
+                          ? `${item.fora} na próxima`
+                          : `${item.fora} fora`}
                     </span>
                   </li>
                 ))}
@@ -527,13 +876,19 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
             {!vazio && (
               <>
                 {montagem.colocados} de {montagem.totalUnidades}{' '}
-                {montagem.totalUnidades === 1 ? 'volume acomodado' : 'volumes acomodados'}
+                {montagem.totalUnidades === 1 ? 'volume' : 'volumes'}
+                {viagens.totalViagens > 1 ? ' na 1ª viagem' : ' acomodados'}
                 {montagem.volumesAtras > 0
                   ? ` · ${montagem.volumesAtras} ${
                       montagem.volumesAtras === 1 ? 'na faixa de trás' : 'nas faixas de trás'
                     }`
                   : ''}
-                {montagem.fora > 0 ? ` · ${montagem.fora} fora` : ''}
+                {viagens.totalViagens > 1
+                  ? ` · ${viagens.totalViagens} viagens no total`
+                  : montagem.fora > 0
+                    ? ` · ${montagem.fora} fora`
+                    : ''}
+                {` · ${volume(montagem.volumeColocadoM3)} nesta viagem`}
                 {` · ${numero(montagem.alturaUsadaCm)} cm de altura usada`}
               </>
             )}

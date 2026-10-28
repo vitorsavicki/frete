@@ -19,13 +19,13 @@ Ordem em `src/index.tsx`:
 | Método | Rota | Quem vê | O que faz |
 | --- | --- | --- | --- |
 | `GET` | `/` | todos | Home pública, categorias, tour de primeiro acesso e ajuda fixa |
-| `GET` | `/fretes` | todos | Lista mudanças abertas com filtros |
-| `GET` | `/fretes/:id` | todos | Detalhe do frete, rota, carga, plano e propostas (propostas só para o dono) |
-| `GET` | `/novo-frete` | cliente logado | Formulário de publicação |
-| `POST` | `/fretes` | cliente logado | Valida e publica a mudança |
-| `POST` | `/fretes/:id/lances` | transportador logado | Envia ou melhora a proposta |
-| `POST` | `/fretes/:id/aceitar/:bidId` | dono do frete | Aceita uma proposta e encerra o frete |
-| `POST` | `/fretes/:id/cancelar` | dono do frete | Cancela um frete aberto |
+| `GET` | `/fretes` | todos | Lista mudanças abertas com filtros; aplica o relógio antes de consultar |
+| `GET` | `/fretes/:id` | todos | Detalhe do frete, rota, carga, plano, status e prazos; propostas só para o dono. 404 para visitante em `sem_lances`, `expirado` ou `cancelado` |
+| `GET` | `/novo-frete` | cliente logado | Formulário de publicação, com prazo de 24/48/72 h |
+| `POST` | `/fretes` | cliente logado | Valida, calcula os prazos e publica a mudança |
+| `POST` | `/fretes/:id/lances` | transportador logado | Envia ou melhora a proposta enquanto o relógio permite |
+| `POST` | `/fretes/:id/aceitar/:bidId` | dono do frete | Aceita uma proposta em `em_escolha`, antes do fim da janela |
+| `POST` | `/fretes/:id/cancelar` | dono do frete | Cancela um frete `aberto` ou `em_escolha` |
 | `GET` | `/painel` | logado | Painel com alertas e fretes/propostas |
 | `POST` | `/alertas/ler` | logado | Marca todos os alertas como lidos |
 | `GET` | `/caminhao` | transportador logado | Perfil do veículo e custos |
@@ -105,5 +105,22 @@ As APIs usam JSON `{ "erro": "mensagem simples" }` com status HTTP adequado:
 
 - Assets estáticos usam `public/_headers`.
 - `robots.txt` e `sitemap.xml` são gerados pelo Worker.
-- Fretes `encerrado` ou `cancelado` saem do sitemap e recebem `noindex`.
+- Só fretes com `situacao = 'aberto'` entram na home, na listagem e no sitemap.
+- Mudanças `sem_lances`, `expirado` ou `cancelado` retornam 404 para visitantes;
+  `em_escolha` e `encerrado` continuam acessíveis pelo link direto e recebem
+  `noindex`.
 - Páginas dinâmicas não usam cache de CDN além do que a rota declara.
+
+## Relógio do leilão
+
+`aplicarPrazos` roda antes das consultas em:
+
+- `GET /fretes`
+- `GET /fretes/:id`
+- `GET /painel`
+- `GET /sitemap.xml`
+- cron `scheduled` (a cada 5 minutos)
+
+A rotina é idempotente e devolve a contagem de `sem_lances`, `em_escolha` e
+`expirado`. Ela é a mesma para todos os pontos, então não há divergência de
+estado entre telas.

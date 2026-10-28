@@ -9,6 +9,7 @@ import {
   volume as formatarVolume,
 } from '../lib/format';
 import { dimensoesTexto, rotuloTipoVeiculo, volumeVeiculoM3 } from '../lib/carga';
+import { rotuloSituacao } from '../lib/prazos';
 import type { Alert, BidComNome, FreightResumo, Truck, User } from '../lib/db';
 
 interface DashboardProps {
@@ -27,10 +28,7 @@ function iniciais(user: User): string {
 }
 
 function rotuloStatus(status: string): string {
-  if (status === 'aberto') return 'Aberta';
-  if (status === 'encerrado') return 'Encerrada';
-  if (status === 'cancelado') return 'Cancelada';
-  return status;
+  return rotuloSituacao(status);
 }
 
 export const DashboardPage: FC<DashboardProps> = ({
@@ -42,9 +40,11 @@ export const DashboardPage: FC<DashboardProps> = ({
   caminhao,
 }) => {
   const clientes = user.papel === 'cliente';
-  const fretesAbertos = meusFretes.filter((f) => f.status === 'aberto').length;
+  const fretesAbertos = meusFretes.filter((f) => f.situacao === 'aberto').length;
   const lancesRecebidos = meusFretes.reduce((total, f) => total + Number(f.total_lances ?? 0), 0);
-  const lancesEmDisputa = meusLances.filter((l) => l.frete_status === 'aberto').length;
+  const lancesEmDisputa = meusLances.filter(
+    (l) => l.frete_status === 'aberto' || l.frete_status === 'em_escolha',
+  ).length;
   const lancesVencidos = meusLances.filter((l) => l.vencedor === 1).length;
   const valorVencido = meusLances
     .filter((l) => l.vencedor === 1)
@@ -161,7 +161,7 @@ export const DashboardPage: FC<DashboardProps> = ({
                   {meusFretes.map((f) => (
                     <a class="item-painel" href={`/fretes/${f.id}`}>
                       <div class="item-painel__topo">
-                        <span class={`status status-${f.status}`}>{rotuloStatus(f.status)}</span>
+                        <span class={`status status-${f.situacao}`}>{rotuloSituacao(f.situacao)}</span>
                         <span class="chip">{f.categoria_nome}</span>
                         <time>{tempoRelativo(f.criado_em)}</time>
                       </div>
@@ -173,6 +173,12 @@ export const DashboardPage: FC<DashboardProps> = ({
                       </p>
                       <div class="item-painel__meta">
                         <span><span aria-hidden="true">📅</span> {dataCurta(f.data_retirada)}</span>
+                        {f.situacao === 'aberto' && f.encerra_em && (
+                          <span><span aria-hidden="true">⏳</span> Propostas até {dataHora(f.encerra_em)}</span>
+                        )}
+                        {f.situacao === 'em_escolha' && f.prazo_escolha_em && (
+                          <span><span aria-hidden="true">🗳️</span> Escolha até {dataHora(f.prazo_escolha_em)}</span>
+                        )}
                         <span><span aria-hidden="true">🤝</span> {f.total_lances} {f.total_lances === 1 ? 'orçamento' : 'orçamentos'}</span>
                         <span class="item-painel__preco">
                           menor orçamento:{' '}
@@ -215,16 +221,18 @@ export const DashboardPage: FC<DashboardProps> = ({
                   {meusLances.map((l) => (
                     <a class="item-painel" href={`/fretes/${l.freight_id}`}>
                       <div class="item-painel__topo">
-                        {l.frete_status !== 'aberto' ? (
-                          l.vencedor === 1 ? (
-                            <span class="tag tag-ok">🏆 aceito</span>
+                        {l.vencedor === 1 ? (
+                          <span class="tag tag-ok">🏆 aceito</span>
+                        ) : l.frete_status === 'aberto' ? (
+                          l.menor_lance != null && l.valor <= l.menor_lance ? (
+                            <span class="tag tag-ok">melhor valor</span>
                           ) : (
-                            <span class="tag">encerrado</span>
+                            <span class="tag tag-alerta">superado</span>
                           )
-                        ) : l.menor_lance != null && l.valor <= l.menor_lance ? (
-                          <span class="tag tag-ok">melhor valor</span>
+                        ) : l.frete_status === 'em_escolha' ? (
+                          <span class="tag tag-alerta">cliente escolhendo</span>
                         ) : (
-                          <span class="tag tag-alerta">superado</span>
+                          <span class="tag">{rotuloSituacao(l.frete_status)}</span>
                         )}
                         <time>{tempoRelativo(l.criado_em)}</time>
                       </div>

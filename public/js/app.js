@@ -976,7 +976,7 @@
       for (var i = 0; i < veiculosCarga.length; i++) {
         var analise = analisarComVeiculo(carga, veiculosCarga[i]);
         if (!analise || analise.status === 'nao_cabe') continue;
-        var plano = montarBlocos(carga, veiculosCarga[i]);
+        var plano = montarBlocos(carga, veiculosCarga[i], veiculosCarga[i].capacidadeKg);
         if (plano.fora === 0) {
           return { veiculo: veiculosCarga[i], analise: analise };
         }
@@ -1050,9 +1050,52 @@
       return opcoes[0] || null;
     }
 
-    function montarBlocos(carga, veiculo) {
+    function volumeDoItem(item) {
+      return (item.comprimentoCm * item.larguraCm * item.alturaCm) / 1000000;
+    }
+
+    function resumoCategorias(carga) {
+      var ordem = ['Móveis', 'Eletrodomésticos', 'Caixas e volumes', 'Outros'];
+      var mapa = {};
+      ordem.forEach(function (categoria) {
+        mapa[categoria] = { categoria: categoria, volumes: 0, volumeM3: 0, pesoKg: 0 };
+      });
+      carga.itens.forEach(function (item) {
+        var quantidade = Math.max(0, Math.floor(item.quantidade));
+        if (quantidade === 0) return;
+        var registro = mapa[item.categoria];
+        if (!registro) {
+          registro = { categoria: item.categoria, volumes: 0, volumeM3: 0, pesoKg: 0 };
+          mapa[item.categoria] = registro;
+        }
+        registro.volumes += quantidade;
+        registro.volumeM3 += volumeDoItem(item) * quantidade;
+        registro.pesoKg += item.pesoKg * quantidade;
+      });
+      return Object.keys(mapa)
+        .map(function (chave) {
+          return mapa[chave];
+        })
+        .filter(function (registro) {
+          return registro.volumes > 0;
+        })
+        .map(function (registro) {
+          return {
+            categoria: registro.categoria,
+            volumes: registro.volumes,
+            volumeM3: Math.round(registro.volumeM3 * 1000) / 1000,
+            pesoKg: Math.round(registro.pesoKg * 100) / 100,
+          };
+        });
+    }
+
+    function montarBlocos(carga, veiculo, pesoMaximoKg) {
       var unidades = [];
       var fora = 0;
+      var foraPorPeso = 0;
+      var pesoColocado = 0;
+      var pesoMaximo =
+        pesoMaximoKg == null ? Number(veiculo.capacidadeKg) || 0 : Number(pesoMaximoKg) || 0;
 
       carga.itens.forEach(function (item) {
         var quantidade = Math.max(0, Math.floor(item.quantidade));
@@ -1170,6 +1213,7 @@
         }
 
         faixa.volumes += 1;
+        pesoColocado += unidade.item.pesoKg;
         blocos.push({
           item: unidade.item,
           faixa: faixa.indice,
@@ -1181,11 +1225,19 @@
           ),
           altura: unidade.altura,
           profundidade: unidade.profundidade,
+          volumeM3: volumeDoItem(unidade.item),
+          pesoKg: unidade.item.pesoKg,
           empilhado: posicao.base > 0.5,
         });
       }
 
       unidades.forEach(function (unidade) {
+        // O peso é conferido antes do encaixe, como no servidor.
+        if (pesoMaximo > 0 && pesoColocado + unidade.item.pesoKg > pesoMaximo + 0.001) {
+          foraPorPeso += 1;
+          return;
+        }
+
         var colocado = false;
 
         // 1. Piso das faixas que já existem.
@@ -1280,11 +1332,19 @@
           total: item.quantidade,
           colocados: 0,
           fora: 0,
+          volumeM3: volumeDoItem(item) * item.quantidade,
+          pesoKg: item.pesoKg * item.quantidade,
+          volumeColocadoM3: 0,
+          pesoColocadoKg: 0,
         };
       });
       blocos.forEach(function (bloco) {
         var chave = String(bloco.item.id) + '|' + String(bloco.item.nome);
-        if (mapaItens[chave]) mapaItens[chave].colocados += 1;
+        if (mapaItens[chave]) {
+          mapaItens[chave].colocados += 1;
+          mapaItens[chave].volumeColocadoM3 += bloco.volumeM3;
+          mapaItens[chave].pesoColocadoKg += bloco.pesoKg;
+        }
       });
       var itens = [];
       var foraTotal = 0;
@@ -1302,10 +1362,192 @@
         totalUnidades: carga.total,
         colocados: blocos.length,
         fora: foraTotal,
+        foraPorPeso: foraPorPeso,
+        pesoColocadoKg: Math.round(pesoColocado * 100) / 100,
+        volumeColocadoM3:
+          Math.round(
+            blocos.reduce(function (total, bloco) {
+              return total + bloco.volumeM3;
+            }, 0) * 1000,
+          ) / 1000,
+        categorias: resumoCategorias(carga),
         volumesAtras: volumesAtras,
         alturaUsada: alturaUsada,
         comprimentoUsado: comprimentoUsado,
         larguraUsada: larguraOcupada,
+      };
+    }
+
+    // Mesma divisão de viagens do servidor: usa o packer de verdade em cada
+    // leva, em vez de estimar por volume.
+    var LIMITE_VIAGENS = 12;
+
+    function resumoDaCarga(itens) {
+      var total = 0;
+      var pesoKg = 0;
+      var volumeM3 = 0;
+      itens.forEach(function (item) {
+        total += item.quantidade;
+        pesoKg += item.pesoKg * item.quantidade;
+        volumeM3 += volumeDoItem(item) * item.quantidade;
+      });
+      return { itens: itens, total: total, pesoKg: pesoKg, volumeM3: volumeM3 };
+    }
+
+    function planejarViagens(carga, veiculo, limite) {
+      var limiteViagens = Math.max(1, Math.floor(limite || LIMITE_VIAGENS));
+      var base = {
+        veiculo: veiculo,
+        viagens: [],
+        totalViagens: 0,
+        cabeEmUma: carga.total === 0,
+        viavel: carga.total === 0,
+        impossiveis: [],
+        restantes: 0,
+        volumes: carga.total,
+        pesoKg: carga.pesoKg,
+        volumeM3: carga.volumeM3,
+        limiteViagens: limiteViagens,
+        motivo: carga.total === 0 ? 'Sem volumes para planejar.' : '',
+      };
+      if (carga.total === 0) return base;
+
+      var restantesItens = carga.itens
+        .map(function (item) {
+          return Object.assign({}, item, {
+            quantidade: Math.max(0, Math.floor(item.quantidade)),
+          });
+        })
+        .filter(function (item) {
+          return item.quantidade > 0;
+        });
+      var impossiveis = [];
+
+      restantesItens = restantesItens.filter(function (item) {
+        if (orientarItem(item, veiculo)) return true;
+        impossiveis.push({
+          nome: item.nome,
+          emoji: item.emoji,
+          quantidade: item.quantidade,
+          motivo: 'não passa nas medidas do veículo',
+        });
+        return false;
+      });
+
+      var viagens = [];
+      while (restantesItens.length > 0 && viagens.length < limiteViagens) {
+        var resumo = resumoDaCarga(restantesItens);
+        var montagem = montarBlocos(resumo, veiculo, veiculo.capacidadeKg);
+        if (montagem.colocados === 0) break;
+
+        var colocadosPorChave = {};
+        montagem.itens.forEach(function (item) {
+          colocadosPorChave[item.chave] = item.colocados;
+        });
+        var proximos = [];
+        var itensViagem = [];
+
+        restantesItens.forEach(function (item) {
+          var chave = String(item.id) + '|' + String(item.nome);
+          var colocados = colocadosPorChave[chave] || 0;
+          if (colocados > 0) {
+            itensViagem.push({
+              nome: item.nome,
+              emoji: item.emoji,
+              quantidade: colocados,
+            });
+          }
+          var sobra = item.quantidade - colocados;
+          if (sobra > 0) proximos.push(Object.assign({}, item, { quantidade: sobra }));
+        });
+
+        if (itensViagem.length === 0) break;
+
+        viagens.push({
+          numero: viagens.length + 1,
+          montagem: montagem,
+          itens: itensViagem,
+          pesoKg: montagem.pesoColocadoKg,
+          volumeM3: montagem.volumeColocadoM3,
+        });
+        restantesItens = proximos;
+      }
+
+      var restantes = restantesItens.reduce(function (total, item) {
+        return total + item.quantidade;
+      }, 0);
+
+      if (restantes > 0) {
+        var porItem = {};
+        restantesItens.forEach(function (item) {
+          var chave = String(item.id) + '|' + String(item.nome);
+          if (porItem[chave]) {
+            porItem[chave].quantidade += item.quantidade;
+          } else {
+            porItem[chave] = {
+              nome: item.nome,
+              emoji: item.emoji,
+              quantidade: item.quantidade,
+              motivo:
+                viagens.length >= limiteViagens
+                  ? 'passa do limite de ' + limiteViagens + ' viagens'
+                  : 'não coube no desenho do veículo',
+            };
+          }
+        });
+        Object.keys(porItem).forEach(function (chave) {
+          impossiveis.push(porItem[chave]);
+        });
+      }
+
+      var totalViagens = viagens.length;
+      var totalImpossiveis = impossiveis.reduce(function (total, item) {
+        return total + item.quantidade;
+      }, 0);
+      var cabeEmUma = totalViagens === 1 && restantes === 0 && impossiveis.length === 0;
+      var viavel = restantes === 0 && impossiveis.length === 0;
+      var motivo = '';
+      if (cabeEmUma) {
+        motivo = 'Tudo cabe em 1 viagem.';
+      } else if (viavel) {
+        motivo =
+          'A carga não cabe de uma vez. São necessárias ' +
+          totalViagens +
+          ' viagens com este veículo.';
+      } else if (restantes > 0 && totalViagens >= limiteViagens) {
+        motivo =
+          'Com ' +
+          totalViagens +
+          ' viagens ainda sobram ' +
+          restantes +
+          (restantes === 1 ? ' volume' : ' volumes') +
+          '. Confirme o veículo ou divida a mudança.';
+      } else if (totalViagens === 0) {
+        motivo =
+          'Nenhum volume deste veículo entra no desenho. Confira as medidas ou escolha um veículo maior.';
+      } else {
+        motivo =
+          'São necessárias ' +
+          totalViagens +
+          ' viagens, mas ' +
+          totalImpossiveis +
+          (totalImpossiveis === 1 ? ' volume não entra' : ' volumes não entram') +
+          ' neste veículo.';
+      }
+
+      return {
+        veiculo: veiculo,
+        viagens: viagens,
+        totalViagens: totalViagens,
+        cabeEmUma: cabeEmUma,
+        viavel: viavel,
+        impossiveis: impossiveis,
+        restantes: restantes,
+        volumes: carga.total,
+        pesoKg: carga.pesoKg,
+        volumeM3: carga.volumeM3,
+        limiteViagens: limiteViagens,
+        motivo: motivo,
       };
     }
 
@@ -1368,17 +1610,20 @@
       return s;
     }
 
-    function listaHtml(dados) {
+    function listaHtml(dados, viagens) {
       var itens = dados.itens || [];
       if (!itens.length) return '';
       var fora = itens.filter(function (item) {
         return item.fora > 0;
       });
+      var proximas = viagens && !viagens.cabeEmUma && viagens.viavel && viagens.totalViagens > 1;
       var html = '<div class="plano-conferencia" data-plano-conferencia>';
 
       if (fora.length) {
         html +=
-          '<div class="plano-fora" data-plano-fora><strong>Ficaram fora do plano</strong><ul>';
+          '<div class="plano-fora" data-plano-fora><strong>' +
+          (proximas ? 'Vão nas próximas viagens' : 'Ficaram fora do plano') +
+          '</strong><ul>';
         fora.forEach(function (item) {
           html +=
             '<li><span aria-hidden="true">' +
@@ -1393,7 +1638,13 @@
             '</span></li>';
         });
         html +=
-          '</ul><p>O veículo escolhido não acomoda tudo. Confira as medidas ou planeje duas viagens com o transportador.</p></div>';
+          '</ul><p>' +
+          (proximas
+            ? 'Estes volumes não couberam na primeira viagem e entram nas próximas. A lista de viagens mostra a divisão.'
+            : viagens && viagens.viavel === false
+              ? 'Estes volumes não entram neste veículo. Confira as medidas ou escolha um veículo maior.'
+              : 'O veículo escolhido não acomoda tudo. Confira as medidas ou escolha um veículo maior.') +
+          '</p></div>';
       }
 
       html +=
@@ -1410,16 +1661,333 @@
           '<small>' +
           item.total +
           (item.total === 1 ? ' volume' : ' volumes') +
-          '</small></span><span class="plano-lista__status">' +
-          (completo ? 'No plano' : item.fora + ' fora') +
+          ' · ' +
+          fmtNumero.format(item.volumeM3 || 0) +
+          ' m³</small></span><span class="plano-lista__status">' +
+          (completo ? 'No plano' : proximas ? item.fora + ' na próxima' : item.fora + ' fora') +
           '</span></li>';
       });
       html += '</ul></div></div>';
       return html;
     }
 
+    function categoriasHtml(dados, carga) {
+      var categorias = dados.categorias || [];
+      if (!categorias.length) return '';
+      var html =
+        '<div class="plano-categorias" data-plano-categorias><div class="plano-categorias__topo"><strong>Quanto espaço cada grupo ocupa</strong><span>Volume total: ' +
+        fmtNumero.format(carga.volumeM3) +
+        ' m³</span></div><ul class="plano-categorias__lista">';
+      categorias.forEach(function (categoria) {
+        html +=
+          '<li class="plano-categoria plano-categoria--' +
+          classeCategoria(categoria.categoria) +
+          '"><span class="plano-categoria__nome">' +
+          escaparHtml(categoria.categoria) +
+          '</span><strong>' +
+          fmtNumero.format(categoria.volumeM3) +
+          ' m³</strong><small>' +
+          categoria.volumes +
+          (categoria.volumes === 1 ? ' volume' : ' volumes') +
+          ' · ' +
+          fmtPesoCarga.format(Math.round(categoria.pesoKg)) +
+          ' kg</small></li>';
+      });
+      html += '</ul></div>';
+      return html;
+    }
+
+    function viagensHtml(viagens) {
+      if (!viagens) return '';
+      var icone = viagens.cabeEmUma ? '✅' : viagens.viavel ? '🔁' : '⚠️';
+      var titulo = viagens.cabeEmUma
+        ? 'Tudo cabe em 1 viagem'
+        : viagens.viavel
+          ? 'São necessárias ' + viagens.totalViagens + ' viagens'
+          : 'Este veículo não leva tudo';
+      var html =
+        '<div class="plano-viagens' +
+        (viagens.cabeEmUma ? ' plano-viagens--ok' : '') +
+        '" data-plano-viagens><div class="plano-viagens__topo"><span class="plano-viagens__icone" aria-hidden="true">' +
+        icone +
+        '</span><div><strong>' +
+        titulo +
+        '</strong><p>' +
+        escaparHtml(viagens.motivo) +
+        '</p></div></div>';
+
+      if (viagens.totalViagens > 1) {
+        html += '<ol class="plano-viagens__lista">';
+        viagens.viagens.forEach(function (viagem) {
+          var itens = viagem.itens
+            .map(function (item) {
+              return item.quantidade + '× ' + (item.emoji || '📦') + ' ' + item.nome;
+            })
+            .join(' · ');
+          html +=
+            '<li class="plano-viagem"><div class="plano-viagem__titulo"><strong>Viagem ' +
+            viagem.numero +
+            '</strong><span>' +
+            fmtNumero.format(viagem.volumeM3) +
+            ' m³ · ' +
+            fmtPesoCarga.format(Math.round(viagem.pesoKg)) +
+            ' kg</span></div><p>' +
+            escaparHtml(itens) +
+            '</p></li>';
+        });
+        html += '</ol>';
+      }
+
+      if (viagens.impossiveis.length) {
+        html +=
+          '<div class="plano-viagens__impossiveis"><strong>O que não entra neste veículo</strong><ul>';
+        viagens.impossiveis.forEach(function (item) {
+          html +=
+            '<li><span aria-hidden="true">' +
+            escaparHtml(item.emoji || '📦') +
+            '</span> ' +
+            item.quantidade +
+            '× ' +
+            escaparHtml(item.nome) +
+            ' — ' +
+            escaparHtml(item.motivo) +
+            '</li>';
+        });
+        html += '</ul></div>';
+      }
+
+      html += '</div>';
+      return html;
+    }
+
+    function coresCategoria(categoria) {
+      if (categoria === 'Móveis') {
+        return { topo: '#dbeafe', frente: '#93c5fd', lado: '#60a5fa', traco: '#2563eb' };
+      }
+      if (categoria === 'Eletrodomésticos') {
+        return { topo: '#fef3c7', frente: '#fcd34d', lado: '#f59e0b', traco: '#b45309' };
+      }
+      if (categoria === 'Caixas e volumes') {
+        return { topo: '#dcfce7', frente: '#86efac', lado: '#4ade80', traco: '#047857' };
+      }
+      return { topo: '#f1f5f9', frente: '#cbd5e1', lado: '#94a3b8', traco: '#64748b' };
+    }
+
+    var ISO_COSSENO = Math.cos(Math.PI / 6);
+    var ISO_SENO = 0.5;
+
+    function pontoIso(x, y, z, origem, escala) {
+      return {
+        x: origem.x + (x - z) * ISO_COSSENO * escala,
+        y: origem.y + (x + z) * ISO_SENO * escala - y * escala,
+      };
+    }
+
+    function pontosPoly(pontos) {
+      return pontos
+        .map(function (ponto) {
+          return ponto.x.toFixed(1) + ',' + ponto.y.toFixed(1);
+        })
+        .join(' ');
+    }
+
+    function vistaIsoHtml(dados, veiculo, carga) {
+      var comprimento = Math.max(1, veiculo.comprimentoCm);
+      var largura = Math.max(1, veiculo.larguraCm);
+      var altura = Math.max(1, veiculo.alturaCm);
+      var larguraView = 880;
+      var margem = 46;
+      var escala = Math.max(
+        0.05,
+        Math.min(
+          (larguraView - margem * 2) / ((comprimento + largura) * ISO_COSSENO),
+          430 / ((comprimento + largura) * ISO_SENO + altura),
+        ),
+      );
+      var larguraDesenho = (comprimento + largura) * ISO_COSSENO * escala;
+      var alturaDesenho = (comprimento + largura) * ISO_SENO * escala + altura * escala;
+      var alturaView = margem * 2 + alturaDesenho;
+      var origem = {
+        x: (larguraView - larguraDesenho) / 2 + largura * ISO_COSSENO * escala,
+        y: (alturaView - alturaDesenho) / 2 + altura * escala,
+      };
+
+      function p(x, y, z) {
+        return pontoIso(x, y, z, origem, escala);
+      }
+
+      var faixaOffset = {};
+      var acumulado = 0;
+      dados.faixas.forEach(function (faixa) {
+        faixaOffset[faixa.indice] = acumulado;
+        acumulado += faixa.profundidadeCm;
+      });
+
+      var blocosOrdenados = dados.blocos.slice().sort(function (a, b) {
+        var za = faixaOffset[a.faixa] || 0;
+        var zb = faixaOffset[b.faixa] || 0;
+        return a.x + za - (b.x + zb);
+      });
+
+      var html =
+        '<svg class="plano-iso" viewBox="0 0 ' +
+        larguraView.toFixed(0) +
+        ' ' +
+        alturaView.toFixed(0) +
+        '" role="img" aria-label="' +
+        (carga.total === 0
+          ? 'Vista 3D de um veículo vazio, pronto para receber a mudança'
+          : 'Vista 3D da carga dentro de ' +
+            escaparHtml(veiculo.nome || 'um veículo') +
+            ', com ' +
+            dados.colocados +
+            ' volumes') +
+        '"><title>Vista 3D do carregamento</title><desc>Cada caixa representa um volume. A frente fica na parte de cima do desenho e a porta na parte de baixo. As faces mais claras são o topo dos volumes.</desc>';
+
+      html +=
+        '<polygon points="' +
+        pontosPoly([
+          p(comprimento, 0, 0),
+          p(comprimento, altura, 0),
+          p(comprimento, altura, largura),
+          p(comprimento, 0, largura),
+        ]) +
+        '" class="plano-iso__parede"/>';
+      html +=
+        '<polygon points="' +
+        pontosPoly([p(0, 0, 0), p(comprimento, 0, 0), p(comprimento, altura, 0), p(0, altura, 0)]) +
+        '" class="plano-iso__parede plano-iso__parede--lado"/>';
+      html +=
+        '<polygon points="' +
+        pontosPoly([
+          p(0, 0, 0),
+          p(comprimento, 0, 0),
+          p(comprimento, 0, largura),
+          p(0, 0, largura),
+        ]) +
+        '" class="plano-iso__piso"/>';
+
+      dados.faixas.forEach(function (faixa) {
+        var z = faixaOffset[faixa.indice] || 0;
+        if (z <= 0) return;
+        var inicio = p(0, 0, z);
+        var fim = p(comprimento, 0, z);
+        html +=
+          '<path d="M' +
+          inicio.x.toFixed(1) +
+          ' ' +
+          inicio.y.toFixed(1) +
+          'L' +
+          fim.x.toFixed(1) +
+          ' ' +
+          fim.y.toFixed(1) +
+          '" class="plano-iso__faixa"/>';
+      });
+
+      blocosOrdenados.forEach(function (bloco) {
+        var z0 = faixaOffset[bloco.faixa] || 0;
+        var z1 = z0 + bloco.profundidade;
+        var x0 = bloco.x;
+        var x1 = bloco.x + bloco.comprimento;
+        var y0 = bloco.base;
+        var y1 = bloco.base + bloco.altura;
+        var cores = coresCategoria(bloco.item.categoria);
+        var topo = [p(x0, y1, z0), p(x1, y1, z0), p(x1, y1, z1), p(x0, y1, z1)];
+        var faceFrente = [p(x1, y0, z0), p(x1, y0, z1), p(x1, y1, z1), p(x1, y1, z0)];
+        var faceLado = [p(x0, y0, z1), p(x1, y0, z1), p(x1, y1, z1), p(x0, y1, z1)];
+
+        html +=
+          '<g class="plano-iso__bloco plano-bloco--' +
+          classeCategoria(bloco.item.categoria) +
+          (bloco.item.fragil ? ' plano-bloco--fragil' : '') +
+          '"><title>' +
+          escaparHtml(bloco.item.nome) +
+          (bloco.item.fragil ? ' (frágil)' : '') +
+          ' · ' +
+          Math.round(bloco.comprimento) +
+          ' × ' +
+          Math.round(bloco.profundidade) +
+          ' × ' +
+          Math.round(bloco.altura) +
+          ' cm · base a ' +
+          Math.round(bloco.base) +
+          ' cm</title>';
+        html +=
+          '<polygon points="' +
+          pontosPoly(faceLado) +
+          '" fill="' +
+          cores.lado +
+          '" stroke="' +
+          cores.traco +
+          '" class="plano-iso__face plano-iso__face--lado"/>';
+        html +=
+          '<polygon points="' +
+          pontosPoly(faceFrente) +
+          '" fill="' +
+          cores.frente +
+          '" stroke="' +
+          cores.traco +
+          '" class="plano-iso__face plano-iso__face--frente"/>';
+        html +=
+          '<polygon points="' +
+          pontosPoly(topo) +
+          '" fill="' +
+          cores.topo +
+          '" stroke="' +
+          cores.traco +
+          '" class="plano-iso__face plano-iso__face--topo"/></g>';
+      });
+
+      var contorno = [p(0, altura, 0), p(comprimento, altura, 0), p(comprimento, altura, largura)];
+      html +=
+        '<path d="M' +
+        contorno[0].x.toFixed(1) +
+        ' ' +
+        contorno[0].y.toFixed(1) +
+        'L' +
+        contorno[1].x.toFixed(1) +
+        ' ' +
+        contorno[1].y.toFixed(1) +
+        'L' +
+        contorno[2].x.toFixed(1) +
+        ' ' +
+        contorno[2].y.toFixed(1) +
+        '" class="plano-iso__contorno"/>';
+
+      var frente = p(0, 0, 0);
+      var porta = p(comprimento, 0, largura);
+      html +=
+        '<text x="' +
+        frente.x.toFixed(1) +
+        '" y="' +
+        (frente.y - 12).toFixed(1) +
+        '" text-anchor="middle" class="plano-iso__rotulo">frente (cabine)</text>';
+      html +=
+        '<text x="' +
+        porta.x.toFixed(1) +
+        '" y="' +
+        (porta.y + 20).toFixed(1) +
+        '" text-anchor="middle" class="plano-iso__rotulo">porta</text>';
+
+      if (carga.total === 0) {
+        html +=
+          '<g class="plano-iso__vazio"><rect x="' +
+          (origem.x - 95).toFixed(1) +
+          '" y="' +
+          (origem.y - 28).toFixed(1) +
+          '" width="190" height="52" rx="8" class="plano-iso__vazio-caixa"/><text x="' +
+          origem.x.toFixed(1) +
+          '" y="' +
+          (origem.y + 4).toFixed(1) +
+          '" text-anchor="middle" class="plano-iso__vazio-texto">escolha os itens para montar a carga em 3D</text></g>';
+      }
+
+      html += '</svg>';
+      return html;
+    }
+
     function vistaHtml(dados, veiculo) {
-      if (!dados.faixas.length) return listaHtml(dados);
+      if (!dados.faixas.length) return '';
 
       var comprimento = Math.max(1, veiculo.comprimentoCm);
       var largura = Math.max(1, veiculo.larguraCm);
@@ -1532,11 +2100,10 @@
       html +=
         '<p class="plano-vista__nota">Cada retângulo é a base de um volume. Volumes empilhados aparecem na mesma posição; a altura usada está no corte lateral.</p>';
       html += '</div>';
-      html += listaHtml(dados);
       return html;
     }
 
-    function svgDoPlano(carga, veiculo, ajudantes) {
+    function svgDoPlano(carga, veiculo, ajudantes, viagens) {
       var alturaCm = Math.max(1, veiculo.alturaCm);
       var comprimentoCm = Math.max(1, veiculo.comprimentoCm);
       var escala = Math.min(ALTURA_PLANO / alturaCm, LARGURA_MAXIMA_PLANO / comprimentoCm);
@@ -1556,11 +2123,27 @@
       var altura = pisoY + BASE_PLANO;
       var cabH = Math.min(110, Math.max(48, internaA * 0.62));
       var cabY = pisoY - cabH;
-      var dados = montarBlocos(carga, veiculo);
+      var dados = montarBlocos(carga, veiculo, veiculo.capacidadeKg);
       var visiveis = dados.blocos.filter(function (bloco) {
         return bloco.faixa === 0;
       });
       var svg = [];
+
+      svg.push('<div class="plano-abas" data-plano-abas>');
+      svg.push(
+        '<div class="plano-abas__botoes" role="tablist" aria-label="Formas de ver o carregamento">' +
+          '<button type="button" class="plano-aba plano-aba--ativo" data-plano-aba="3d" role="tab" aria-selected="true"><span aria-hidden="true">🧊</span> 3D</button>' +
+          '<button type="button" class="plano-aba" data-plano-aba="lado" role="tab" aria-selected="false"><span aria-hidden="true">📐</span> Lado</button>' +
+          '<button type="button" class="plano-aba" data-plano-aba="cima" role="tab" aria-selected="false"><span aria-hidden="true">🗺️</span> Cima</button>' +
+          '</div>',
+      );
+      svg.push(
+        '<div class="plano-abas__painel" data-plano-painel="3d">' +
+          vistaIsoHtml(dados, veiculo, carga) +
+          '<p class="plano-abas__nota">Gire a cabeça, não a tela: a frente do veículo fica em cima e a porta embaixo. Cada cubo é um volume da lista.</p>' +
+          '</div>',
+      );
+      svg.push('<div class="plano-abas__painel" data-plano-painel="lado">');
 
       svg.push(
         '<svg viewBox="0 0 ' +
@@ -1805,13 +2388,22 @@
               ': o motorista e a equipe organizam a carga.') +
           '</p>',
       );
+      svg.push('</div>');
+
+      svg.push('<div class="plano-abas__painel" data-plano-painel="cima">');
       svg.push(vistaHtml(dados, veiculo));
+      svg.push('</div>');
+      svg.push('</div>');
+
+      svg.push(categoriasHtml(dados, carga));
+      svg.push(viagensHtml(viagens));
+      svg.push(listaHtml(dados, viagens));
 
       return { html: svg.join(''), dados: dados };
     }
 
     function dicasDoPlano(carga, veiculo) {
-      var dados = montarBlocos(carga, veiculo);
+      var dados = montarBlocos(carga, veiculo, veiculo.capacidadeKg);
       var nomes = carga.itens
         .map(function (item) {
           return String(item.nome).toLowerCase();
@@ -1825,7 +2417,7 @@
         dicas.push(
           dados.fora +
             (dados.fora === 1 ? ' volume ficou' : ' volumes ficaram') +
-            ' fora do desenho. Confirme as medidas ou pense em duas viagens.',
+            ' fora do desenho. Confirme as medidas ou veja a divisão em viagens no plano.',
         );
       }
       if (fragil) {
@@ -1892,13 +2484,13 @@
         fala.textContent = 'Essa carga passa de uma carreta.';
         if (detalhe) {
           detalhe.textContent =
-            'Provavelmente serão duas viagens. Vale conversar com o transportador antes de fechar.';
+            'O plano abaixo mostra quantas viagens são necessárias e o que vai em cada uma.';
         }
         ajuda.classList.add('mascote-ajuda--atencao');
       }
     }
 
-    function atualizarNumerosDoPlano(dados, carga) {
+    function atualizarNumerosDoPlano(dados, carga, viagens) {
       var numeros = $('[data-plano-numeros]', montador);
       if (!numeros) return;
 
@@ -1912,7 +2504,8 @@
         dados.colocados +
           ' de ' +
           carga.total +
-          (carga.total === 1 ? ' volume acomodado' : ' volumes acomodados'),
+          (carga.total === 1 ? ' volume' : ' volumes') +
+          (viagens && viagens.totalViagens > 1 ? ' na 1ª viagem' : ' acomodados'),
       ];
       if (dados.volumesAtras > 0) {
         partes.push(
@@ -1920,10 +2513,47 @@
             (dados.volumesAtras === 1 ? ' na faixa de trás' : ' nas faixas de trás'),
         );
       }
-      if (dados.fora > 0) partes.push(dados.fora + ' fora');
+      if (viagens && viagens.totalViagens > 1) {
+        partes.push(viagens.totalViagens + ' viagens no total');
+      } else if (dados.fora > 0) {
+        partes.push(dados.fora + ' fora');
+      }
+      partes.push(fmtNumero.format(dados.volumeColocadoM3 || 0) + ' m³ nesta viagem');
       partes.push(Math.round(dados.alturaUsada) + ' cm de altura usada');
       numeros.textContent = partes.join(' · ');
       numeros.hidden = false;
+    }
+
+    function iniciarAbasPlano(raiz) {
+      if (!raiz) return;
+      var abas = $('[data-plano-abas]', raiz);
+      if (!abas) return;
+
+      abas.classList.add('plano-abas--js');
+      var botoes = $$('[data-plano-aba]', abas);
+      var paineis = $$('[data-plano-painel]', abas);
+
+      function ativar(nome) {
+        botoes.forEach(function (botao) {
+          var ativo = botao.getAttribute('data-plano-aba') === nome;
+          botao.classList.toggle('plano-aba--ativo', ativo);
+          botao.setAttribute('aria-selected', ativo ? 'true' : 'false');
+        });
+        paineis.forEach(function (painel) {
+          painel.classList.toggle(
+            'plano-abas__painel--ativo',
+            painel.getAttribute('data-plano-painel') === nome,
+          );
+        });
+      }
+
+      botoes.forEach(function (botao) {
+        botao.addEventListener('click', function () {
+          ativar(botao.getAttribute('data-plano-aba'));
+        });
+      });
+
+      ativar('3d');
     }
 
     function atualizarPlano(carga, sugestao) {
@@ -1945,10 +2575,12 @@
       var form = montador.closest('form');
       var campoAjudantes = form ? $('input[name="ajudantes"]', form) : null;
       var ajudantes = campoAjudantes ? Math.max(0, Math.floor(Number(campoAjudantes.value) || 0)) : 0;
+      var viagens = planejarViagens(carga, veiculo);
 
-      var resultado = svgDoPlano(carga, veiculo, ajudantes);
+      var resultado = svgDoPlano(carga, veiculo, ajudantes, viagens);
       quadro.innerHTML = resultado.html;
-      atualizarNumerosDoPlano(resultado.dados, carga);
+      iniciarAbasPlano(quadro);
+      atualizarNumerosDoPlano(resultado.dados, carga, viagens);
       if (tituloEl) {
         tituloEl.textContent =
           carga.total === 0 ? 'Seu caminhão, pronto para a mudança' : 'Como a carga se encaixa';
@@ -2036,7 +2668,7 @@
         if (nome) nome.textContent = 'Nenhum caminhão padrão';
         if (obs) {
           obs.textContent =
-            'A carga passa de uma carreta padrão — provavelmente serão necessárias duas viagens.';
+            'A carga não cabe em uma carreta padrão. O plano abaixo mostra quantas viagens são necessárias.';
         }
       } else {
         caixa.classList.add('carga-resumo__veiculo--vazio');

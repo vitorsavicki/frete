@@ -11,11 +11,14 @@
 import {
   VEICULOS,
   analisarEncaixe,
+  resumoCarga,
+  resumoCategorias,
   volumeItemM3,
   type CargaResumo,
   type CategoriaCarga,
   type ItemCarga,
   type MedidasVeiculo,
+  type ResumoCategoria,
   type SugestaoVeiculo,
 } from './carga';
 
@@ -35,6 +38,10 @@ export interface BlocoMontagem {
   comprimento: number;
   altura: number;
   profundidade: number;
+  /** Peso de uma unidade deste volume. */
+  pesoKg: number;
+  /** Volume de uma unidade deste volume, em m³. */
+  volumeM3: number;
   quantidade: number;
   empilhado: boolean;
 }
@@ -48,6 +55,12 @@ export interface ItemMontagem {
   total: number;
   colocados: number;
   fora: number;
+  /** Volume de todos os volumes deste tipo de item. */
+  volumeM3: number;
+  /** Peso de todos os volumes deste tipo de item. */
+  pesoKg: number;
+  volumeColocadoM3: number;
+  pesoColocadoKg: number;
 }
 
 export interface FaixaMontagem {
@@ -65,6 +78,15 @@ export interface MontagemCarga {
   totalUnidades: number;
   colocados: number;
   fora: number;
+  /** Motivos da conferência: ajuda a orientar o cliente sem jargão. */
+  foraPorMedida: number;
+  foraPorPeso: number;
+  foraPorGeometria: number;
+  /** Volumes que realmente entraram no desenho. */
+  pesoColocadoKg: number;
+  volumeColocadoM3: number;
+  /** Volume e peso por categoria, para mostrar o volume das caixas. */
+  categorias: ResumoCategoria[];
   /** Volumes acomodados nas faixas que não aparecem no corte lateral. */
   volumesAtras: number;
   alturaUsadaCm: number;
@@ -160,7 +182,16 @@ function ordenarUnidades(a: Unidade, b: Unidade): number {
   return a.item.pesoKg - b.item.pesoKg;
 }
 
-export function montarPlanoCarga(carga: CargaResumo, veiculo: MedidasVeiculo): MontagemCarga {
+export interface LimitesMontagem {
+  /** Quando informado, o plano para de colocar volumes ao atingir o peso. */
+  pesoMaximoKg?: number | null;
+}
+
+export function montarPlanoCarga(
+  carga: CargaResumo,
+  veiculo: MedidasVeiculo,
+  limites: LimitesMontagem = {},
+): MontagemCarga {
   const alturaVeiculo = Math.max(0, veiculo.alturaCm);
   const comprimentoVeiculo = Math.max(0, veiculo.comprimentoCm);
   const larguraVeiculo = Math.max(0, veiculo.larguraCm);
@@ -177,7 +208,14 @@ export function montarPlanoCarga(carga: CargaResumo, veiculo: MedidasVeiculo): M
   const celulas = Math.max(1, Math.ceil(comprimentoVeiculo / PASSO_CM));
   const faixas: FaixaInterna[] = [];
   const blocos: BlocoMontagem[] = [];
-  let fora = foraOrientacao;
+  const pesoMaximo =
+    limites.pesoMaximoKg != null && limites.pesoMaximoKg > 0
+      ? limites.pesoMaximoKg
+      : Number.POSITIVE_INFINITY;
+  let pesoColocadoKg = 0;
+  let foraPorMedida = foraOrientacao;
+  let foraPorPeso = 0;
+  let foraPorGeometria = 0;
   let larguraOcupada = 0;
 
   const criarFaixa = (profundidade: number): FaixaInterna => ({
@@ -265,6 +303,7 @@ export function montarPlanoCarga(carga: CargaResumo, veiculo: MedidasVeiculo): M
     }
 
     faixa.volumes += 1;
+    pesoColocadoKg += unidade.item.pesoKg;
     blocos.push({
       chave: `${unidade.item.id}-${faixa.indice}-${blocos.length}`,
       itemId: unidade.item.id,
@@ -281,12 +320,21 @@ export function montarPlanoCarga(carga: CargaResumo, veiculo: MedidasVeiculo): M
       ),
       altura: unidade.altura,
       profundidade: unidade.profundidade,
+      pesoKg: unidade.item.pesoKg,
+      volumeM3: volumeItemM3(unidade.item),
       quantidade: 1,
       empilhado: posicao.base > 0.5,
     });
   };
 
   for (const unidade of unidades) {
+    // O peso é conferido antes de tentar o encaixe. Assim a mesma função
+    // serve para o plano completo e para cada viagem de um caminhão menor.
+    if (pesoColocadoKg + unidade.item.pesoKg > pesoMaximo + 0.001) {
+      foraPorPeso += 1;
+      continue;
+    }
+
     let colocado = false;
 
     // 1. Piso das faixas que já existem.
@@ -331,7 +379,7 @@ export function montarPlanoCarga(carga: CargaResumo, veiculo: MedidasVeiculo): M
       }
     }
 
-    if (!colocado) fora += 1;
+    if (!colocado) foraPorGeometria += 1;
   }
 
   let alturaUsadaCm = 0;
@@ -377,12 +425,20 @@ export function montarPlanoCarga(carga: CargaResumo, veiculo: MedidasVeiculo): M
         total: item.quantidade,
         colocados: 0,
         fora: 0,
+        volumeM3: volumeItemM3(item) * item.quantidade,
+        pesoKg: item.pesoKg * item.quantidade,
+        volumeColocadoM3: 0,
+        pesoColocadoKg: 0,
       });
     }
   }
   for (const bloco of blocos) {
     const registro = mapaItens.get(`${bloco.itemId}|${bloco.nome}`);
-    if (registro) registro.colocados += 1;
+    if (registro) {
+      registro.colocados += 1;
+      registro.volumeColocadoM3 += bloco.volumeM3;
+      registro.pesoColocadoKg += bloco.pesoKg;
+    }
   }
   for (const registro of mapaItens.values()) {
     registro.fora = Math.max(0, registro.total - registro.colocados);
@@ -392,6 +448,7 @@ export function montarPlanoCarga(carga: CargaResumo, veiculo: MedidasVeiculo): M
 
   const nomes = carga.itens.map((item) => item.nome.toLowerCase()).join(' ');
   const ocupacaoPeso = veiculo.capacidadeKg > 0 ? carga.pesoKg / veiculo.capacidadeKg : 0;
+  const volumeColocadoM3 = blocos.reduce((total, bloco) => total + bloco.volumeM3, 0);
 
   return {
     veiculo: {
@@ -406,6 +463,12 @@ export function montarPlanoCarga(carga: CargaResumo, veiculo: MedidasVeiculo): M
     totalUnidades: carga.totalItens,
     colocados: blocos.length,
     fora: foraTotal,
+    foraPorMedida,
+    foraPorPeso,
+    foraPorGeometria,
+    pesoColocadoKg: Math.round(pesoColocadoKg * 100) / 100,
+    volumeColocadoM3: Math.round(volumeColocadoM3 * 1000) / 1000,
+    categorias: resumoCategorias(carga),
     volumesAtras,
     alturaUsadaCm: Math.round(alturaUsadaCm),
     comprimentoUsadoCm: Math.round(comprimentoUsadoCm),
@@ -430,7 +493,7 @@ export function dicasCarregamento(carga: CargaResumo, montagem: MontagemCarga): 
 
   if (montagem.fora > 0) {
     dicas.push(
-      `${montagem.fora} ${montagem.fora === 1 ? 'volume ficou' : 'volumes ficaram'} fora do desenho. Confirme as medidas ou pense em duas viagens.`,
+      `${montagem.fora} ${montagem.fora === 1 ? 'volume ficou' : 'volumes ficaram'} fora do desenho. Confirme as medidas ou veja a divisão em viagens no plano.`,
     );
   }
   if (montagem.temFragil) {
@@ -489,9 +552,219 @@ export function sugerirVeiculoParaPlano(carga: CargaResumo): SugestaoVeiculo | n
   for (const veiculo of VEICULOS) {
     const analise = analisarEncaixe(carga, veiculo);
     if (analise.status === 'nao_cabe') continue;
-    const plano = montarPlanoCarga(carga, veiculo);
+    const plano = montarPlanoCarga(carga, veiculo, { pesoMaximoKg: veiculo.capacidadeKg });
     if (plano.fora === 0) return { veiculo, analise };
   }
 
   return null;
+}
+
+export interface ItemViagem {
+  nome: string;
+  emoji: string;
+  quantidade: number;
+}
+
+export interface ViagemCarga {
+  numero: number;
+  montagem: MontagemCarga;
+  itens: ItemViagem[];
+  pesoKg: number;
+  volumeM3: number;
+}
+
+export interface ItemImpossivel {
+  nome: string;
+  emoji: string;
+  quantidade: number;
+  motivo: string;
+}
+
+export interface PlanoViagens {
+  veiculo: MedidasVeiculo;
+  viagens: ViagemCarga[];
+  totalViagens: number;
+  /** A carga inteira cabe em uma única viagem. */
+  cabeEmUma: boolean;
+  /** Todas as unidades podem ser levadas, em uma ou mais viagens. */
+  viavel: boolean;
+  /** Unidades que não entram neste veículo de jeito nenhum. */
+  impossiveis: ItemImpossivel[];
+  /** Unidades que sobraram por causa do limite de viagens. */
+  restantes: number;
+  volumes: number;
+  pesoKg: number;
+  volumeM3: number;
+  limiteViagens: number;
+  motivo: string;
+}
+
+export const LIMITE_VIAGENS = 12;
+
+function clonarItens(itens: ItemCarga[]): ItemCarga[] {
+  return itens
+    .map((item) => ({ ...item, quantidade: Math.max(0, Math.floor(item.quantidade)) }))
+    .filter((item) => item.quantidade > 0);
+}
+
+/**
+ * Distribui a carga em viagens quando ela não cabe de uma vez no veículo
+ * escolhido. Cada viagem usa o mesmo packer do desenho: nada de estimar por
+ * volume e prometer um encaixe que o plano não mostra.
+ *
+ * Itens maiores que a carroceria ou mais pesados que a lotação viram
+ * "impossíveis" com o motivo escrito, em vez de sumirem da conta.
+ */
+export function planejarViagens(
+  carga: CargaResumo,
+  veiculo: MedidasVeiculo,
+  limite = LIMITE_VIAGENS,
+): PlanoViagens {
+  const limiteViagens = Math.max(1, Math.floor(limite));
+  const base: PlanoViagens = {
+    veiculo,
+    viagens: [],
+    totalViagens: 0,
+    cabeEmUma: carga.totalItens === 0,
+    viavel: carga.totalItens === 0,
+    impossiveis: [],
+    restantes: 0,
+    volumes: carga.totalItens,
+    pesoKg: carga.pesoKg,
+    volumeM3: carga.volumeM3,
+    limiteViagens,
+    motivo: carga.totalItens === 0 ? 'Sem volumes para planejar.' : '',
+  };
+
+  if (carga.totalItens === 0) return base;
+
+  let restantesItens = clonarItens(carga.itens);
+  const impossiveis: ItemImpossivel[] = [];
+
+  // 1. O que nem passa pela porta: medida maior que o veículo.
+  restantesItens = restantesItens.filter((item) => {
+    if (orientar(item, veiculo)) return true;
+    impossiveis.push({
+      nome: item.nome,
+      emoji: item.emoji,
+      quantidade: item.quantidade,
+      motivo: 'não passa nas medidas do veículo',
+    });
+    return false;
+  });
+
+  // 2. Cada viagem consome o que couber no desenho. Como o packer é
+  //    determinístico, o que não entra numa carroceria vazia não entra em
+  //    nenhuma outra.
+  const viagens: ViagemCarga[] = [];
+  while (restantesItens.length > 0 && viagens.length < limiteViagens) {
+    const resumo = resumoCarga(restantesItens);
+    const montagem = montarPlanoCarga(resumo, veiculo, {
+      pesoMaximoKg: veiculo.capacidadeKg,
+    });
+
+    if (montagem.colocados === 0) break;
+
+    const colocadosPorChave = new Map(
+      montagem.itens.map((item) => [item.chave, item.colocados] as const),
+    );
+    const proximos: ItemCarga[] = [];
+    const itensViagem: ItemViagem[] = [];
+
+    for (const item of restantesItens) {
+      const colocados = colocadosPorChave.get(`${item.id}|${item.nome}`) ?? 0;
+      if (colocados > 0) {
+        itensViagem.push({
+          nome: item.nome,
+          emoji: item.emoji,
+          quantidade: colocados,
+        });
+      }
+      const sobra = item.quantidade - colocados;
+      if (sobra > 0) proximos.push({ ...item, quantidade: sobra });
+    }
+
+    if (itensViagem.length === 0) break;
+
+    viagens.push({
+      numero: viagens.length + 1,
+      montagem,
+      itens: itensViagem,
+      pesoKg: Math.round(montagem.pesoColocadoKg * 100) / 100,
+      volumeM3: Math.round(montagem.volumeColocadoM3 * 1000) / 1000,
+    });
+    restantesItens = proximos;
+  }
+
+  const restantes = restantesItens.reduce((total, item) => total + item.quantidade, 0);
+  if (restantes > 0 && viagens.length >= limiteViagens) {
+    const porItem = new Map<string, ItemImpossivel>();
+    for (const item of restantesItens) {
+      const chave = `${item.id}|${item.nome}`;
+      const registro = porItem.get(chave);
+      if (registro) registro.quantidade += item.quantidade;
+      else {
+        porItem.set(chave, {
+          nome: item.nome,
+          emoji: item.emoji,
+          quantidade: item.quantidade,
+          motivo: `passa do limite de ${limiteViagens} viagens`,
+        });
+      }
+    }
+    impossiveis.push(...porItem.values());
+  } else if (restantes > 0) {
+    const porItem = new Map<string, ItemImpossivel>();
+    for (const item of restantesItens) {
+      const chave = `${item.id}|${item.nome}`;
+      const registro = porItem.get(chave);
+      if (registro) registro.quantidade += item.quantidade;
+      else {
+        porItem.set(chave, {
+          nome: item.nome,
+          emoji: item.emoji,
+          quantidade: item.quantidade,
+          motivo: 'não coube no desenho do veículo',
+        });
+      }
+    }
+    impossiveis.push(...porItem.values());
+  }
+
+  const totalViagens = viagens.length;
+  const cabeEmUma = totalViagens === 1 && restantes === 0 && impossiveis.length === 0;
+  const viavel = restantes === 0 && impossiveis.length === 0;
+
+  let motivo = '';
+  if (cabeEmUma) {
+    motivo = 'Tudo cabe em 1 viagem.';
+  } else if (viavel) {
+    motivo = `A carga não cabe de uma vez. São necessárias ${totalViagens} viagens com este veículo.`;
+  } else if (restantes > 0 && totalViagens >= limiteViagens) {
+    motivo = `Com ${totalViagens} viagens ainda sobram ${restantes} ${
+      restantes === 1 ? 'volume' : 'volumes'
+    }. Confirme o veículo ou divida a mudança.`;
+  } else if (totalViagens === 0) {
+    motivo = 'Nenhum volume deste veículo entra no desenho. Confira as medidas ou escolha um veículo maior.';
+  } else {
+    motivo = `São necessárias ${totalViagens} viagens, mas ${impossiveis.reduce(
+      (total, item) => total + item.quantidade,
+      0,
+    )} ${
+      impossiveis.reduce((total, item) => total + item.quantidade, 0) === 1
+        ? 'volume não entra'
+        : 'volumes não entram'
+    } neste veículo.`;
+  }
+
+  return {
+    ...base,
+    viagens,
+    totalViagens,
+    cabeEmUma,
+    viavel,
+    impossiveis,
+    restantes,
+    motivo,
+  };
 }

@@ -4,6 +4,7 @@ import { Hono } from 'hono';
 import { exigirLogin, type Vars } from '../lib/session';
 import { DashboardPage } from '../pages/Dashboard';
 import type { Alert, BidComNome, FreightResumo, Truck } from '../lib/db';
+import { aplicarPrazos } from '../lib/prazos';
 
 const dashboard = new Hono<{ Bindings: { DB: D1Database }; Variables: Vars }>();
 
@@ -13,6 +14,8 @@ dashboard.get('/painel', async (c) => {
   if (bloqueio) return bloqueio;
   const u = user!;
   const db = c.env.DB;
+
+  await aplicarPrazos(db);
 
   const [alertas, naoLidos, meusFretes, meusLances, caminhao] = await Promise.all([
     db
@@ -42,7 +45,7 @@ dashboard.get('/painel', async (c) => {
       ? db
           .prepare(
             `SELECT b.*, u3.nome AS transportador_nome,
-                    f.descricao AS frete_descricao, f.status AS frete_status,
+                    f.descricao AS frete_descricao, f.situacao AS frete_status,
                     (SELECT MIN(b2.valor) FROM bids b2 WHERE b2.freight_id = b.freight_id) AS menor_lance
              FROM bids b
              JOIN freight f ON f.id = b.freight_id

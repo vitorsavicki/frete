@@ -32,9 +32,11 @@ processa pagamento.
 
 - monta a lista de móveis, eletrodomésticos e caixas com peso e medidas;
 - vê o resumo da carga (peso, volume e veículo recomendado);
-- confere o plano de carga antes de fechar;
-- publica a mudança e recebe propostas de transportadores;
-- compara as propostas e escolhe com calma;
+- confere o plano de carga em **3D**, com volume por grupo e a lista do que
+  ficou fora;
+- vê **quantas viagens** serão necessárias quando a carga não cabe de uma vez;
+- publica a mudança e escolhe por quanto tempo quer receber propostas;
+- compara as propostas durante a janela de escolha;
 - combina retirada, entrega e pagamento direto com o transportador.
 
 **Para quem transporta (transportador):**
@@ -149,7 +151,7 @@ node --check public/js/app.js
 .
 ├── android/              # projeto, build e assinatura do APK
 ├── docs/                 # documentação funcional, técnica e de operação
-├── migrations/           # migrações D1 (0001 a 0006)
+├── migrations/           # migrações D1 (0001 a 0007)
 ├── memory/               # registros de sessões e decisões
 ├── public/               # CSS, JS, imagens, APK, Leaflet e headers
 ├── src/
@@ -170,6 +172,7 @@ node --check public/js/app.js
 | Regras de orçamento | `src/lib/rules.ts` |
 | Carga, catálogo e veículos | `src/lib/carga.ts` |
 | Plano de carga (packer) | `src/lib/montagem.ts` |
+| Prazos e situação do leilão | `src/lib/prazos.ts` |
 | Custo do transportador | `src/lib/cost.ts` |
 | Referências configuráveis | `src/lib/referencias.ts` |
 | Validação de formulários | `src/lib/validate.ts` |
@@ -186,10 +189,10 @@ node --check public/js/app.js
 ### Publicar uma mudança
 
 1. O cliente entra ou cria uma conta.
-2. Em `/novo-frete`, escolhe categoria, descrição, endereços, data, ajudantes e
-   os itens da carga.
-3. O servidor valida tudo com Zod, calcula peso/volume e grava o frete com
-   status `aberto`.
+2. Em `/novo-frete`, escolhe categoria, descrição, endereços, data, ajudantes,
+   prazo de recebimento (24, 48 ou 72 horas) e os itens da carga.
+3. O servidor valida tudo com Zod, calcula peso/volume, grava o frete com
+   `situacao = 'aberto'` e calcula `encerra_em` e `prazo_escolha_em`.
 4. A mudança aparece em `/fretes` e os transportadores podem enviar propostas.
 
 ### Enviar uma proposta
@@ -199,19 +202,21 @@ node --check public/js/app.js
 3. Envia um valor maior que zero, menor ou igual ao preço máximo do cliente (se
    houver) e menor que o menor orçamento dos outros transportadores.
 4. Cada transportador tem uma proposta por frete; pode melhorá-la enquanto o
-   frete estiver aberto.
+   prazo de recebimento não vence.
 
 ### Escolher e encerrar
 
-1. O dono da mudança vê todas as propostas.
-2. Ao aceitar uma proposta, o frete vira `encerrado`, a proposta é marcada como
-   vencedora e os demais transportadores recebem um alerta.
-3. O pagamento e os detalhes são combinados direto entre as partes.
+1. Quando o prazo de recebimento termina, o frete vira `em_escolha` (com
+   propostas) ou `sem_lances` (sem nenhuma).
+2. Em `em_escolha`, o dono tem 48 horas para comparar e aceitar uma proposta.
+3. Ao aceitar, o frete vira `encerrado`, a proposta é marcada como vencedora e
+   os demais transportadores recebem um alerta.
+4. Se o prazo de escolha vencer sem aceite, o frete vira `expirado`.
+5. O pagamento e os detalhes são combinados direto entre as partes.
 
-> **Importante:** hoje não existe prazo automático de encerramento. O frete fica
-> `aberto` até o dono aceitar uma proposta ou cancelar. Veja
-> [docs/decisoes-e-pendencias.md](docs/decisoes-e-pendencias.md) para a proposta
-> de leilão com prazo.
+> O relógio é aplicado no servidor e no cron a cada 5 minutos. Mudanças que não
+> estão `aberto` saem da listagem, da home e do sitemap. As regras completas
+> estão em [docs/regras-de-negocio.md](docs/regras-de-negocio.md).
 
 ## Documentação
 
@@ -243,10 +248,12 @@ npm test
 
 A suíte cobre:
 
-- regras de orçamento (`test/rules.test.ts`);
+- regras de orçamento e prazos (`test/rules.test.ts`, `test/prazos.test.ts`);
 - cálculo de custo e normalização (`test/cost.test.ts`);
 - catálogo, resumo e encaixe de carga (`test/carga.test.ts`);
-- montagem/plano de carga (`test/montagem.test.ts`);
+- montagem/plano de carga, peso, categorias e viagens
+  (`test/montagem.test.ts`);
+- renderização das abas 3D/Lado/Cima, volume e viagens (`test/plano.test.ts`);
 - validação de CPF/CNPJ (`test/documento.test.ts`);
 - bindings e ambiente (`test/env.test.ts`).
 
@@ -259,9 +266,9 @@ npm run db:migrate        # se houver migração nova
 npm run deploy
 ```
 
-O deploy publica o Worker, os assets de `public/` e o cron de e-mail. Confira a
-seção [Operação e deploy](docs/operacao-e-deploy.md) para segredos, D1 remoto,
-smoke test e rollback.
+O deploy publica o Worker, os assets de `public/` e o cron de prazos e e-mail.
+Confira a seção [Operação e deploy](docs/operacao-e-deploy.md) para segredos,
+D1 remoto, smoke test e rollback.
 
 ## Estado atual
 
@@ -269,14 +276,15 @@ smoke test e rollback.
 - **Último deploy registrado:** `79d5e460-2c55-4a24-9dfa-feebadb69ec5`
   (home nova, tour de primeiro acesso, ajuda fixa, vista de cima do plano e
   remoção do ARLA da interface).
-- **Publicado neste deploy:** home focada no cliente, tour do Zé Mudança,
-  ajuda fixa, plano de carga com vista de cima e conferência por volume,
-  recomendação pelo packer e custo do transportador sem o campo de ARLA.
-- **Validação:** telas conferidas em Edge headless em 1440 px e 390 px; o
-  `/fretes/3` de produção mostra o baú, os 11 volumes e a conferência completa.
+- **Aguardando publicação:** plano de carga 3D com abas (3D/Lado/Cima), volume
+  por categoria, cálculo de viagens, imagens 3D dos veículos, prazo do leilão
+  (migração `0007`) e cron a cada 5 minutos.
+- **Validação local:** `npm run typecheck`, `node --check public/js/app.js` e
+  `npm test` passam; home, `/fretes`, `/fretes/3`, 404 em `/fretes/4` e
+  `/sitemap.xml` conferidos no Wrangler.
 - **Pendências conhecidas:** domínio próprio, envio real de e-mail (depende de
-  domínio na Cloudflare), prazo de encerramento do leilão, tipo de veículo
-  Kombi e leitura dos textos por alguém de fora do projeto.
+  domínio na Cloudflare), tipo de veículo Kombi e leitura dos textos por alguém
+  de fora do projeto.
 
 O estado detalhado fica em
 [docs/decisoes-e-pendencias.md](docs/decisoes-e-pendencias.md).

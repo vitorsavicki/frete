@@ -26,7 +26,8 @@ saber **o que a pessoa consegue fazer** — as regras detalhadas ficam em
 | Dois papéis | ✅ | Separa “quem vai mudar” de “quem transporta”, com ações diferentes |
 | Categorias | ✅ | Atalhos para as categorias de mudança |
 | Itens em destaque | ✅ | Mostra exemplos do catálogo com peso e medidas |
-| Seis veículos ilustrados | ✅ | Fiorino, Kombi, van, 3/4, baú e carreta com desenhos próprios |
+| Seis veículos ilustrados | ✅ | Fiorino, Kombi, van, 3/4, baú e carreta com imagens 3D locais (Fluent Emoji, MIT) |
+| Cena do hero | ✅ | Caminhão 3D, caixas e o mascote; imagens locais, sem CDN |
 | Faixa do transportador | ✅ | Convite discreto para quem tem veículo; não mistura com a copy do cliente |
 | App Android | ✅ | Link para a página do APK |
 | Perguntas frequentes | ✅ | Dúvidas sobre preço, propostas, plano, pagamento e transportadores |
@@ -54,24 +55,28 @@ saber **o que a pessoa consegue fazer** — as regras detalhadas ficam em
 | Lista de itens | ✅ | Móveis, eletrodomésticos, caixas e itens especiais com peso e medidas |
 | Caixas personalizadas | ✅ | Pequena, média, grande ou medida informada |
 | Cálculo ao vivo | ✅ | Peso, volume e veículo recomendado enquanto a lista muda |
-| Plano de carga | ✅ | Corte lateral + vista de cima proporcional + lista de volumes |
+| Plano de carga 3D | ✅ | Aba 3D isométrica, corte lateral e vista de cima, gerados do mesmo packer |
+| Volume das caixas | ✅ | Volume total e volume por grupo (móveis, eletrodomésticos, caixas, outros), com peso |
+| Viagens necessárias | ✅ | Quando não cabe de uma vez, calcula quantas viagens e o que vai em cada uma |
 | Itens fora do plano | ✅ | Lista explícita do que não coube, com contagem por item |
 | Preço máximo | ✅ | Teto opcional que limita as propostas |
+| Prazo de propostas | ✅ | Cliente escolhe 24, 48 ou 72 horas de recebimento |
 | IA para descrição | ✅ (se configurada) | Melhora o texto antes de publicar |
 
 ## Receber propostas
 
 | Recurso | Status | O que faz |
 | --- | --- | --- |
-| Listagem pública | ✅ | Filtros por categoria, UF, cidade, texto e data |
-| Detalhe do frete | ✅ | Rota, carga, plano, distância e prazo de retirada |
-| Proposta do transportador | ✅ | Valor, mensagem e melhoria enquanto o frete está aberto |
-| Menor proposta em destaque | ✅ | O card mostra quantidade e menor valor |
+| Listagem pública | ✅ | Filtros por categoria, UF, cidade, texto e data; só mostra mudanças abertas |
+| Detalhe do frete | ✅ | Rota, carga, plano, distância, prazo de retirada e prazo de propostas |
+| Proposta do transportador | ✅ | Valor, mensagem e melhoria enquanto o prazo de recebimento está aberto |
+| Menor proposta em destaque | ✅ | O card mostra quantidade, menor valor e prazo |
 | Propostas visíveis ao dono | ✅ | Tabela com nome do transportador e mensagem |
-| Aceite | ✅ | Dono escolhe qualquer proposta e encerra o frete |
-| Cancelamento | ✅ | Dono cancela frete aberto e avisa quem propôs |
+| Prazo automático | ✅ | 24/48/72 h de propostas + 48 h de escolha; mudança vencida sai das listagens |
+| Status escrito | ✅ | Recebendo orçamentos, escolhendo proposta, sem propostas, expirada, encerrada, cancelada |
 | Alertas no sino | ✅ | Novo orçamento, superado, vencedor, perdedor e cancelamento |
-| Prazo automático | ⏳ | Proposta em [decisoes-e-pendencias.md](decisoes-e-pendencias.md) |
+| Aceite | ✅ | Dono escolhe qualquer proposta durante a janela de escolha e encerra o frete |
+| Cancelamento | ✅ | Dono cancela enquanto aberto ou em escolha e avisa quem propôs |
 
 ## Perfil do transportador e custos
 
@@ -96,13 +101,15 @@ saber **o que a pessoa consegue fazer** — as regras detalhadas ficam em
 | Catálogo com mais de 60 itens | ✅ | Peso, medidas, fragilidade e empilhamento |
 | Resumo da carga | ✅ | Quantidade, peso, volume e altura máxima |
 | Encaixe no veículo | ✅ | `cabe`, `limite` ou `nao_cabe`, com motivos |
-| Plano por faixas de largura | ✅ | Preenche o piso antes de empilhar |
+| Plano por faixas de largura | ✅ | Preenche o piso antes de empilhar e respeita o peso máximo |
+| Vista 3D | ✅ | Cubos isométricos com topo, frente e lateral, gerados dos mesmos blocos |
 | Corte lateral | ✅ | Mostra a faixa da frente, alturas e frágeis |
 | Vista de cima real | ✅ | Retângulos proporcionais ao piso, com todas as faixas |
-| Lista de conferência | ✅ | Todos os itens, com “No plano” ou “N fora” |
-| Recomendação pelo packer | ✅ | Escolhe o menor veículo que não deixa volumes fora |
-| Fallback para carreta | ✅ | Quando nenhum veículo padrão acomoda tudo, usa a carreta e avisa |
-| Duas viagens | ✅ (texto) | Aviso quando nem a carreta padrão resolve |
+| Volume por categoria | ✅ | Quanto cada grupo ocupa, com peso e número de volumes |
+| Lista de conferência | ✅ | Todos os itens, com “No plano”, “N fora” ou “na próxima” |
+| Recomendação pelo packer | ✅ | Escolhe o menor veículo que não deixa volumes fora, considerando peso |
+| Cálculo de viagens | ✅ | Divide a carga em até 12 viagens, com itens e volume de cada leva |
+| O que não entra | ✅ | Lista o que é grande demais ou passa do limite de viagens |
 
 ## App Android
 

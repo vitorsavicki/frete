@@ -33,6 +33,14 @@ export interface CargaResumo {
   comprimentoMaximoCm: number;
 }
 
+/** Volume e peso por categoria, incluindo o volume das caixas. */
+export interface ResumoCategoria {
+  categoria: CategoriaCarga;
+  volumes: number;
+  volumeM3: number;
+  pesoKg: number;
+}
+
 export interface MedidasVeiculo {
   comprimentoCm: number;
   larguraCm: number;
@@ -1198,6 +1206,47 @@ export function resumoCarga(itens: ItemCarga[]): CargaResumo {
     alturaMaximaCm,
     comprimentoMaximoCm,
   };
+}
+
+const ORDEM_CATEGORIAS: CategoriaCarga[] = [
+  'Móveis',
+  'Eletrodomésticos',
+  'Caixas e volumes',
+  'Outros',
+];
+
+/**
+ * Agrupa a carga por categoria. A área do cliente mostra, por exemplo,
+ * quantos m³ só as caixas ocupam — sem precisar somar item por item.
+ */
+export function resumoCategorias(carga: CargaResumo): ResumoCategoria[] {
+  const mapa = new Map<CategoriaCarga, ResumoCategoria>();
+  for (const categoria of ORDEM_CATEGORIAS) {
+    mapa.set(categoria, { categoria, volumes: 0, volumeM3: 0, pesoKg: 0 });
+  }
+
+  for (const item of carga.itens) {
+    const quantidade = Math.max(0, Math.floor(item.quantidade));
+    if (quantidade === 0) continue;
+    const registro = mapa.get(item.categoria) ?? {
+      categoria: item.categoria,
+      volumes: 0,
+      volumeM3: 0,
+      pesoKg: 0,
+    };
+    registro.volumes += quantidade;
+    registro.volumeM3 += volumeItemM3(item) * quantidade;
+    registro.pesoKg += item.pesoKg * quantidade;
+    mapa.set(item.categoria, registro);
+  }
+
+  return [...mapa.values()]
+    .filter((registro) => registro.volumes > 0)
+    .map((registro) => ({
+      ...registro,
+      volumeM3: Math.round(registro.volumeM3 * 1000) / 1000,
+      pesoKg: Math.round(registro.pesoKg * 100) / 100,
+    }));
 }
 
 export function medidasDoCaminhao(caminhao: {

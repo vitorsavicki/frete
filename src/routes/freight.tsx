@@ -21,6 +21,7 @@ import {
   serializarItens,
 } from '../lib/carga';
 import { sugerirVeiculoParaPlano } from '../lib/montagem';
+import { aplicarPrazos, calcularPrazos, detalhePublico } from '../lib/prazos';
 import { ListaFretesPage, DetalheFretePage, NovoFretePage } from '../pages/Freight';
 import type { AppBindings } from '../lib/bindings';
 
@@ -50,6 +51,10 @@ freight.get('/fretes', async (c) => {
   const db = c.env.DB;
   const q = c.req.query();
 
+  // O relógio do leilão é aplicado antes da consulta: mudança com prazo
+  // vencido não aparece na lista pública.
+  await aplicarPrazos(db);
+
   const filtros = {
     categoria: (q.categoria ?? '').trim(),
     uf: (q.uf ?? '').trim().toUpperCase(),
@@ -59,7 +64,7 @@ freight.get('/fretes', async (c) => {
     pagina: Math.max(1, parseInt(q.pagina ?? '1', 10) || 1),
   };
 
-  const where: string[] = ["f.status = 'aberto'"];
+  const where: string[] = ["f.situacao = 'aberto'"];
   const binds: (string | number)[] = [];
 
   if (filtros.categoria && /^\d+$/.test(filtros.categoria)) {
@@ -195,6 +200,7 @@ freight.post('/fretes', async (c) => {
   const f = resultado.data;
   const itensCarga = parseItensForm(bruto);
   const resumo = resumoCarga(itensCarga);
+  const prazos = calcularPrazos(new Date(), f.prazo_recebimento);
 
   // Coordenadas best-effort via BrasilAPI (sem coords, o mapa simplesmente não aparece)
   const [cepOrigem, cepDestino] = await Promise.all([
@@ -211,8 +217,9 @@ freight.post('/fretes', async (c) => {
            data_retirada, hora_retirada,
            origem_cep, origem_rua, origem_bairro, origem_cidade, origem_uf, origem_lat, origem_lng,
            destino_cep, destino_rua, destino_bairro, destino_cidade, destino_uf, destino_lat, destino_lng,
-           carga_itens, carga_peso_kg, carga_volume_m3
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           carga_itens, carga_peso_kg, carga_volume_m3,
+           situacao, encerra_em, prazo_escolha_em
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .bind(
         user!.id,
@@ -240,6 +247,9 @@ freight.post('/fretes', async (c) => {
         itensCarga.length > 0 ? serializarItens(itensCarga) : null,
         itensCarga.length > 0 ? resumo.pesoKg : null,
         itensCarga.length > 0 ? resumo.volumeM3 : null,
+        'aberto',
+        prazos.encerraEm,
+        prazos.prazoEscolhaEm,
       )
       .run();
     freteId = Number(r.meta.last_row_id);
@@ -260,8 +270,16 @@ freight.get('/fretes/:id', async (c) => {
   const db = c.env.DB;
   const q = c.req.query();
 
+  await aplicarPrazos(db);
+
   let frete = await db.prepare(`${SQL_RESUMO} WHERE f.id = ?`).bind(id).first<FreightResumo>();
   if (!frete) return c.notFound();
+
+  const donoDoFrete = user?.id === frete.user_id;
+
+  // Mudança sem propostas, expirada ou cancelada não fica pública. O dono
+  // continua enxergando o próprio histórico.
+  if (!donoDoFrete && !detalhePublico(frete.situacao)) return c.notFound();
 
   // Fretes antigos podem não ter coordenadas. Geocodifica sob demanda e
   // persiste o resultado para que o mapa funcione nas próximas visitas.
@@ -317,8 +335,6 @@ freight.get('/fretes/:id', async (c) => {
       destino_lng: destinoGeo?.lng ?? frete.destino_lng,
     };
   }
-
-  const donoDoFrete = user?.id === frete.user_id;
 
   const [lances, meuLance, alertas, caminhao] = await Promise.all([
     donoDoFrete
@@ -456,9 +472,15 @@ freight.post('/fretes/:id/lances', async (c) => {
   const { valor, mensagem } = resultado.data;
 
   const frete = await c.env.DB
-    .prepare('SELECT user_id, status, preco_maximo, descricao FROM freight WHERE id = ?')
+    .prepare('SELECT user_id, situacao, encerra_em, preco_maximo, descricao FROM freight WHERE id = ?')
     .bind(id)
-    .first<{ user_id: number; status: string; preco_maximo: number | null; descricao: string }>();
+    .first<{
+      user_id: number;
+      situacao: string;
+      encerra_em: string | null;
+      preco_maximo: number | null;
+      descricao: string;
+    }>();
   if (!frete) return c.notFound();
 
   // Menor lance de OUTROS transportadores (para a regra do leilão reverso)
@@ -471,11 +493,13 @@ freight.post('/fretes/:id/lances', async (c) => {
 
   const regra = validarLance({
     papel: user!.papel,
-    statusFrete: frete.status,
+    situacaoFrete: frete.situacao,
     valor,
     menorLanceDosOutros: menorDosOutros?.valor ?? null,
     precoMaximo: frete.preco_maximo,
     donoDoFrete: frete.user_id === user!.id,
+    encerraEm: frete.encerra_em,
+    agora: new Date(),
   });
   if (!regra.ok) return voltarErro(regra.erro);
 
@@ -545,9 +569,14 @@ freight.post('/fretes/:id/aceitar/:bidId', async (c) => {
   const voltarErro = (erro: string) => c.redirect(redir(`/fretes/${id}`, { erro }));
 
   const frete = await c.env.DB
-    .prepare('SELECT user_id, status, descricao FROM freight WHERE id = ?')
+    .prepare('SELECT user_id, situacao, prazo_escolha_em, descricao FROM freight WHERE id = ?')
     .bind(id)
-    .first<{ user_id: number; status: string; descricao: string }>();
+    .first<{
+      user_id: number;
+      situacao: string;
+      prazo_escolha_em: string | null;
+      descricao: string;
+    }>();
   if (!frete) return c.notFound();
 
   const lance = await c.env.DB
@@ -556,14 +585,28 @@ freight.post('/fretes/:id/aceitar/:bidId', async (c) => {
     .first<{ id: number; transportador_id: number; valor: number } | null>();
   if (!lance) return voltarErro('Orçamento não encontrado nesta mudança.');
 
-  if (!podeAceitarLance(frete.user_id === user!.id, frete.status)) {
-    return voltarErro('Só o dono pode aceitar orçamentos, e apenas em mudanças abertas.');
+  const agora = new Date();
+  if (
+    !podeAceitarLance(
+      frete.user_id === user!.id,
+      frete.situacao,
+      frete.prazo_escolha_em,
+      agora,
+    )
+  ) {
+    return voltarErro(
+      frete.situacao === 'aberto'
+        ? 'Espere o prazo de propostas terminar para escolher o transportador.'
+        : 'Só o dono pode aceitar, e o prazo de escolha precisa estar aberto.',
+    );
   }
 
   // Atômico: marca vencedor e encerra na mesma transação
   await c.env.DB.batch([
     c.env.DB.prepare('UPDATE bids SET vencedor = 1 WHERE id = ?').bind(bidId),
-    c.env.DB.prepare("UPDATE freight SET status = 'encerrado' WHERE id = ?").bind(id),
+    c.env.DB
+      .prepare("UPDATE freight SET situacao = 'encerrado', status = 'encerrado' WHERE id = ?")
+      .bind(id),
   ]);
 
   // Alertas: vencedor comemora, os outros ficam sabendo
@@ -617,16 +660,19 @@ freight.post('/fretes/:id/cancelar', async (c) => {
   const voltarErro = (erro: string) => c.redirect(redir(`/fretes/${id}`, { erro }));
 
   const frete = await c.env.DB
-    .prepare('SELECT user_id, status FROM freight WHERE id = ?')
+    .prepare('SELECT user_id, situacao FROM freight WHERE id = ?')
     .bind(id)
-    .first<{ user_id: number; status: string }>();
+    .first<{ user_id: number; situacao: string }>();
   if (!frete) return c.notFound();
 
-  if (!podeCancelarFrete(frete.user_id === user!.id, frete.status)) {
-    return voltarErro('Só o dono pode cancelar, e apenas fretes abertos.');
+  if (!podeCancelarFrete(frete.user_id === user!.id, frete.situacao)) {
+    return voltarErro('Só o dono pode cancelar, e apenas enquanto a mudança está em andamento.');
   }
 
-  await c.env.DB.prepare("UPDATE freight SET status = 'cancelado' WHERE id = ?").bind(id).run();
+  await c.env.DB
+    .prepare("UPDATE freight SET situacao = 'cancelado', status = 'cancelado' WHERE id = ?")
+    .bind(id)
+    .run();
 
   const licitantes = await c.env.DB
     .prepare('SELECT DISTINCT transportador_id FROM bids WHERE freight_id = ?')

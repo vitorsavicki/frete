@@ -46,6 +46,17 @@ export const schemaLogin = z.object({
   senha: z.string().min(1, 'Informe a senha').max(72),
 });
 
+const prazoRecebimento = z.preprocess(
+  (valor) => {
+    if (valor == null || valor === '') return 48;
+    const numero = Number(valor);
+    return Number.isFinite(numero) ? numero : valor;
+  },
+  z.union([z.literal(24), z.literal(48), z.literal(72)], {
+    message: 'Escolha um prazo de 24, 48 ou 72 horas',
+  }),
+);
+
 export const schemaFrete = z.object({
   category_id: z.coerce.number().int().positive('Escolha uma categoria'),
   descricao: z.string().trim().min(5, 'Descreva o que precisa transportar').max(255),
@@ -57,6 +68,7 @@ export const schemaFrete = z.object({
     .optional()
     .transform((v) => (v ? Number(v.replace(/\./g, '').replace(',', '.')) : null))
     .pipe(z.number().positive().max(1_000_000).nullable()),
+  prazo_recebimento: prazoRecebimento,
   data_retirada: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida'),
   hora_retirada: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Hora inválida').optional().or(z.literal('')),
   origem_cep: cep,

@@ -6332,6 +6332,510 @@ legend {
   }
 }
 
+/* ---------- abas e vista 3D do plano ---------- */
+.plano-abas {
+  display: grid;
+  gap: 8px;
+}
+
+.plano-abas__botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.plano-aba {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 40px;
+  padding: 7px 14px;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--tinta-2);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.plano-aba:hover {
+  border-color: var(--marca-borda);
+  background: #f8fbff;
+}
+
+.plano-aba--ativo {
+  border-color: var(--marca);
+  background: var(--marca-clara);
+  color: var(--marca-forte);
+}
+
+.plano-aba:focus-visible {
+  outline: 3px solid var(--marca-borda);
+  outline-offset: 2px;
+}
+
+/* Sem JavaScript os três painéis ficam visíveis, um abaixo do outro. */
+.plano-abas--js .plano-abas__painel {
+  display: none;
+}
+
+.plano-abas--js .plano-abas__painel--ativo {
+  display: block;
+}
+
+.plano-abas__nota {
+  margin: 4px 2px 0;
+  color: var(--cinza);
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.plano-iso {
+  display: block;
+  width: 100%;
+  max-width: 880px;
+  height: auto;
+  margin-inline: auto;
+}
+
+.plano-iso__parede {
+  fill: #e8f1ff;
+  stroke: #bfdbfe;
+  stroke-width: 1.2;
+}
+
+.plano-iso__parede--lado {
+  fill: #f1f6ff;
+}
+
+.plano-iso__piso {
+  fill: #f8fafc;
+  stroke: #94a3b8;
+  stroke-width: 1.4;
+}
+
+.plano-iso__faixa {
+  fill: none;
+  stroke: #dbeafe;
+  stroke-width: 1;
+  stroke-dasharray: 5 4;
+}
+
+.plano-iso__face {
+  stroke-width: 1.1;
+  stroke-linejoin: round;
+}
+
+.plano-iso__bloco.plano-bloco--fragil .plano-iso__face {
+  stroke-dasharray: 4 3;
+  stroke-width: 1.6;
+}
+
+.plano-iso__contorno {
+  fill: none;
+  stroke: #94a3b8;
+  stroke-width: 1.2;
+  stroke-dasharray: 6 5;
+  opacity: 0.8;
+}
+
+.plano-iso__rotulo {
+  fill: #475569;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.plano-iso__vazio-caixa {
+  fill: #fff;
+  stroke: #bfdbfe;
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+
+.plano-iso__vazio-texto {
+  fill: var(--cinza);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ---------- volume por categoria ---------- */
+.plano-categorias {
+  margin-top: 12px;
+  padding: 12px 13px;
+  border: 1px solid var(--borda);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.plano-categorias__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 10px;
+}
+
+.plano-categorias__topo strong {
+  font-size: 0.8rem;
+}
+
+.plano-categorias__topo span {
+  color: var(--cinza);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.plano-categorias__lista {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 7px;
+  margin: 9px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plano-categoria {
+  padding: 8px 10px;
+  border: 1px solid var(--borda);
+  border-radius: 11px;
+  background: #f8fafc;
+}
+
+.plano-categoria__nome {
+  display: block;
+  color: var(--cinza);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.plano-categoria strong {
+  display: block;
+  color: var(--tinta);
+  font-size: 1rem;
+  line-height: 1.3;
+}
+
+.plano-categoria small {
+  color: var(--cinza);
+  font-size: 0.67rem;
+  font-weight: 600;
+}
+
+.plano-categoria--moveis {
+  border-left: 4px solid #2563eb;
+}
+
+.plano-categoria--eletrodomesticos {
+  border-left: 4px solid #b45309;
+}
+
+.plano-categoria--caixas {
+  border-left: 4px solid #047857;
+}
+
+.plano-categoria--outros {
+  border-left: 4px solid #64748b;
+}
+
+/* ---------- viagens necessárias ---------- */
+.plano-viagens {
+  margin-top: 12px;
+  padding: 12px 13px;
+  border: 1px solid #fed7aa;
+  border-radius: 14px;
+  background: #fff7ed;
+}
+
+.plano-viagens--ok {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.plano-viagens__topo {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.plano-viagens__topo strong {
+  font-size: 0.82rem;
+}
+
+.plano-viagens__icone {
+  font-size: 1.25rem;
+  line-height: 1.1;
+}
+
+.plano-viagens__topo p {
+  margin: 2px 0 0;
+  color: #9a3412;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.plano-viagens--ok .plano-viagens__topo p {
+  color: #166534;
+}
+
+.plano-viagens__lista {
+  display: grid;
+  gap: 7px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plano-viagem {
+  padding: 8px 10px;
+  border: 1px solid #fed7aa;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.plano-viagem__titulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 8px;
+}
+
+.plano-viagem__titulo strong {
+  color: #9a3412;
+  font-size: 0.76rem;
+}
+
+.plano-viagem__titulo span {
+  color: var(--cinza);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.plano-viagem p {
+  margin: 3px 0 0;
+  color: var(--tinta-2);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.plano-viagens__impossiveis {
+  margin-top: 9px;
+  padding-top: 8px;
+  border-top: 1px dashed #fed7aa;
+}
+
+.plano-viagens__impossiveis strong {
+  color: #b91c1c;
+  font-size: 0.76rem;
+}
+
+.plano-viagens__impossiveis ul {
+  display: grid;
+  gap: 3px;
+  margin: 5px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plano-viagens__impossiveis li {
+  color: #7f1d1d;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+/* ---------- cena da home com imagens 3D ---------- */
+.cena-mudanca--foto {
+  position: relative;
+  overflow: hidden;
+  min-height: 300px;
+  border: 1px solid #bfdbfe;
+  background:
+    radial-gradient(420px 220px at 20% 0%, #dbeafe, transparent 70%),
+    linear-gradient(180deg, #eff6ff 0%, #e0f2fe 62%, #dbeafe 100%);
+}
+
+.cena-mudanca__ceu {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120px 90px at 78% 18%, rgba(250, 204, 21, 0.35), transparent 70%),
+    radial-gradient(160px 110px at 14% 12%, rgba(255, 255, 255, 0.9), transparent 72%);
+}
+
+.cena-mudanca__estrada {
+  position: absolute;
+  right: -6%;
+  bottom: 0;
+  left: -6%;
+  height: 22%;
+  background: linear-gradient(180deg, #cbd5e1, #94a3b8);
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.6);
+}
+
+.cena-mudanca__caminhao {
+  position: absolute;
+  right: 6%;
+  bottom: 12%;
+  width: min(62%, 340px);
+  height: auto;
+  filter: drop-shadow(0 16px 22px rgba(15, 23, 42, 0.24));
+}
+
+.cena-mudanca__caixa {
+  position: absolute;
+  height: auto;
+  filter: drop-shadow(0 10px 14px rgba(15, 23, 42, 0.2));
+}
+
+.cena-mudanca__caixa--grande {
+  bottom: 14%;
+  left: 8%;
+  width: min(24%, 120px);
+}
+
+.cena-mudanca__caixa--pequena {
+  bottom: 30%;
+  left: 22%;
+  width: min(16%, 78px);
+}
+
+.cena-mudanca__mascote {
+  position: absolute;
+  bottom: 8%;
+  left: 4%;
+  width: min(30%, 160px);
+  height: auto;
+}
+
+@media (max-width: 640px) {
+  .cena-mudanca--foto {
+    min-height: 230px;
+  }
+
+  .cena-mudanca__caixa--pequena {
+    display: none;
+  }
+
+  .cena-mudanca__mascote {
+    width: min(26%, 120px);
+  }
+}
+
+/* ---------- prazo e situação da mudança ---------- */
+.prazo-frete {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 12px 0 16px;
+  padding: 12px 14px;
+  border: 1px solid #fde68a;
+  border-left: 5px solid #f59e0b;
+  border-radius: 14px;
+  background: #fffbeb;
+}
+
+.prazo-frete__icone {
+  font-size: 1.3rem;
+  line-height: 1.1;
+}
+
+.prazo-frete strong {
+  display: block;
+  color: #92400e;
+  font-size: 0.86rem;
+}
+
+.prazo-frete p {
+  margin: 3px 0 0;
+  color: #78350f;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.prazo-frete--em_escolha {
+  border-color: #bfdbfe;
+  border-left-color: #2563eb;
+  background: #eff6ff;
+}
+
+.prazo-frete--em_escolha strong {
+  color: #1e40af;
+}
+
+.prazo-frete--em_escolha p {
+  color: #1e3a8a;
+}
+
+.prazo-frete--encerrado {
+  border-color: #bbf7d0;
+  border-left-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.prazo-frete--encerrado strong {
+  color: #166534;
+}
+
+.prazo-frete--encerrado p {
+  color: #14532d;
+}
+
+.prazo-frete--sem_lances,
+.prazo-frete--expirado {
+  border-color: #e2e8f0;
+  border-left-color: #64748b;
+  background: #f8fafc;
+}
+
+.prazo-frete--sem_lances strong,
+.prazo-frete--expirado strong {
+  color: #334155;
+}
+
+.prazo-frete--sem_lances p,
+.prazo-frete--expirado p {
+  color: #475569;
+}
+
+.prazo-frete--cancelado {
+  border-color: #fecaca;
+  border-left-color: #dc2626;
+  background: #fef2f2;
+}
+
+.prazo-frete--cancelado strong {
+  color: #991b1b;
+}
+
+.prazo-frete--cancelado p {
+  color: #7f1d1d;
+}
+
+.status-em_escolha {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.status-sem_lances,
+.status-expirado {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+/* Imagens dos veículos (antes eram desenhos SVG). */
+.cena-veiculos img,
+.veiculo-arte {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
 /* ============================================================
    Tour de primeiro acesso e ajuda fixa do Zé Mudança
    ============================================================ */

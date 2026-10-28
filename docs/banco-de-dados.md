@@ -23,6 +23,7 @@ ORM.
 | `0004_custos_servico.sql` | combustível e custos operacionais em `trucks` (inclui `arla_por_km`) |
 | `0005_configuracoes.sql` | tabela `configuracoes` e referências iniciais |
 | `0006_email_outbox.sql` | fila `email_outbox` e índice de pendentes |
+| `0007_prazo_leilao.sql` | `freight.situacao`, `freight.encerra_em`, `freight.prazo_escolha_em`, backfill e índice |
 
 Aplicar:
 
@@ -82,21 +83,29 @@ frete tem exatamente uma origem e um destino.
 | Dono e categoria | `user_id`, `category_id` |
 | Texto | `descricao`, `comentario` |
 | Serviço | `ajudantes`, `preco_maximo` |
-| Estado | `status` (`aberto`, `encerrado`, `cancelado`), `motivo_cancelamento` |
+| Estado | `situacao` (`aberto`, `em_escolha`, `sem_lances`, `expirado`, `encerrado`, `cancelado`), `status` (legado), `motivo_cancelamento` |
+| Prazos | `encerra_em`, `prazo_escolha_em` |
 | Retirada | `data_retirada`, `hora_retirada` |
 | Origem | `origem_cep`, `origem_rua`, `origem_bairro`, `origem_cidade`, `origem_uf`, `origem_lat`, `origem_lng` |
 | Destino | `destino_cep`, `destino_rua`, `destino_bairro`, `destino_cidade`, `destino_uf`, `destino_lat`, `destino_lng` |
 | Carga | `carga_itens` (JSON), `carga_peso_kg`, `carga_volume_m3` |
 | Criação | `criado_em` |
 
-Índices: `idx_freight_status`, `idx_freight_user`.
+Índices: `idx_freight_status`, `idx_freight_user`, `idx_freight_situacao`.
+
+`situacao` é o campo que manda nas regras novas. `status` continua existindo
+para consultas antigas e é atualizado junto (`encerrado` para `sem_lances`,
+`expirado` e `encerrado`).
+
+`encerra_em` é o fim do recebimento de propostas. `prazo_escolha_em` é o fim da
+janela de escolha (48 h depois). O formulário envia `prazo_recebimento` (24, 48
+ou 72 horas), mas ele não é gravado como coluna: o servidor converte em
+`encerra_em` e `prazo_escolha_em`. A migração `0007` preencheu os fretes antigos
+com 48 h a partir da criação e criou o índice de `situacao`.
 
 `carga_itens` guarda uma lista JSON de itens com `id`, `nome`, `emoji`,
 `categoria`, `quantidade`, `pesoKg`, `comprimentoCm`, `larguraCm`, `alturaCm`,
 `fragil` e `empilhavel`. O servidor recalcula os totais ao publicar.
-
-> **Lacuna:** não existem `encerra_em` nem `prazo_escolha_em`. Veja
-> [decisoes-e-pendencias.md](decisoes-e-pendencias.md).
 
 ### `bids`
 
@@ -208,6 +217,6 @@ freight 1 ── N alerts
 ## O que não existe no banco
 
 - tabela de pagamentos, contratos ou comissões;
-- tabela de prazos do leilão;
+- tabela separada de prazos do leilão (os prazos são colunas de `freight`);
 - tabela de avaliações ou depoimentos;
 - tabela de administração além do papel `admin` em `users`.

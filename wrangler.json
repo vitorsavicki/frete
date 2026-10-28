@@ -25,7 +25,7 @@
     }
   ],
   "triggers": {
-    "crons": ["*/15 * * * *"]
+    "crons": ["*/5 * * * *"]
   },
   "vars": {
     "EMAIL_FROM": "Quero Mudar Já <onboarding@resend.dev>"

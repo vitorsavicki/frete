@@ -16,6 +16,7 @@ import truck from './routes/truck';
 import android from './routes/android';
 import api from './routes/api';
 import { processarFilaEmails } from './lib/email';
+import { aplicarPrazos } from './lib/prazos';
 
 const app = new Hono<{ Bindings: AppBindings; Variables: Vars }>();
 
@@ -120,6 +121,13 @@ export default {
     env: AppBindings,
     _ctx: ExecutionContext,
   ): Promise<void> => {
+    // Fecha leilões vencidos antes de qualquer outra tarefa: é o que tira a
+    // mudança das listagens públicas mesmo sem ninguém visitar o site.
+    const prazos = await aplicarPrazos(env.DB);
+    if (prazos.semLances + prazos.emEscolha + prazos.expirados > 0) {
+      console.log('[prazos]', JSON.stringify(prazos));
+    }
+
     const resultado = await processarFilaEmails(env);
     if (resultado.processados > 0) {
       console.log('[email:fila]', JSON.stringify(resultado));

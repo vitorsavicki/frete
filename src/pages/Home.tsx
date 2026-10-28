@@ -233,7 +233,7 @@ export const HomePage: FC<HomeProps> = ({
         </div>
 
         <div class="home-hero__arte">
-          <CenaMudanca class="cena-mudanca cena-mudanca--hero" />
+          <CenaMudanca class="cena-mudanca--hero" />
           <p class="home-hero__legenda">
             <span aria-hidden="true">✓</span> Peso, volume e plano de carga antes de fechar
           </p>
