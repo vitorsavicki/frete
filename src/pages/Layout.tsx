@@ -135,7 +135,7 @@ export const Layout: FC<PropsWithChildren<LayoutProps>> = ({
                 Publicar mudança
               </a>
             )}
-            {user?.papel === 'transportador' && <a href="/caminhao">Meu caminhão</a>}
+            {user?.papel === 'transportador' && <a href="/caminhao">Meu veículo</a>}
             {user ? (
               <>
                 <a href="/painel" class="nav-painel">
@@ -227,7 +227,7 @@ export const Layout: FC<PropsWithChildren<LayoutProps>> = ({
               {user ? (
                 <>
                   <a href="/painel">Olá, {user.nome}</a>
-                  {user.papel === 'transportador' && <a href="/caminhao">Meu caminhão</a>}
+                  {user.papel === 'transportador' && <a href="/caminhao">Meu veículo</a>}
                   <form method="post" action="/sair">
                     <button type="submit" class="footer-link">
                       Sair

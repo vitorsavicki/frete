@@ -278,7 +278,7 @@ export const DashboardPage: FC<DashboardProps> = ({
             <section class={`cartao ${caminhao ? '' : 'cartao--dica'}`}>
               <div class="cartao__cabecalho">
                 <div>
-                  <h2>Meu caminhão</h2>
+                  <h2>Meu veículo</h2>
                   <p class="auxiliar">
                     {caminhao ? rotuloTipoVeiculo(caminhao.tipo) : 'Ainda não cadastrado'}
                   </p>
@@ -329,7 +329,7 @@ export const DashboardPage: FC<DashboardProps> = ({
                     </div>
                   </dl>
                   <a href="/caminhao" class="btn btn-secundario btn-bloco btn-pequeno">
-                    Editar caminhão
+                    Editar veículo
                   </a>
                 </>
               ) : (
@@ -339,7 +339,7 @@ export const DashboardPage: FC<DashboardProps> = ({
                     mudança cabe no seu veículo — e receba um orçamento sugerido com os seus custos.
                   </p>
                   <a href="/caminhao" class="btn btn-primario btn-bloco btn-pequeno">
-                    Cadastrar meu caminhão
+                    Cadastrar meu veículo
                   </a>
                 </>
               )}
