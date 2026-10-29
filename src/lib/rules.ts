@@ -54,8 +54,10 @@ export function validarLance(ctx: ContextoLance): ResultadoRegra {
 }
 
 /**
- * O cliente escolhe depois que as propostas terminam. A janela é de 48 h;
- * se ela vencer, o frete fica `expirado` e o aceite tardio é bloqueado.
+ * O cliente escolhe quando quiser: assim que chega o primeiro orçamento
+ * (`aberto`) e também na janela extra de 48 h depois que as propostas
+ * terminam (`em_escolha`). Vencida a janela, o frete fica `expirado` e o
+ * aceite é bloqueado.
  */
 export function podeAceitarLance(
   donoDoFrete: boolean,
@@ -63,7 +65,8 @@ export function podeAceitarLance(
   prazoEscolhaEm: string | null = null,
   agora: Date | string | number = Date.now(),
 ): boolean {
-  if (!donoDoFrete || situacaoFrete !== 'em_escolha') return false;
+  if (!donoDoFrete) return false;
+  if (situacaoFrete !== 'aberto' && situacaoFrete !== 'em_escolha') return false;
   if (!prazoEscolhaEm) return true;
   return !prazoVenceu(prazoEscolhaEm, agora);
 }

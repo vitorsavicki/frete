@@ -28,7 +28,8 @@ enviar orçamento. Corrigir em `src/pages/Freight.tsx` (DetalheFretePage):
      e escolhe com quem fechar — direto, sem taxa do site." + botão grande
      "Enviar orçamento" (âncora para o formulário / login).
    - Dono da mudança: "Esta é a sua mudança" + resumo: X orçamentos recebidos,
-     menor valor, e o que acontece depois do prazo (48h para escolher).
+     menor valor, e que pode escolher a qualquer momento (e tem 48 h extras
+     depois do prazo de propostas).
    - Mudança encerrada: ver TAREFA 3.
 2. **Resumo da carga em 1 linha** no topo (ex.: "8 volumes · 270 kg · 3,6 m³ ·
    cabe em Caminhão baú") e mover as vistas 3D/Lado/Cima + conferência +

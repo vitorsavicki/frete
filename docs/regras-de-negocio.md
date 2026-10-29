@@ -151,7 +151,9 @@ Rota: `POST /fretes/:id/aceitar/:bidId`.
 Regras (`podeAceitarLance`):
 
 - somente o dono do frete;
-- somente com `situacao = 'em_escolha'` (o prazo de recebimento já terminou);
+- com `situacao = 'aberto'` (recebendo orçamentos) ou `'em_escolha'` (prazo de
+  recebimento encerrado) — o cliente escolhe quando quiser, desde o primeiro
+  orçamento;
 - o relógio precisa estar antes de `prazo_escolha_em`;
 - a proposta precisa pertencer ao frete.
 

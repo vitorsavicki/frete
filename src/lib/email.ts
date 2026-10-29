@@ -22,6 +22,7 @@
 
 import type { AppBindings } from './bindings';
 import { dinheiro } from './format';
+import { PRAZO_ESCOLHA_HORAS } from './prazos';
 
 export interface EmailParams {
   to: string;
@@ -401,7 +402,7 @@ export async function emailNovoLance(
     'Novo orçamento na sua mudança',
     `<p style="margin:0 0 12px;color:#334155">Olá, ${escapar(dados.nomeDono)}! Um transportador enviou um orçamento de <strong>${dinheiro(dados.valor)}</strong> para a mudança <strong>${descricao}</strong> (#${dados.freteId}).</p>
      ${botao(`${dados.baseUrl}/fretes/${dados.freteId}`, 'Ver o orçamento')}
-     <p style="margin:16px 0 0;color:#64748b;font-size:13px">Você decide quando aceitar. A mudança segue aberta até você escolher.</p>`,
+     <p style="margin:16px 0 0;color:#64748b;font-size:13px">Você pode escolher quando quiser, inclusive antes do prazo terminar. Se preferir esperar, ainda tem ${PRAZO_ESCOLHA_HORAS} horas depois do fim dos orçamentos.</p>`,
     'Você recebeu este e-mail porque é o dono desta mudança.',
   );
   const text = `Olá, ${dados.nomeDono}!\n\nNovo orçamento de ${dinheiro(dados.valor)} para a mudança "${dados.descricao}" (#${dados.freteId}).\n\nVeja: ${dados.baseUrl}/fretes/${dados.freteId}`;

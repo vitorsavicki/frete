@@ -73,7 +73,7 @@ saber **o que a pessoa consegue fazer** — as regras detalhadas ficam em
 | Prazo automático | ✅ | 24/48/72 h de propostas + 48 h de escolha; mudança vencida sai das listagens |
 | Status escrito | ✅ | Recebendo orçamentos, escolhendo proposta, sem propostas, expirada, encerrada, cancelada |
 | Alertas no sino | ✅ | Novo orçamento, superado, vencedor, perdedor e cancelamento |
-| Aceite | ✅ | Dono escolhe qualquer proposta durante a janela de escolha e encerra o frete |
+| Aceite | ✅ | Dono escolhe qualquer proposta assim que ela chega (em `aberto`) ou na janela de escolha, antes de `prazo_escolha_em` |
 | Cancelamento | ✅ | Dono cancela enquanto aberto ou em escolha e avisa quem propôs |
 
 ## Perfil do transportador e custos

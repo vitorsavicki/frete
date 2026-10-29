@@ -84,7 +84,8 @@ nome do insumo.
 
 ### Decisão
 
-O leilão tem **dois relógios**:
+O leilão tem **dois relógios**, mas o cliente não precisa esperar o primeiro
+terminar para escolher:
 
 1. **Recebimento de propostas** — o cliente escolhe 24, 48 ou 72 horas no
    formulário (padrão 48). O fim fica em `freight.encerra_em`.
@@ -95,17 +96,26 @@ Transições:
 
 - fim do recebimento **com propostas** → `em_escolha`;
 - fim do recebimento **sem propostas** → `sem_lances`;
-- aceite do dono em `em_escolha` → `encerrado` com vencedor;
+- aceite do dono em `aberto` ou `em_escolha` → `encerrado` com vencedor;
 - fim da escolha sem aceite → `expirado`;
 - cancelamento do dono em `aberto` ou `em_escolha` → `cancelado`.
 
 ### Por que dois momentos
 
 - O transportador precisa de um prazo claro para investir tempo na proposta.
-- O cliente precisa de tempo para comparar depois que as propostas param de
-  mudar. Aceitar no meio do recebimento premiava quem chegasse por último.
+- O cliente pode fechar assim que um orçamento fizer sentido: esperar o prazo
+  inteiro só para poder aceitar não ajudava ninguém.
+- As 48 horas depois do fim são uma janela extra para quem preferir comparar
+  com o mercado já fechado. Vencida a janela, o frete expira.
 - Sem propostas, o cliente não fica com um frete aberto para sempre: ele sai das
   listagens e pode ser republicado.
+
+### Revisão de 2026-10-29
+
+Antes, o aceite só era liberado em `em_escolha`. Isso contradizia o e-mail de
+novo orçamento (“você decide quando aceitar”) e obrigava o cliente a ver
+propostas por até 72 horas sem poder fechar. Agora `podeAceitarLance` libera o
+dono em `aberto` e em `em_escolha`, sempre antes de `prazo_escolha_em`.
 
 ### O que foi aplicado
 

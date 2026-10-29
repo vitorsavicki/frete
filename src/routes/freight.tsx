@@ -595,19 +595,43 @@ freight.post('/fretes/:id/aceitar/:bidId', async (c) => {
     )
   ) {
     return voltarErro(
-      frete.situacao === 'aberto'
-        ? 'Espere o prazo de propostas terminar para escolher o transportador.'
-        : 'Só o dono pode aceitar, e o prazo de escolha precisa estar aberto.',
+      frete.situacao !== 'aberto' && frete.situacao !== 'em_escolha'
+        ? 'Esta mudança não está mais aberta para escolha.'
+        : frete.user_id !== user!.id
+          ? 'Só o dono da mudança pode escolher o transportador.'
+          : 'O prazo para escolher o transportador terminou.',
     );
   }
 
-  // Atômico: marca vencedor e encerra na mesma transação
-  await c.env.DB.batch([
-    c.env.DB.prepare('UPDATE bids SET vencedor = 1 WHERE id = ?').bind(bidId),
+  // Atômico: marca vencedor e encerra na mesma transação. As duas condições
+  // impedem aceite duplicado (duas abas, duplo clique) e aceite depois do
+  // prazo de escolha, mesmo que a tela esteja desatualizada.
+  const agoraIso = agora.toISOString();
+  const [resultadoLance, resultadoFrete] = await c.env.DB.batch([
     c.env.DB
-      .prepare("UPDATE freight SET situacao = 'encerrado', status = 'encerrado' WHERE id = ?")
-      .bind(id),
+      .prepare(
+        `UPDATE bids SET vencedor = 1
+          WHERE id = ? AND freight_id = ?
+            AND EXISTS (
+              SELECT 1 FROM freight f
+               WHERE f.id = bids.freight_id
+                 AND f.situacao IN ('aberto', 'em_escolha')
+                 AND (f.prazo_escolha_em IS NULL OR f.prazo_escolha_em > ?)
+            )`,
+      )
+      .bind(bidId, id, agoraIso),
+    c.env.DB
+      .prepare(
+        `UPDATE freight SET situacao = 'encerrado', status = 'encerrado'
+          WHERE id = ? AND situacao IN ('aberto', 'em_escolha')
+            AND (prazo_escolha_em IS NULL OR prazo_escolha_em > ?)`,
+      )
+      .bind(id, agoraIso),
   ]);
+
+  if ((resultadoFrete?.meta.changes ?? 0) === 0 || (resultadoLance?.meta.changes ?? 0) === 0) {
+    return voltarErro('Esta mudança já foi fechada ou o prazo de escolha terminou.');
+  }
 
   // Alertas: vencedor comemora, os outros ficam sabendo
   const perdedores = await c.env.DB

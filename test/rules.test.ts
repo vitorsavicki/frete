@@ -99,10 +99,11 @@ describe('Regras de negócio dos orçamentos (validarLance)', () => {
 });
 
 describe('Escolha do cliente (podeAceitarLance)', () => {
-  it('só aceita quando o frete está em escolha', () => {
-    expect(podeAceitarLance(true, 'aberto')).toBe(false);
+  it('aceita desde o primeiro orçamento enquanto a mudança está aberta', () => {
+    expect(podeAceitarLance(true, 'aberto')).toBe(true);
     expect(podeAceitarLance(true, 'em_escolha')).toBe(true);
     expect(podeAceitarLance(true, 'encerrado')).toBe(false);
+    expect(podeAceitarLance(false, 'aberto')).toBe(false);
     expect(podeAceitarLance(false, 'em_escolha')).toBe(false);
   });
 
@@ -112,6 +113,12 @@ describe('Escolha do cliente (podeAceitarLance)', () => {
     ).toBe(true);
     expect(
       podeAceitarLance(true, 'em_escolha', '2026-10-29T12:00:00.000Z', '2026-10-29T12:00:01.000Z'),
+    ).toBe(false);
+  });
+
+  it('bloqueia quem tenta escolher depois da janela mesmo em aberto', () => {
+    expect(
+      podeAceitarLance(true, 'aberto', '2026-10-29T12:00:00.000Z', '2026-10-29T12:00:01.000Z'),
     ).toBe(false);
   });
 });

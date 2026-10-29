@@ -284,7 +284,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
   const aberto = situacao === 'aberto';
   const emEscolha = situacao === 'em_escolha';
   const podeCancelar = donoDoFrete && (aberto || emEscolha);
-  const podeAceitar = donoDoFrete && emEscolha;
+  const podeAceitar = donoDoFrete && (aberto || emEscolha);
   const vencedor = lances.find((l) => l.vencedor === 1);
   const parametrosBase: ParametrosCusto = { ...CUSTO_PADRAO, ...(custoInicial ?? {}) };
   const estimativa = estimativaCaminhao;
@@ -354,10 +354,10 @@ export const DetalheFretePage: FC<DetalheProps> = ({
         <div>
           {aberto && (
             <>
-              <strong>Propostas até {dataHora(frete.encerra_em)}</strong>
+              <strong>Orçamentos até {dataHora(frete.encerra_em)}</strong>
               <p>
-                Depois desse prazo, você terá {PRAZO_ESCOLHA_HORAS} horas para comparar e escolher
-                um transportador.
+                Você já pode escolher um orçamento. Se preferir esperar o prazo terminar, tem até{' '}
+                {dataHora(frete.prazo_escolha_em)} para decidir.
               </p>
             </>
           )}
@@ -716,7 +716,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
                   {emEscolha
                     ? 'propostas encerradas · escolha do cliente'
                     : frete.total_lances > 0
-                      ? 'recebendo orçamentos'
+                      ? 'recebendo orçamentos · escolha liberada'
                       : 'aguardando orçamento'}
                 </span>
               )}
@@ -1773,7 +1773,7 @@ export const NovoFretePage: FC<NovoFreteProps> = ({
           </div>
 
           <label class="campo">
-            <span class="campo__rotulo">Tempo para receber propostas</span>
+            <span class="campo__rotulo">Por quanto tempo quer receber orçamentos?</span>
             <select name="prazo_recebimento">
               {PRAZOS_RECEBIMENTO.map((horas) => (
                 <option value={String(horas)} selected={(v('prazo_recebimento') || '48') === String(horas)}>
@@ -1782,8 +1782,9 @@ export const NovoFretePage: FC<NovoFreteProps> = ({
               ))}
             </select>
             <span class="campo__dica">
-              Depois desse prazo, você tem {PRAZO_ESCOLHA_HORAS} horas para comparar e escolher um
-              transportador.
+              Durante esse tempo, os transportadores enviam orçamentos. Você escolhe quando quiser
+              e, se preferir esperar o prazo terminar, ainda tem {PRAZO_ESCOLHA_HORAS} horas para
+              decidir.
             </span>
           </label>
 
@@ -1805,9 +1806,9 @@ export const NovoFretePage: FC<NovoFreteProps> = ({
 
         <div class="form-publicar__acoes">
           <p class="auxiliar">
-            Ao publicar, sua mudança fica visível para transportadores durante o prazo escolhido.
-            Depois, você compara as propostas e escolhe com calma. Pode cancelar enquanto estiver
-            aberta.
+            Ao publicar, sua mudança fica visível para os transportadores durante o prazo
+            escolhido. Você pode aceitar um orçamento a qualquer momento e cancelar enquanto ela
+            estiver aberta.
           </p>
           <button type="submit" class="btn btn-primario btn-grande">
             Publicar minha mudança
