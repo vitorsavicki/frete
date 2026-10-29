@@ -121,7 +121,7 @@ npm run deploy
 
 O deploy publica o Worker, os assets e o cron. Depois de publicar:
 
-1. abra a home e confira a cena com imagens 3D e o tour;
+1. abra a home e confira os dois caminhos (publicar mudança e ver mudanças);
 2. abra `/fretes`, um frete com carga e o formulário `/novo-frete`;
 3. confira as abas 3D/Lado/Cima, o volume por categoria e a lista de viagens;
 4. confira o prazo de propostas e os status escritos na listagem e no detalhe;
@@ -155,11 +155,10 @@ O build precisa de JDK, Android SDK e da keystore configurada em
 
 | Sintoma | Onde olhar |
 | --- | --- |
-| Tour não abre | `data-tour-auto` na home, `localStorage` (`qm-tour-v1`), console do navegador |
+| Tour não abre | botão “Rever o passo a passo” na ajuda fixa, `data-tour-abrir`, console do navegador |
 | Ajuda não abre | `data-ajuda-fixa`, `aria-expanded`, `hidden` do painel |
 | Plano não atualiza | `data-montador-carga`, `data-veiculos`, `node --check public/js/app.js` |
 | Abas não alternam | `data-plano-abas`, classe `plano-abas--js`, painel `--ativo` |
-| Imagem de veículo quebrada | `/img/veiculos/*.png`, CSP `'self'`, créditos em `CREDITOS.md` |
 | Mudança não some da lista | `situacao`, `encerra_em`, `aplicarPrazos`, cron `*/5` |
 | Custo estranho | perfil do caminhão, `/api/referencias`, `configuracoes` no D1 |
 | E-mail não sai | `/api/email/status`, `wrangler tail`, domínio verificado |

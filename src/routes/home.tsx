@@ -1,7 +1,6 @@
-// Landing page pública: categorias e o tour de primeiro acesso.
+// Landing page pública: dois caminhos diretos (publicar mudança ou ver mudanças).
 import { Hono } from 'hono';
 import { HomePage } from '../pages/Home';
-import type { Category } from '../lib/db';
 import type { Vars } from '../lib/session';
 import type { AppBindings } from '../lib/bindings';
 import { aplicarPrazos } from '../lib/prazos';
@@ -10,24 +9,15 @@ const home = new Hono<{ Bindings: AppBindings; Variables: Vars }>();
 
 home.get('/', async (c) => {
   const db = c.env.DB;
-
-  const [categorias, alertas] = await Promise.all([
-    db.prepare('SELECT id, nome FROM categories ORDER BY nome').all<Category>(),
-    c.get('user')
-      ? db
-          .prepare('SELECT COUNT(*) AS n FROM alerts WHERE user_id = ? AND lido = 0')
-          .bind(c.get('user')!.id)
-          .first<{ n: number }>()
-      : Promise.resolve({ n: 0 }),
-  ]);
+  const alertas = c.get('user')
+    ? await db
+        .prepare('SELECT COUNT(*) AS n FROM alerts WHERE user_id = ? AND lido = 0')
+        .bind(c.get('user')!.id)
+        .first<{ n: number }>()
+    : null;
 
   return c.html(
-    <HomePage
-      user={c.get('user')}
-      alertas={alertas?.n ?? 0}
-      categorias={categorias.results ?? []}
-      url={c.req.url}
-    />,
+    <HomePage user={c.get('user')} alertas={alertas?.n ?? 0} url={c.req.url} />,
   );
 });
 

@@ -15,7 +15,6 @@ interface LayoutProps {
   jsonLd?: string;
   robots?: string;
   tipo?: string;
-  tour?: boolean;
 }
 
 function iniciais(user: User): string {
@@ -37,7 +36,6 @@ export const Layout: FC<PropsWithChildren<LayoutProps>> = ({
   jsonLd,
   robots,
   tipo = 'website',
-  tour = false,
   children,
 }) => {
   const imagemAbsoluta =
@@ -129,7 +127,7 @@ export const Layout: FC<PropsWithChildren<LayoutProps>> = ({
           </button>
 
           <nav class="site-nav" id="menu-principal" aria-label="Principal" data-nav>
-            <a href="/fretes">Mudanças e fretes</a>
+            <a href="/fretes">Mudanças abertas</a>
             {user?.papel === 'cliente' && (
               <a href="/novo-frete" class="nav-destaque">
                 Publicar mudança
@@ -249,7 +247,7 @@ export const Layout: FC<PropsWithChildren<LayoutProps>> = ({
         </div>
       </footer>
 
-      <TourMascote auto={tour} user={user} />
+      <TourMascote user={user} />
       <AjudaFixa user={user} />
 
       {mapa && <script src="/vendor/leaflet/leaflet.js" defer></script>}

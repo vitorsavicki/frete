@@ -391,9 +391,8 @@ necessárias e o que não entra de jeito nenhum.
 | `carreta` | Carreta | 1.400 cm | 240 cm | 270 cm | 25.000 kg |
 | `outro` | Outro/personalizado | medidas do perfil | | | |
 
-**Kombi:** aparece como referência visual na home, mas não é um tipo selecionável
-no cadastro de caminhão. Hoje ela deve ser cadastrada como `van` ou `outro`.
-Isso está registrado como pendência de consistência.
+**Kombi:** não é um tipo selecionável no cadastro de caminhão e não aparece mais
+na home. Quem usa Kombi deve cadastrá-la como `van` ou `outro`.
 
 ## 12. Validação, segurança e limites
 
@@ -426,7 +425,7 @@ Isso está registrado como pendência de consistência.
    - não aceitou → `expirado`.
 6. O cliente pode cancelar em `aberto` ou `em_escolha`; o cancelamento avisa
    todos que propuseram.
-7. Mudanças em `aberto` aparecem na listagem, no sitemap e na home. `em_escolha`
+7. Mudanças em `aberto` aparecem na listagem e no sitemap. `em_escolha`
    e `encerrado` continuam acessíveis pelo link direto; `sem_lances`,
    `expirado` e `cancelado` retornam 404 para quem não é dono.
 8. As telas mostram o prazo em texto e o status escrito, sem depender de cor.

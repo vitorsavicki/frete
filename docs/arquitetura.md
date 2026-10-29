@@ -84,7 +84,7 @@ Arquivos: `src/pages/*.tsx`.
 - `Truck.tsx` — perfil do caminhão.
 - `Auth.tsx` — login e cadastro.
 - `PlanoCarga.tsx` — desenho do plano (corte lateral + vista de cima).
-- `Tour.tsx` — tour de primeiro acesso e ajuda fixa do mascote.
+- `Tour.tsx` — tour pela ajuda fixa e painel do mascote.
 - `Ilustracoes.tsx` — SVGs próprios (mascote, cena, veículos, ícones).
 - `FreteCard.tsx` — cartão de frete reutilizável.
 - `AppAndroid.tsx` — página do APK.

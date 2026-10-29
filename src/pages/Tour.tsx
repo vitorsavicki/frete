@@ -1,5 +1,5 @@
 import type { FC } from 'hono/jsx';
-import { IconeCliente, IconeTransportador, MascoteMudanca, VeiculoArte } from './Ilustracoes';
+import { CaminhaoMudanca, IconeCliente, IconeTransportador, MascoteMudanca } from './Ilustracoes';
 import type { User } from '../lib/db';
 
 // Tour de primeiro acesso e ajuda fixa do Zé Mudança.
@@ -57,7 +57,7 @@ const ArtePasso: FC<{ tipo: Passo['arte'] }> = ({ tipo }) => {
   if (tipo === 'veiculo') {
     return (
       <div class="tour__arte-veiculo">
-        <VeiculoArte tipo="bau" class="veiculo-arte veiculo-arte--tour" />
+        <CaminhaoMudanca class="veiculo-arte veiculo-arte--tour" />
         <span class="tour__selo-arte">Plano de carga</span>
       </div>
     );
@@ -113,16 +113,8 @@ const ArtePasso: FC<{ tipo: Passo['arte'] }> = ({ tipo }) => {
   );
 };
 
-export const TourMascote: FC<{ auto?: boolean; user?: User | null }> = ({
-  auto = false,
-  user = null,
-}) => (
-  <div
-    class="tour"
-    data-tour
-    data-tour-auto={auto ? '1' : undefined}
-    hidden
-  >
+export const TourMascote: FC<{ user?: User | null }> = ({ user = null }) => (
+  <div class="tour" data-tour hidden>
     <div class="tour__fundo" data-tour-fechar></div>
     <section
       class="tour__caixa"

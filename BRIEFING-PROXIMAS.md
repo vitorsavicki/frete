@@ -5,6 +5,18 @@
 > não dá para saber quem está contratando ou quem oferece o serviço".
 > Regras de estilo: ler GUIA-ESTILO.md ANTES. Não regredir nada de lá.
 
+> **Atualização 2026-10-29:** a home foi refeita para focar no que o site faz
+> (publicar a mudança ou ver mudanças), sem catálogo de itens nem vitrine de
+> veículos. O hero também passou a usar ilustração flat em SVG. A TAREFA 0 e a
+> TAREFA 2 estão concluídas; a TAREFA 1 continua sendo a prioridade.
+
+## TAREFA 0 — Home direta ✅ CONCLUÍDA
+
+A home agora abre com dois caminhos explícitos: **Vou me mudar** (publicar a
+mudança e receber orçamentos) e **Faço mudanças** (ver mudanças abertas e
+enviar orçamento). O catálogo de itens e a vitrine de veículos saíram da home;
+esses recursos continuam no fluxo de publicar e no detalhe da mudança.
+
 ## TAREFA 1 — Página de detalhe: deixar claro QUEM faz O QUÊ (prioridade máxima)
 
 Hoje um visitante rola ~1500px de plano de carga antes de descobrir que pode
@@ -25,14 +37,11 @@ enviar orçamento. Corrigir em `src/pages/Freight.tsx` (DetalheFretePage):
 3. Ordem final da página: prazo → cartão de ação → rota/mapa → resumo carga
    → orçamentos → detalhes da retirada → `<details>` plano → segurança.
 
-## TAREFA 2 — Foto hero decente
+## TAREFA 2 — Foto hero decente ✅ CONCLUÍDA
 
-Substituir `public/img/hero-truck.webp` (é um caminhão CHILENO com URL
-"granotrade.cl" visível na traseira). Buscar no Unsplash/Pexels foto de
-mudança urbana (caminhão de mudança em rua residencial, ou pessoas com
-caixas). Requisitos: sem marcas/placas legíveis, `.webp` < 120 KB,
-creditado em `public/img/CREDITOS.md`. Idem `boxes.webp` (tem marca
-"miloloo" estampada).
+A home não usa mais foto de estoque. O hero e o tour usam uma ilustração flat
+em SVG, na mesma linguagem do ícone do app. Não há placas, marcas estrangeiras
+nem dependência de CDN.
 
 ## TAREFA 3 — Contato após o aceite (sistema de comunicação, sem e-mail)
 

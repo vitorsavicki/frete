@@ -10,10 +10,10 @@ saber **o que a pessoa consegue fazer** — as regras detalhadas ficam em
 
 | Recurso | Status | O que faz |
 | --- | --- | --- |
-| Tour do Zé Mudança | ✅ | Na primeira visita à home, abre um passo a passo animado com lista, veículo, propostas e encontro direto; o convite final muda conforme o papel |
-| Rever o passo a passo | ✅ | Botão na ajuda fixa reabre o tour a qualquer momento |
+| Tour do Zé Mudança | ✅ | Passo a passo animado com lista, veículo, propostas e encontro direto; o convite final muda conforme o papel |
+| Rever o passo a passo | ✅ | Botão na ajuda fixa abre o tour a qualquer momento |
 | Ajuda fixa | ✅ | Mascote no canto da tela abre um painel com atalhos, texto e a opção de rever o tour conforme o papel |
-| Memória do tour | ✅ | O tour não abre sozinho de novo depois que a pessoa fecha; fica salvo em `localStorage` (`qm-tour-v1`) |
+| Memória do tour | ✅ | O tour não abre sozinho na chegada; a preferência de já ter visto fica em `localStorage` (`qm-tour-v1`) |
 | Funciona sem JavaScript | ✅ | O conteúdo do tour e da ajuda é renderizado no servidor; o JS só abre, fecha e avança |
 | Respeita movimento reduzido | ✅ | As animações param com `prefers-reduced-motion` |
 
@@ -21,17 +21,15 @@ saber **o que a pessoa consegue fazer** — as regras detalhadas ficam em
 
 | Recurso | Status | O que faz |
 | --- | --- | --- |
-| Hero do cliente | ✅ | Explica em uma frase o que o site faz e leva para “Publicar minha mudança” |
-| Como funciona em 3 passos | ✅ | Lista → plano de carga → propostas e combinado direto |
-| Dois papéis | ✅ | Separa “quem vai mudar” de “quem transporta”, com ações diferentes |
-| Categorias | ✅ | Atalhos para as categorias de mudança |
-| Itens em destaque | ✅ | Mostra exemplos do catálogo com peso e medidas |
-| Seis veículos ilustrados | ✅ | Fiorino, Kombi, van, 3/4, baú e carreta com imagens 3D locais (Fluent Emoji, MIT) |
-| Cena do hero | ✅ | Caminhão 3D, caixas e o mascote; imagens locais, sem CDN |
-| Faixa do transportador | ✅ | Convite discreto para quem tem veículo; não mistura com a copy do cliente |
+| Dois caminhos no topo | ✅ | “Vou me mudar” leva a publicar a mudança; “Faço mudanças” leva a ver as mudanças abertas |
+| Hero direto | ✅ | Explica em uma frase o que o site faz: publicar a mudança e receber orçamentos |
+| Como funciona em 3 passos | ✅ | Publicar → receber orçamentos → escolher e combinar direto |
+| Cena do hero | ✅ | Ilustração flat local de uma mudança, sem foto de estoque e sem CDN |
+| Faixa do transportador | ✅ | Convite para ver as mudanças abertas e cadastrar o veículo |
 | App Android | ✅ | Link para a página do APK |
-| Perguntas frequentes | ✅ | Dúvidas sobre preço, propostas, plano, pagamento e transportadores |
+| Perguntas frequentes | ✅ | Dúvidas sobre custo, orçamentos, escolha, transportadores e pagamento |
 | CTA final | ✅ | Repete a ação principal com o mascote |
+| Página curta | ✅ | Sem catálogo de itens nem vitrine de veículos na home; esses recursos ficam no fluxo de publicar e no detalhe da mudança |
 
 ## Conta e acesso
 

@@ -18,7 +18,7 @@ Ordem em `src/index.tsx`:
 
 | Método | Rota | Quem vê | O que faz |
 | --- | --- | --- | --- |
-| `GET` | `/` | todos | Home pública, categorias, tour de primeiro acesso e ajuda fixa |
+| `GET` | `/` | todos | Home pública com dois caminhos (publicar mudança ou ver mudanças), tour e ajuda fixa |
 | `GET` | `/fretes` | todos | Lista mudanças abertas com filtros; aplica o relógio antes de consultar |
 | `GET` | `/fretes/:id` | todos | Detalhe do frete, rota, carga, plano, status e prazos; propostas só para o dono. 404 para visitante em `sem_lances`, `expirado` ou `cancelado` |
 | `GET` | `/novo-frete` | cliente logado | Formulário de publicação, com prazo de 24/48/72 h |
@@ -105,7 +105,8 @@ As APIs usam JSON `{ "erro": "mensagem simples" }` com status HTTP adequado:
 
 - Assets estáticos usam `public/_headers`.
 - `robots.txt` e `sitemap.xml` são gerados pelo Worker.
-- Só fretes com `situacao = 'aberto'` entram na home, na listagem e no sitemap.
+- Só fretes com `situacao = 'aberto'` entram na listagem e no sitemap. A home
+  não lista fretes: ela só mostra os dois caminhos de entrada.
 - Mudanças `sem_lances`, `expirado` ou `cancelado` retornam 404 para visitantes;
   `em_escolha` e `encerrado` continuam acessíveis pelo link direto e recebem
   `noindex`.

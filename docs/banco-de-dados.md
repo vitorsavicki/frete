@@ -164,9 +164,9 @@ Um veículo por transportador (`user_id` único).
 | `margem_percentual` | 0 a 100 |
 | `criado_em`, `atualizado_em` | auditoria |
 
-O `trucks.tipo` **não aceita `kombi`**. A Kombi aparece só como ilustração na
-home; hoje ela deve ser cadastrada como `van` ou `outro`. Isso está registrado
-como pendência.
+O `trucks.tipo` **não aceita `kombi`**. Quem usa Kombi deve cadastrá-la como
+`van` ou `outro`. A home não exibe mais vitrine de veículos, então não há
+promessa de um tipo que o formulário não aceita.
 
 `arla_por_km` continua no banco e no cálculo interno, mas não aparece mais na
 interface. Perfis antigos mantêm o valor salvo; perfis novos recebem `0.06`.

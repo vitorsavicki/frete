@@ -231,6 +231,66 @@ export const MascoteAjuda: FC<MascoteAjudaProps> = ({
   </div>
 );
 
+export const CaminhaoMudanca: FC<{ class?: string }> = ({ class: classe }) => (
+  <svg class={classe} viewBox="0 0 300 200" aria-hidden="true">
+    <ellipse cx="150" cy="178" rx="126" ry="11" fill="#0f172a" opacity=".12" />
+    <rect
+      x="96"
+      y="26"
+      width="184"
+      height="116"
+      rx="16"
+      fill="#f5b942"
+      stroke="#0f172a"
+      stroke-width="4"
+    />
+    <path d="M96 48h184" stroke="#fbbf24" stroke-width="7" stroke-linecap="round" />
+    <path d="M118 26v116M258 26v116" stroke="#eab308" stroke-width="3" opacity=".55" />
+    <path
+      d="M24 142V98c0-12 8-22 20-22h52v66H24Z"
+      fill="#1e4fd8"
+      stroke="#0f172a"
+      stroke-width="4"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M40 94h38v28H40z"
+      fill="#dbeafe"
+      stroke="#0f172a"
+      stroke-width="4"
+      stroke-linejoin="round"
+    />
+    <path d="M24 142h256" stroke="#0f172a" stroke-width="10" stroke-linecap="round" />
+    <circle cx="78" cy="158" r="24" fill="#1e293b" />
+    <circle cx="78" cy="158" r="9" fill="#cbd5e1" />
+    <circle cx="238" cy="158" r="24" fill="#1e293b" />
+    <circle cx="238" cy="158" r="9" fill="#cbd5e1" />
+    <rect x="24" y="118" width="10" height="18" rx="3" fill="#fbbf24" />
+    <path d="M24 151h18" stroke="#0f172a" stroke-width="6" stroke-linecap="round" />
+  </svg>
+);
+
+const CaixaMudanca: FC<{ class?: string; cor?: string }> = ({
+  class: classe,
+  cor = '#f5b942',
+}) => (
+  <svg class={classe} viewBox="0 0 100 100" aria-hidden="true">
+    <rect
+      x="10"
+      y="22"
+      width="80"
+      height="70"
+      rx="10"
+      fill={cor}
+      stroke="#0f172a"
+      stroke-width="4"
+    />
+    <path d="M10 39h80" stroke="#fbbf24" stroke-width="6" />
+    <path d="M50 22v70" stroke="#fbbf24" stroke-width="12" opacity=".7" />
+    <path d="M44 22v12M56 22v12" stroke="#eab308" stroke-width="2" />
+  </svg>
+);
+
 export const CenaMudanca: FC<{ class?: string }> = ({ class: classe }) => (
   <div
     class={`cena-mudanca cena-mudanca--foto${classe ? ` ${classe}` : ''}`}
@@ -239,72 +299,11 @@ export const CenaMudanca: FC<{ class?: string }> = ({ class: classe }) => (
   >
     <span class="cena-mudanca__ceu" aria-hidden="true"></span>
     <span class="cena-mudanca__estrada" aria-hidden="true"></span>
-    <img
-      class="cena-mudanca__caminhao"
-      src="/img/veiculos/delivery_truck.png"
-      alt=""
-      width="256"
-      height="256"
-      decoding="async"
-    />
-    <img
-      class="cena-mudanca__caixa cena-mudanca__caixa--grande"
-      src="/img/veiculos/package_3d.png"
-      alt=""
-      width="256"
-      height="256"
-      decoding="async"
-    />
-    <img
-      class="cena-mudanca__caixa cena-mudanca__caixa--pequena"
-      src="/img/veiculos/package_3d.png"
-      alt=""
-      width="256"
-      height="256"
-      decoding="async"
-    />
+    <CaminhaoMudanca class="cena-mudanca__caminhao" />
+    <CaixaMudanca class="cena-mudanca__caixa cena-mudanca__caixa--grande" />
+    <CaixaMudanca class="cena-mudanca__caixa cena-mudanca__caixa--pequena" cor="#fde68a" />
     <MascoteMudanca class="cena-mudanca__mascote" idPrefixo="cena-mascote" decorativo />
   </div>
-);
-
-type TipoArte = 'fiorino' | 'kombi' | 'van' | 'tres_quartos' | 'bau' | 'carreta';
-
-const ROTULOS_VEICULO: Record<TipoArte, string> = {
-  fiorino: 'Fiorino',
-  kombi: 'Kombi',
-  van: 'Van',
-  tres_quartos: 'Caminhão 3/4',
-  bau: 'Caminhão baú',
-  carreta: 'Carreta',
-};
-
-interface VeiculoArteProps {
-  tipo: TipoArte;
-  class?: string;
-}
-
-// Imagens 3D do Microsoft Fluent Emoji (licença MIT), servidas localmente
-// para manter a CSP fechada. O crédito fica em /img/veiculos/CREDITOS.md.
-const ARQUIVO_VEICULO: Record<TipoArte, string> = {
-  fiorino: 'delivery_truck.png',
-  kombi: 'minibus.png',
-  van: 'minibus.png',
-  tres_quartos: 'pickup_truck.png',
-  bau: 'delivery_truck.png',
-  carreta: 'articulated_lorry.png',
-};
-
-/** Imagem 3D do veículo usado em mudanças. */
-export const VeiculoArte: FC<VeiculoArteProps> = ({ tipo, class: classe }) => (
-  <img
-    class={classe ?? 'veiculo-arte'}
-    src={`/img/veiculos/${ARQUIVO_VEICULO[tipo]}`}
-    alt={`Imagem de ${ROTULOS_VEICULO[tipo]} usado em mudanças`}
-    width="256"
-    height="256"
-    loading="lazy"
-    decoding="async"
-  />
 );
 
 export const IconeCliente: FC<{ class?: string }> = ({ class: classe }) => (

@@ -13,17 +13,14 @@ e o item deve ser atualizado ou removido daqui.
 
 - O layout precisa ser entendido por quem tem pouca familiaridade com tecnologia
   e por quem lê pouco. Isso vale para todas as telas, não só para a home.
-- O mascote é uma **caixa de mudança com boné e luvas**. Ele aparece no tour de
-  primeiro acesso e fica disponível na ajuda fixa.
-- O tour abre sozinho **apenas na primeira visita à home**. Depois fica salvo em
-  `localStorage` (`qm-tour-v1`).
-- O tour pode ser revisto pelo botão **“Rever o passo a passo”** na ajuda fixa.
+- O mascote é uma **caixa de mudança com boné e luvas**. Ele aparece no tour e
+  fica disponível na ajuda fixa.
+- O tour **não abre sozinho** na chegada. Ele fica disponível na ajuda fixa e
+  pode ser revisto pelo botão **“Rever o passo a passo”**.
 - A ajuda fixa fica no canto da tela e não cobre os botões principais no celular.
-- Os veículos usam **imagens 3D do Microsoft Fluent Emoji** (licença MIT),
-  copiadas para `public/img/veiculos/`. A troca de desenhos por imagens foi
-  pedida para deixar a vitrine mais concreta. O crédito fica em
-  `public/img/veiculos/CREDITOS.md`. Nada é carregado de CDN: a CSP continua
-  `'self'`.
+- A home e o tour usam a mesma ilustração flat do caminhão, desenhada em SVG
+  local. Não há mais vitrine de veículos 3D nem dependência de CDN: a CSP
+  continua `'self'`.
 - O plano de carga mostra **todas as faixas**, com vista de cima proporcional,
   **vista 3D isométrica**, volume por categoria e uma lista explícita do que
   ficou fora.
@@ -60,7 +57,7 @@ O redesign foi publicado em produção e as telas principais foram conferidas em
 Edge headless, em desktop (1440 px) e celular (390 px). Ainda faltam alguns
 cenários antes de considerar a validação completa:
 
-- [x] tour no primeiro acesso e botão de rever (testado em 1440 px e 390 px);
+- [x] tour pela ajuda fixa e botão de rever (testado em 1440 px e 390 px);
 - [x] ajuda fixa abrindo, fechando e sem cobrir o CTA no celular;
 - [ ] home em 360 px e 768 px (já conferida em 390 px e 1440 px);
 - [x] `/fretes/3` com baú, vista de cima e lista completa dos volumes;
@@ -127,25 +124,17 @@ Transições:
 - contagem regressiva em tempo real (o prazo é mostrado como data e hora);
 - republicar com um clique (hoje é preciso criar uma mudança nova).
 
-## 4. Kombi na home, mas não no cadastro ⏳
+## 4. Kombi na vitrine, mas não no cadastro ✅
 
-A home mostra a Kombi como opção visual, porque ela é comum em mudanças
-pequenas. O cadastro de veículo, porém, aceita apenas:
+Resolvido em 2026-10-29 com a opção **A**: a home deixou de exibir a vitrine de
+veículos. O cadastro continua aceitando apenas:
 
 `fiorino`, `van`, `tres_quartos`, `bau`, `carreta` e `outro`.
 
-Hoje a Kombi precisa ser cadastrada como `van` ou `outro`. Isso é uma
-inconsistência entre a vitrine e o formulário.
-
-Opções:
-
-- **A.** remover a Kombi da home e ficar só com os tipos reais;
-- **B.** criar o tipo `kombi`, com medidas típicas, rótulo e custo de referência;
-- **C.** manter a ilustração, mas explicar que ela entra como van.
-
-Recomendação: **B**, se a Kombi for relevante para o público; caso contrário,
-**A** é mais honesto. Não deixar a vitrine prometer um tipo que o formulário não
-aceita.
+Quem usa Kombi cadastra como `van` ou `outro`. Como a home não promete mais um
+tipo que o formulário não aceita, a inconsistência deixou de existir. Criar o
+tipo `kombi` continua sendo uma decisão futura, sem urgência e sem vitrine na
+home.
 
 ## 5. Endereço público ⏳
 
@@ -183,7 +172,7 @@ regras de prazo.
 | Tema | Decisão |
 | --- | --- |
 | Nome do mascote | “Zé Mudança” no tour e na ajuda |
-| Tour automático | só na home e só na primeira visita |
+| Tour automático | não abre sozinho; fica na ajuda fixa |
 | Memória do tour | `localStorage`, chave `qm-tour-v1` |
 | Tour sem JavaScript | conteúdo renderizado no servidor; JS só abre, fecha e avança |
 | Movimento reduzido | animações desligadas com `prefers-reduced-motion` |
@@ -194,6 +183,8 @@ regras de prazo.
 | Custo do transportador | visível só para transportador logado |
 | ARLA | fora da interface, dentro do cálculo |
 | Copy da home | benefícios ao cliente, sem “leilão” ou “marketplace” |
+| Foco da home | dois caminhos diretos: publicar o que precisa levar ou ver mudanças abertas |
+| Catálogo na home | fora; itens e veículos ficam no fluxo de publicar e no detalhe da mudança |
 | Prova social | nenhuma inventada |
 | CSP | fechada em `'self'`; sem CDN ou API externa no cliente |
 | Domínio/e-mail | adiado; ver seção 6 |
@@ -201,8 +192,7 @@ regras de prazo.
 ## 8. Próximos passos sugeridos
 
 1. Completar a validação do redesign em 360 px, 768 px e com leitores de fora.
-2. Resolver a Kombi (tipo real ou remover da home).
-3. Decidir a privacidade do endereço.
-4. Configurar domínio e e-mail quando fizer sentido para o negócio.
-5. Criar e-mails de “recebimento encerrado” e “prazo de escolha acabando”.
-6. Avaliar um botão de republicar a partir de `sem_lances`/`expirado`.
+2. Decidir a privacidade do endereço.
+3. Configurar domínio e e-mail quando fizer sentido para o negócio.
+4. Criar e-mails de “recebimento encerrado” e “prazo de escolha acabando”.
+5. Avaliar um botão de republicar a partir de `sem_lances`/`expirado`.

@@ -60,8 +60,9 @@ Confira também se o README continua apontando para o estado real do projeto.
 ## Pendências
 
 Antes de prometer algo na interface, confira
-`docs/decisoes-e-pendencias.md`. Prazo automático do leilão, Kombi como tipo de
-veículo e endereço público ainda estão em aberto.
+`docs/decisoes-e-pendencias.md`. Prazo automático do leilão, Kombi como tipo
+próprio de veículo (hoje cadastrada como van ou outro) e endereço público ainda
+estão em aberto.
 
 ## REGRA ZERO
 Leia GUIA-ESTILO.md antes de qualquer mudanca visual ou de copy. Nao regredir o que la esta marcado como pronto.

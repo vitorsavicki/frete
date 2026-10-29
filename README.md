@@ -273,19 +273,17 @@ D1 remoto, smoke test e rollback.
 ## Estado atual
 
 - **Produção:** `https://frete.vitorsavicki.workers.dev`.
-- **Último deploy registrado:** `cff1d59a-559b-4def-9c15-2010db2f1d93`
-  (plano de carga 3D com abas, volume por categoria, cálculo de viagens,
-  imagens 3D dos veículos e prazo do leilão).
-- **Publicado neste deploy:** migração `0007`, `situacao`/`encerra_em`/
-  `prazo_escolha_em`, cron a cada 5 minutos, plano 3D/Lado/Cima, viagens e
-  imagens locais dos veículos.
+- **Último deploy registrado:** `9a7b1715-0edc-4943-bf87-d452ca48c892`
+  (home enxuta com dois caminhos, hero flat em SVG e tour pela ajuda fixa).
+- **Publicado neste deploy:** home focada em publicar a mudança ou ver
+  mudanças, sem catálogo de itens nem vitrine de veículos; hero e tour com
+  ilustração flat local; remoção dos assets 3D; documentação atualizada.
 - **Validação:** `npm run typecheck`, `node --check public/js/app.js` e
-  `npm test` passam (71 testes). Smoke test em produção: home com imagens,
-  `/fretes`, `/sitemap.xml` e imagens 200; os fretes antigos venceram e saíram
-  da lista pública como `sem_lances`.
+  `npm test` passam (71 testes). Smoke test em produção: home 200 com os dois
+  caminhos, sem as seções antigas, e CSS 200; conferida em 390 px e 1440 px.
 - **Pendências conhecidas:** domínio próprio, envio real de e-mail (depende de
-  domínio na Cloudflare), tipo de veículo Kombi e leitura dos textos por alguém
-  de fora do projeto.
+  domínio na Cloudflare), Kombi como tipo próprio (hoje cadastrada como van ou
+  outro) e leitura dos textos por alguém de fora do projeto.
 
 O estado detalhado fica em
 [docs/decisoes-e-pendencias.md](docs/decisoes-e-pendencias.md).
