@@ -210,12 +210,15 @@ export const HomePage: FC<HomeProps> = ({
 
           <div class="home-hero__acoes">
             <a href={destinoCliente} class="btn btn-primario btn-grande">
-              Publicar minha mudança
+              📦 Vou me mudar — publicar grátis
             </a>
-            <a href="#como-funciona" class="btn btn-fantasma btn-grande">
-              Como funciona
+            <a href="/fretes" class="btn btn-fantasma btn-grande">
+              🚛 Faço mudanças — ver cargas
             </a>
           </div>
+          <p class="home-hero__atalho">
+            Novo por aqui? Veja <a href="#como-funciona">como funciona</a> em 3 passos.
+          </p>
 
           <ul class="home-hero__garantias">
             <li><span aria-hidden="true">✓</span> Grátis para publicar</li>

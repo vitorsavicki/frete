@@ -3338,11 +3338,9 @@
       });
     });
 
-    if (tour.getAttribute('data-tour-auto') === '1' && !lerTourVisto()) {
-      window.setTimeout(function () {
-        abrirTour(false);
-      }, 650);
-    }
+    // O tour NÃO abre sozinho na cara do visitante: quem chega precisa
+    // primeiro entender o que é o site (feedback de teste real, 29/10).
+    // O tour continua disponível pelo balão "Precisa de ajuda?".
   }
 
   if (ajuda) {

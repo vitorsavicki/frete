@@ -7508,3 +7508,7 @@ body.tour-aberto {
 .custo-transportador .lista-check {
   font-size: 0.8rem;
 }
+
+/* Atalho discreto sob os CTAs do hero */
+.home-hero__atalho { margin: .75rem 0 0; font-size: .95rem; color: #475569; }
+.home-hero__atalho a { color: #1e4fd8; }
