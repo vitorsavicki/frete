@@ -61,7 +61,4 @@ Quando em dúvida, MUDE MENOS. Não reescreva o que funciona.
 
 ## 6. Próximas tarefas sugeridas (nesta ordem)
 
-1. **Chat entre as partes após o aceite** — tabela `messages` no D1 (freight_id, sender_id, texto, criado_em), visível só para dono e vencedor na página da mudança encerrada. Notificar via `alerts`. Nada de e-mail ainda.
-2. **Foto hero nova** — substituir o caminhão chileno por cena urbana de mudança no Brasil (Unsplash, .webp < 120 KB).
-3. **E-mail transacional** — só quando houver domínio comprado (verificar domínio no Resend e trocar `EMAIL_FROM` no wrangler.json). Sem domínio, NÃO tentar enviar e-mail — não funciona e gera erro silencioso.
-4. Revisar se o flash de erro do cadastro aparece quando a validação falha (400 re-render).
+Ver **BRIEFING-PROXIMAS.md** — lista detalhada e ordenada (clareza da página de detalhe, hero, contato após aceite, flash de erro).

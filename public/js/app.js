@@ -3412,3 +3412,36 @@
     if (evento.key === 'Escape') fecharAjuda(false);
   });
 })();
+
+// Abas do plano de carga (3D / Lado / Cima).
+// O CSS só esconde os painéis quando o contêiner tem .plano-abas--js;
+// sem JS, tudo fica visível (fallback). Funciona também para HTML
+// reinjetado pelo construtor (delegação de clique + MutationObserver).
+(function () {
+  function ativar(abas, nome) {
+    abas.querySelectorAll('[data-plano-aba]').forEach(function (b) {
+      var on = b.getAttribute('data-plano-aba') === nome;
+      b.classList.toggle('plano-aba--ativo', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    abas.querySelectorAll('[data-plano-painel]').forEach(function (p) {
+      p.classList.toggle('plano-abas__painel--ativo', p.getAttribute('data-plano-painel') === nome);
+    });
+  }
+  function ligar(abas) {
+    if (abas.dataset.planoPronto) return;
+    abas.dataset.planoPronto = '1';
+    abas.classList.add('plano-abas--js');
+    var ini = abas.querySelector('.plano-aba--ativo');
+    ativar(abas, ini ? ini.getAttribute('data-plano-aba') : 'lado');
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-plano-aba]');
+    if (!b) return;
+    var abas = b.closest('[data-plano-abas]');
+    if (abas) ativar(abas, b.getAttribute('data-plano-aba'));
+  });
+  function varrer() { document.querySelectorAll('[data-plano-abas]').forEach(ligar); }
+  varrer();
+  new MutationObserver(varrer).observe(document.documentElement, { childList: true, subtree: true });
+})();

@@ -411,7 +411,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
         <div class="detalhe-principal">
           <section class="cartao">
             <div class="cartao__cabecalho">
-              <h2>Rota do frete</h2>
+              <h2>Rota da mudança</h2>
               {distanciaRodoviariaKm != null && (
                 <span class="chip chip-verde">
                   ~{distanciaRodoviariaKm.toFixed(1).replace('.', ',')} km por estrada
@@ -457,7 +457,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
               data-rota={rotaGeometria ? JSON.stringify(rotaGeometria) : undefined}
               data-rota-fonte={rotaFonte ?? undefined}
               data-mapa
-              aria-label="Mapa da rota do frete"
+              aria-label="Mapa da rota da mudança"
             >
               <div class="mapa__vazio">
                 {temMapa

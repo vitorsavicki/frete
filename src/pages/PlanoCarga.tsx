@@ -431,19 +431,19 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
           <div class="plano-abas__botoes" role="tablist" aria-label="Formas de ver o carregamento">
             <button
               type="button"
-              class="plano-aba plano-aba--ativo"
+              class="plano-aba"
               data-plano-aba="3d"
               role="tab"
-              aria-selected="true"
+              aria-selected="false"
             >
               <span aria-hidden="true">🧊</span> 3D
             </button>
             <button
               type="button"
-              class="plano-aba"
+              class="plano-aba plano-aba--ativo"
               data-plano-aba="lado"
               role="tab"
-              aria-selected="false"
+              aria-selected="true"
             >
               <span aria-hidden="true">📐</span> Lado
             </button>
