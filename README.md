@@ -276,14 +276,16 @@ D1 remoto, smoke test e rollback.
 ## Estado atual
 
 - **Produção:** `https://frete.vitorsavicki.workers.dev`.
-- **Último deploy registrado:** `9a7b1715-0edc-4943-bf87-d452ca48c892`
-  (home enxuta com dois caminhos, hero flat em SVG e tour pela ajuda fixa).
-- **Publicado neste deploy:** home focada em publicar a mudança ou ver
-  mudanças, sem catálogo de itens nem vitrine de veículos; hero e tour com
-  ilustração flat local; remoção dos assets 3D; documentação atualizada.
+- **Último deploy registrado:** `09783327-c629-4a94-8c45-8f861d181924`
+  (plano de carga em grade 2D, prazos limitados pela retirada e “Meu veículo”).
+- **Publicado neste deploy:** packer 2D com posições reais no piso, vistas
+  3D/lateral/cima sem amontoar a carga em uma lateral, escolha do prazo de
+  recebimento com datas exatas no formulário, limite da janela de 48 h pela
+  retirada, migração `0008` aplicada no D1 remoto e textos “Meu veículo”.
 - **Validação:** `npm run typecheck`, `node --check public/js/app.js` e
-  `npm test` passam (74 testes). Smoke test em produção: home 200 com os dois
-  caminhos, sem as seções antigas, e CSS 200; conferida em 390 px e 1440 px.
+  `npm test` passam (74 testes). Smoke test em produção: home, `/fretes`,
+  `/sitemap.xml`, CSS e JS respondem 200; a listagem mostra “Publicar mudança”
+  e o estado vazio com “Nenhuma mudança com esses filtros”.
 - **Pendências conhecidas:** domínio próprio, envio real de e-mail (depende de
   domínio na Cloudflare), Kombi como tipo próprio (hoje cadastrada como van ou
   outro) e leitura dos textos por alguém de fora do projeto.
