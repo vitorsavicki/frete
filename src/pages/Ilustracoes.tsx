@@ -205,11 +205,15 @@ interface MascoteAjudaProps {
   tom?: 'dica' | 'atencao' | 'ok';
   class?: string;
   idPrefixo?: string;
+  /** Ação útil: o Zé nunca aparece sem um próximo passo. */
+  acaoTexto?: string;
+  acaoHref?: string;
 }
 
 /**
  * Zé Mudança em modo ajuda: uma fala curta e útil, com o texto sempre
- * visível (nada de esconder informação atrás de um balão clicável).
+ * visível (nada de esconder informação atrás de um balão clicável) e um
+ * link para a pessoa continuar sozinha.
  */
 export const MascoteAjuda: FC<MascoteAjudaProps> = ({
   fala,
@@ -217,6 +221,8 @@ export const MascoteAjuda: FC<MascoteAjudaProps> = ({
   tom = 'dica',
   class: classe,
   idPrefixo = 'mascote-ajuda',
+  acaoTexto,
+  acaoHref,
 }) => (
   <div
     class={`mascote-ajuda mascote-ajuda--${tom}${classe ? ` ${classe}` : ''}`}
@@ -227,6 +233,11 @@ export const MascoteAjuda: FC<MascoteAjudaProps> = ({
       <span class="mascote-ajuda__nome">Zé Mudança</span>
       <strong data-mascote-fala>{fala}</strong>
       {detalhe && <p data-mascote-detalhe>{detalhe}</p>}
+      {acaoTexto && acaoHref && (
+        <a class="mascote-ajuda__acao" href={acaoHref}>
+          {acaoTexto}
+        </a>
+      )}
     </div>
   </div>
 );

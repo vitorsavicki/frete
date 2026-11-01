@@ -13,6 +13,7 @@ saber **o que a pessoa consegue fazer** — as regras detalhadas ficam em
 | Tour do Zé Mudança | ✅ | Passo a passo animado com lista, veículo, propostas e encontro direto; o convite final muda conforme o papel |
 | Rever o passo a passo | ✅ | Botão na ajuda fixa abre o tour a qualquer momento |
 | Ajuda fixa | ✅ | Mascote no canto da tela abre um painel com atalhos, texto e a opção de rever o tour conforme o papel |
+| Mascote no formulário | ✅ | Diz o que priorizar, mostra o volume e o veículo sugerido e leva ao plano da carga |
 | Memória do tour | ✅ | O tour não abre sozinho na chegada; a preferência de já ter visto fica em `localStorage` (`qm-tour-v1`) |
 | Funciona sem JavaScript | ✅ | O conteúdo do tour e da ajuda é renderizado no servidor; o JS só abre, fecha e avança |
 | Respeita movimento reduzido | ✅ | As animações param com `prefers-reduced-motion` |
@@ -53,12 +54,12 @@ saber **o que a pessoa consegue fazer** — as regras detalhadas ficam em
 | Lista de itens | ✅ | Móveis, eletrodomésticos, caixas e itens especiais com peso e medidas |
 | Caixas personalizadas | ✅ | Pequena, média, grande ou medida informada |
 | Cálculo ao vivo | ✅ | Peso, volume e veículo recomendado enquanto a lista muda |
-| Plano de carga 3D | ✅ | Aba 3D isométrica, corte lateral e vista de cima, gerados do mesmo packer |
+| Plano de carga 3D | ✅ | Aba 3D isométrica, corte lateral e vista de cima, gerados do mesmo packer em grade 2D |
 | Volume das caixas | ✅ | Volume total e volume por grupo (móveis, eletrodomésticos, caixas, outros), com peso |
 | Viagens necessárias | ✅ | Quando não cabe de uma vez, calcula quantas viagens e o que vai em cada uma |
 | Itens fora do plano | ✅ | Lista explícita do que não coube, com contagem por item |
 | Preço máximo | ✅ | Teto opcional que limita as propostas |
-| Prazo de propostas | ✅ | Cliente escolhe 24, 48 ou 72 horas de recebimento |
+| Prazo de propostas | ✅ | Cliente escolhe 24, 48 ou 72 horas e vê as datas exatas antes de publicar |
 | IA para descrição | ✅ (se configurada) | Melhora o texto antes de publicar |
 
 ## Receber propostas
@@ -70,7 +71,7 @@ saber **o que a pessoa consegue fazer** — as regras detalhadas ficam em
 | Proposta do transportador | ✅ | Valor, mensagem e melhoria enquanto o prazo de recebimento está aberto |
 | Menor proposta em destaque | ✅ | O card mostra quantidade, menor valor e prazo |
 | Propostas visíveis ao dono | ✅ | Tabela com nome do transportador e mensagem |
-| Prazo automático | ✅ | 24/48/72 h de propostas + 48 h de escolha; mudança vencida sai das listagens |
+| Prazo automático | ✅ | 24/48/72 h de propostas + escolha de até 48 h, limitada à retirada; mudança vencida sai das listagens |
 | Status escrito | ✅ | Recebendo orçamentos, escolhendo proposta, sem propostas, expirada, encerrada, cancelada |
 | Alertas no sino | ✅ | Novo orçamento, superado, vencedor, perdedor e cancelamento |
 | Aceite | ✅ | Dono escolhe qualquer proposta assim que ela chega (em `aberto`) ou na janela de escolha, antes de `prazo_escolha_em` |
@@ -99,10 +100,10 @@ saber **o que a pessoa consegue fazer** — as regras detalhadas ficam em
 | Catálogo com mais de 60 itens | ✅ | Peso, medidas, fragilidade e empilhamento |
 | Resumo da carga | ✅ | Quantidade, peso, volume e altura máxima |
 | Encaixe no veículo | ✅ | `cabe`, `limite` ou `nao_cabe`, com motivos |
-| Plano por faixas de largura | ✅ | Preenche o piso antes de empilhar e respeita o peso máximo |
+| Plano em grade 2D | ✅ | Preenche o piso em comprimento × largura, aproveita vãos e respeita o peso máximo |
 | Vista 3D | ✅ | Cubos isométricos com topo, frente e lateral, gerados dos mesmos blocos |
-| Corte lateral | ✅ | Mostra a faixa da frente, alturas e frágeis |
-| Vista de cima real | ✅ | Retângulos proporcionais ao piso, com todas as faixas |
+| Corte lateral | ✅ | Mostra comprimento × altura, com os volumes mais próximos da lateral |
+| Vista de cima real | ✅ | Posições reais no piso (`x` e `z`), com o espaço livre explicado |
 | Volume por categoria | ✅ | Quanto cada grupo ocupa, com peso e número de volumes |
 | Lista de conferência | ✅ | Todos os itens, com “No plano”, “N fora” ou “na próxima” |
 | Recomendação pelo packer | ✅ | Escolhe o menor veículo que não deixa volumes fora, considerando peso |

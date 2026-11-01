@@ -5,6 +5,7 @@ import {
   calcularPrazos,
   detalhePublico,
   prazoRecebimentoValido,
+  retiradaEm,
   rotuloSituacao,
   situacaoPublica,
 } from '../src/lib/prazos';
@@ -56,6 +57,22 @@ describe('Prazos do leilão', () => {
     expect(prazos.prazoEscolhaEm).toBe('2026-10-31T12:00:00.000Z');
   });
 
+  it('lê a retirada no horário de Brasília e usa o fim do dia sem hora', () => {
+    expect(retiradaEm('2026-10-30', '16:50')?.toISOString()).toBe('2026-10-30T19:50:00.000Z');
+    expect(retiradaEm('2026-10-30', '')?.toISOString()).toBe('2026-10-31T02:59:00.000Z');
+    expect(retiradaEm('data-invalida', '16:50')).toBeNull();
+  });
+
+  it('encerra a escolha na retirada quando ela chega antes das 48 horas', () => {
+    const retirada = new Date('2026-10-29T18:00:00.000Z');
+    const prazos = calcularPrazos(BASE, 48, retirada);
+    expect(prazos.encerraEm).toBe('2026-10-29T12:00:00.000Z');
+    expect(prazos.prazoEscolhaEm).toBe('2026-10-29T18:00:00.000Z');
+
+    const depois = new Date('2026-11-05T12:00:00.000Z');
+    expect(calcularPrazos(BASE, 48, depois).prazoEscolhaEm).toBe('2026-10-31T12:00:00.000Z');
+  });
+
   it('escreve o status sem depender de cor', () => {
     expect(rotuloSituacao('aberto')).toBe('Recebendo orçamentos');
     expect(rotuloSituacao('em_escolha')).toBe('Escolhendo proposta');
@@ -86,6 +103,7 @@ describe('Prazos do leilão', () => {
     expect(sqls).toHaveLength(3);
     expect(sqls[0]).toContain("situacao = 'sem_lances'");
     expect(sqls[1]).toContain("situacao = 'em_escolha'");
+    expect(sqls[1]).toContain('data_retirada');
     expect(sqls[2]).toContain("situacao = 'expirado'");
   });
 });

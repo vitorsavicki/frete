@@ -66,7 +66,7 @@ Arquivos: `src/routes/*.tsx`.
 | `auth.tsx` | cadastro, login local, login Google, logout |
 | `freight.tsx` | listagem, detalhe, publicação, proposta, aceite, cancelamento |
 | `dashboard.tsx` | painel do usuário e leitura de alertas |
-| `truck.tsx` | perfil do caminhão do transportador |
+| `truck.tsx` | perfil do veículo do transportador |
 | `android.tsx` | página do app e download do APK |
 | `api.ts` | CEP, cidades, referências, rota, status de e-mail e IA |
 
@@ -81,7 +81,7 @@ Arquivos: `src/pages/*.tsx`.
 - `Home.tsx` — home pública.
 - `Freight.tsx` — listagem, detalhe, formulário de publicação e simulador.
 - `Dashboard.tsx` — painel do cliente/transportador.
-- `Truck.tsx` — perfil do caminhão.
+- `Truck.tsx` - perfil do veículo.
 - `Auth.tsx` — login e cadastro.
 - `PlanoCarga.tsx` — desenho do plano (corte lateral + vista de cima).
 - `Tour.tsx` — tour pela ajuda fixa e painel do mascote.

@@ -1,6 +1,8 @@
 // Schemas zod — validação de tudo que entra por formulário/API.
 
 import { z } from 'zod';
+import { dataHora } from './format';
+import { retiradaEm } from './prazos';
 
 const cep = z
   .string()
@@ -81,6 +83,20 @@ export const schemaFrete = z.object({
   destino_bairro: z.string().trim().min(2).max(255),
   destino_cidade: z.string().trim().min(2).max(255),
   destino_uf: z.string().trim().length(2).toUpperCase(),
+}).superRefine((frete, ctx) => {
+  const retirada = retiradaEm(frete.data_retirada, frete.hora_retirada);
+  if (!retirada) return;
+
+  // O leilão precisa terminar antes da retirada. Se a data marcada chega
+  // antes, não há tempo hábil para receber e escolher um orçamento.
+  const fimDasPropostas = new Date(Date.now() + frete.prazo_recebimento * 60 * 60 * 1000);
+  if (retirada.getTime() <= fimDasPropostas.getTime()) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['data_retirada'],
+      message: `A retirada precisa ser depois do fim das propostas (${dataHora(fimDasPropostas.toISOString())}). Escolha outra data ou um prazo menor.`,
+    });
+  }
 });
 
 export const schemaLance = z.object({
@@ -103,9 +119,9 @@ export const schemaIaCarga = z.object({
 });
 
 export const schemaCaminhao = z.object({
-  nome: z.string().trim().min(2, 'Dê um nome ao caminhão').max(80),
+  nome: z.string().trim().min(2, 'Dê um nome ao veículo').max(80),
   tipo: z.enum(['fiorino', 'van', 'tres_quartos', 'bau', 'carreta', 'outro'], {
-    message: 'Escolha o tipo de caminhão',
+    message: 'Escolha o tipo de veículo',
   }),
   tipo_combustivel: z.enum(['diesel', 'gasolina'], {
     message: 'Escolha diesel ou gasolina',

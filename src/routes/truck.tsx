@@ -34,7 +34,7 @@ truck.get('/caminhao', async (c) => {
   const bloqueio = exigirLogin(user);
   if (bloqueio) return bloqueio;
   if (user!.papel !== 'transportador') {
-    return c.redirect(redir('/painel', { erro: 'O perfil de caminhão é exclusivo para transportadores.' }));
+    return c.redirect(redir('/painel', { erro: 'O perfil de veículo é exclusivo para transportadores.' }));
   }
 
   const { alertas, caminhao, referencias } = await contexto(c);
@@ -57,7 +57,7 @@ truck.post('/caminhao', async (c) => {
   const bloqueio = exigirLogin(user);
   if (bloqueio) return bloqueio;
   if (user!.papel !== 'transportador') {
-    return c.redirect(redir('/painel', { erro: 'O perfil de caminhão é exclusivo para transportadores.' }));
+    return c.redirect(redir('/painel', { erro: 'O perfil de veículo é exclusivo para transportadores.' }));
   }
 
   const body = await c.req.parseBody();
@@ -135,7 +135,7 @@ truck.post('/caminhao', async (c) => {
     capacidade_kg: Math.round(d.capacidade_kg),
   });
 
-  return c.redirect(redir('/caminhao', { msg: 'Caminhão salvo! Agora você pode conferir o encaixe nos fretes. 🚛' }));
+  return c.redirect(redir('/caminhao', { msg: 'Veículo salvo! Agora você pode conferir o encaixe nos fretes. 🚛' }));
 });
 
 export default truck;

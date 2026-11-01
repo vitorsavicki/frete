@@ -196,18 +196,11 @@ const VistaIso: FC<VistaIsoProps> = ({ montagem, veiculo, vazio }) => {
 
   const p = (x: number, y: number, z: number) => pontoIso(x, y, z, origem, escala);
 
-  const faixaOffset = new Map<number, number>();
-  let acumulado = 0;
-  for (const faixa of montagem.faixas) {
-    faixaOffset.set(faixa.indice, acumulado);
-    acumulado += faixa.profundidadeCm;
-  }
+  // Centraliza a carga na largura. O packer guarda a posição a partir da
+  // lateral esquerda; o desenho mostra a folga dividida nos dois lados.
+  const offsetLargura = Math.max(0, (largura - montagem.larguraUsadaCm) / 2);
 
-  const blocosOrdenados = [...montagem.blocos].sort((a, b) => {
-    const za = faixaOffset.get(a.faixa) ?? 0;
-    const zb = faixaOffset.get(b.faixa) ?? 0;
-    return a.x + za - (b.x + zb);
-  });
+  const blocosOrdenados = [...montagem.blocos].sort((a, b) => a.x + a.z - (b.x + b.z));
 
   const piso = [p(0, 0, 0), p(comprimento, 0, 0), p(comprimento, 0, largura), p(0, 0, largura)];
   const paredeFundo = [
@@ -246,19 +239,9 @@ const VistaIso: FC<VistaIsoProps> = ({ montagem, veiculo, vazio }) => {
       <polygon points={pontosPoly(paredeLado)} class="plano-iso__parede plano-iso__parede--lado" />
       <polygon points={pontosPoly(piso)} class="plano-iso__piso" />
 
-      {montagem.faixas.map((faixa) => {
-        const z = faixaOffset.get(faixa.indice) ?? 0;
-        if (z <= 0) return null;
-        return (
-          <path
-            d={`M${p(0, 0, z).x.toFixed(1)} ${p(0, 0, z).y.toFixed(1)}L${p(comprimento, 0, z).x.toFixed(1)} ${p(comprimento, 0, z).y.toFixed(1)}`}
-            class="plano-iso__faixa"
-          />
-        );
-      })}
 
       {blocosOrdenados.map((bloco) => {
-        const z0 = faixaOffset.get(bloco.faixa) ?? 0;
+        const z0 = offsetLargura + bloco.z;
         const z1 = z0 + bloco.profundidade;
         const x0 = bloco.x;
         const x1 = bloco.x + bloco.comprimento;
@@ -278,8 +261,8 @@ const VistaIso: FC<VistaIsoProps> = ({ montagem, veiculo, vazio }) => {
             <title>
               {bloco.nome}
               {bloco.fragil ? ' (frágil)' : ''} · {numero(bloco.comprimento)} ×{' '}
-              {numero(bloco.profundidade)} × {numero(bloco.altura)} cm · base a{' '}
-              {numero(bloco.base)} cm
+              {numero(bloco.profundidade)} × {numero(bloco.altura)} cm · a {numero(bloco.z)} cm da
+              lateral · base a {numero(bloco.base)} cm
             </title>
             <polygon
               points={pontosPoly(faceLado)}
@@ -370,7 +353,10 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
   const cabH = Math.min(110, Math.max(48, internaA * 0.62));
   const cabY = pisoY - cabH;
 
-  const blocosVisiveis = montagem.blocos.filter((bloco) => bloco.faixa === 0);
+  // O corte lateral mostra todos os volumes projetados. Os que ficam ao
+  // fundo são desenhados primeiro e com traço mais claro; os da lateral
+  // esquerda ficam na frente.
+  const blocosVisiveis = [...montagem.blocos].sort((a, b) => b.z - a.z);
   const nomesAbaixo = new Set(
     blocosVisiveis
       .filter((bloco) =>
@@ -378,6 +364,7 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
           (outro) =>
             outro.chave !== bloco.chave &&
             outro.x === bloco.x &&
+            outro.z === bloco.z &&
             Math.abs(outro.base + outro.altura - bloco.base) < 0.6 &&
             outro.nome === bloco.nome,
         ),
@@ -394,18 +381,13 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
   const vistaAltura = larguraCm * vistaEscala;
   const vistaViewLargura = vistaX + vistaLargura + 40;
   const vistaViewAltura = vistaY + vistaAltura + 34;
-  const faixaOffset = new Map<number, number>();
-  let acumuladoVista = 0;
-  for (const faixa of montagem.faixas) {
-    faixaOffset.set(faixa.indice, acumuladoVista);
-    acumuladoVista += faixa.profundidadeCm;
-  }
   const itensFora = montagem.itens.filter((item) => item.fora > 0);
-  const sobraLarguraCm = Math.max(0, larguraCm - montagem.larguraUsadaCm);
+  const offsetLarguraVista = Math.max(0, (larguraCm - montagem.larguraUsadaCm) / 2);
 
   return (
     <section
       class={`plano-carga${compacto ? ' plano-carga--compacto' : ''}`}
+      id={`${idPrefixo}-plano`}
       data-plano-carga
       data-plano-prefixo={idPrefixo}
     >
@@ -413,7 +395,7 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
         <div>
           <span class="eyebrow">Carregamento</span>
           <h3 data-plano-titulo>
-            {vazio ? 'Seu caminhão, pronto para a mudança' : 'Como a carga se encaixa'}
+            {vazio ? 'Seu veículo, pronto para a mudança' : 'Como a carga se encaixa'}
           </h3>
           <p class="auxiliar">
             Veja a carga em 3D, no corte lateral e na vista de cima. Pesados na frente, frágeis por
@@ -461,8 +443,8 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
           <div class="plano-abas__painel" data-plano-painel="3d">
             <VistaIso montagem={montagem} veiculo={veiculo} vazio={vazio} />
             <p class="plano-abas__nota">
-              Gire a cabeça, não a tela: a frente do veículo fica em cima e a porta embaixo. Cada
-              cubo é um volume da lista.
+              A frente do veículo fica em cima e a porta embaixo. Os volumes ao fundo aparecem mais
+              claros; os da lateral esquerda ficam na frente.
             </p>
           </div>
 
@@ -473,15 +455,15 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
           role="img"
           aria-label={
             vazio
-              ? 'Caminhão vazio, pronto para receber a mudança'
-              : `Desenho esquemático da carga dentro de ${veiculo.nome ?? 'um caminhão'}, com ${montagem.colocados} volumes acomodados em ${montagem.faixas.length} ${montagem.faixas.length === 1 ? 'faixa' : 'faixas'} de largura`
+              ? 'Veículo vazio, pronto para receber a mudança'
+              : `Desenho esquemático da carga dentro de ${veiculo.nome ?? 'um veículo'}, com ${montagem.colocados} volumes acomodados`
           }
         >
           <title>Plano de carregamento</title>
           <desc>
             {vazio
               ? 'Escolha os itens da mudança para ver como eles se organizam dentro do veículo.'
-              : `${montagem.colocados} volumes posicionados. O corte lateral mostra a faixa 1; as demais faixas aparecem na vista de cima. Itens frágeis aparecem com contorno tracejado e ficam por cima.`}
+              : `${montagem.colocados} volumes posicionados. O corte lateral mostra todos os volumes; os que ficam ao fundo aparecem mais claros. A vista de cima mostra a posição de cada um. Itens frágeis aparecem com contorno tracejado e ficam por cima.`}
           </desc>
 
           <rect
@@ -576,18 +558,23 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
             const x = CARGO_X + bloco.x * escala;
             const y = TOPO + (internaA - (bloco.base + bloco.altura) * escala);
             const maxChars = Math.floor((larguraBloco - 6) / 5);
-            const rotulo = nomesAbaixo.has(bloco.chave) ? '' : cortar(rotuloCurto(bloco.nome), maxChars);
+            const noFundo = bloco.z > 0.5;
+            const rotulo =
+              noFundo || nomesAbaixo.has(bloco.chave)
+                ? ''
+                : cortar(rotuloCurto(bloco.nome), maxChars);
             const mostrarRotulo = rotulo.length > 0 && alturaBloco >= 16 && larguraBloco >= 30;
 
             return (
               <g
                 class={`plano-bloco plano-bloco--${classeCategoria(bloco.categoria)}${
                   bloco.fragil ? ' plano-bloco--fragil' : ''
-                }`}
+                }${noFundo ? ' plano-bloco--fundo' : ''}`}
               >
                 <title>
                   {bloco.nome}
-                  {bloco.fragil ? ' (frágil)' : ''} · base a {numero(bloco.base)} cm · {numero(bloco.altura)} cm de altura
+                  {bloco.fragil ? ' (frágil)' : ''} · a {numero(bloco.x)} cm da frente · começa a{' '}
+                  {numero(bloco.base)} cm do piso · {numero(bloco.altura)} cm de altura
                 </title>
                 <rect
                   x={x}
@@ -640,13 +627,13 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
           </div>
 
           <div class="plano-abas__painel" data-plano-painel="cima">
-        {!vazio && montagem.faixas.length > 0 && (
+        {!vazio && montagem.blocos.length > 0 && (
           <div class="plano-vista" data-plano-vista>
             <div class="plano-vista__topo">
-              <strong>Vista de cima real</strong>
+              <strong>Vista de cima da carroceria</strong>
               <span>
-                {numero(comprimentoCm)} × {numero(larguraCm)} cm · {montagem.faixas.length}{' '}
-                {montagem.faixas.length === 1 ? 'faixa de largura' : 'faixas de largura'}
+                {numero(comprimentoCm)} × {numero(larguraCm)} cm · ocupa{' '}
+                {numero(montagem.comprimentoUsadoCm)} × {numero(montagem.larguraUsadaCm)} cm
               </span>
             </div>
             <svg
@@ -675,30 +662,20 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
               >
                 porta
               </text>
-              {sobraLarguraCm > 0.5 && (
-                <rect
-                  x={vistaX}
-                  y={vistaY + montagem.larguraUsadaCm * vistaEscala}
-                  width={vistaLargura}
-                  height={Math.max(1, sobraLarguraCm * vistaEscala)}
-                  rx="3"
-                  class="plano-vista__sobra"
-                />
-              )}
               {montagem.blocos.map((bloco) => {
-                const offset = faixaOffset.get(bloco.faixa) ?? 0;
                 const x = vistaX + bloco.x * vistaEscala;
-                const y = vistaY + offset * vistaEscala;
+                const y = vistaY + (offsetLarguraVista + bloco.z) * vistaEscala;
                 return (
                   <g
                     class={`plano-vista__bloco plano-bloco--${classeCategoria(bloco.categoria)}${
                       bloco.fragil ? ' plano-bloco--fragil' : ''
-                    }`}
+                    }${bloco.empilhado ? ' plano-vista__bloco--empilhado' : ''}`}
                   >
                     <title>
                       {bloco.nome}
-                      {bloco.fragil ? ' (frágil)' : ''} · faixa {bloco.faixa + 1} · base{' '}
-                      {numero(bloco.comprimento)} × {numero(bloco.profundidade)} cm
+                      {bloco.fragil ? ' (frágil)' : ''} · a {numero(bloco.x)} cm da frente ·
+                      base {numero(bloco.comprimento)} × {numero(bloco.profundidade)} cm ·{' '}
+                      {bloco.empilhado ? 'empilhado' : 'no piso'}
                     </title>
                     <rect
                       x={x}
@@ -713,8 +690,10 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
               })}
             </svg>
             <p class="plano-vista__nota">
-              Cada retângulo é a base de um volume. Volumes empilhados aparecem na mesma posição; a
-              altura usada está no corte lateral.
+              Cada retângulo é a base de um volume. A área clara é o espaço livre:{' '}
+              {numero(montagem.sobraLarguraCm)} cm na largura e{' '}
+              {numero(montagem.sobraComprimentoCm)} cm no comprimento. A carga fica junta à frente
+              para não deslizar; volumes empilhados aparecem na mesma posição.
             </p>
           </div>
         )}
@@ -878,17 +857,13 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
                 {montagem.colocados} de {montagem.totalUnidades}{' '}
                 {montagem.totalUnidades === 1 ? 'volume' : 'volumes'}
                 {viagens.totalViagens > 1 ? ' na 1ª viagem' : ' acomodados'}
-                {montagem.volumesAtras > 0
-                  ? ` · ${montagem.volumesAtras} ${
-                      montagem.volumesAtras === 1 ? 'na faixa de trás' : 'nas faixas de trás'
-                    }`
-                  : ''}
                 {viagens.totalViagens > 1
                   ? ` · ${viagens.totalViagens} viagens no total`
                   : montagem.fora > 0
                     ? ` · ${montagem.fora} fora`
                     : ''}
                 {` · ${volume(montagem.volumeColocadoM3)} nesta viagem`}
+                {` · ${numero(montagem.larguraUsadaCm)} cm de largura`}
                 {` · ${numero(montagem.alturaUsadaCm)} cm de altura usada`}
               </>
             )}

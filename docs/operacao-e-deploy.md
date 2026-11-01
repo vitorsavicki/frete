@@ -160,7 +160,7 @@ O build precisa de JDK, Android SDK e da keystore configurada em
 | Plano não atualiza | `data-montador-carga`, `data-veiculos`, `node --check public/js/app.js` |
 | Abas não alternam | `data-plano-abas`, classe `plano-abas--js`, painel `--ativo` |
 | Mudança não some da lista | `situacao`, `encerra_em`, `aplicarPrazos`, cron `*/5` |
-| Custo estranho | perfil do caminhão, `/api/referencias`, `configuracoes` no D1 |
+| Custo estranho | perfil do veículo, `/api/referencias`, `configuracoes` no D1 |
 | E-mail não sai | `/api/email/status`, `wrangler tail`, domínio verificado |
 | CEP não preenche | `/api/cep/:cep`, rate limit, BrasilAPI/ViaCEP |
 | Mapa vazio | coordenadas no frete, `/api/rota`, Nominatim/OSRM |

@@ -2076,6 +2076,36 @@ legend {
   margin: 0;
 }
 
+/* Resumo do prazo no formulário: mostra as duas datas exatas antes de publicar. */
+.prazo-resumo {
+  margin: 4px 0 18px;
+  padding: 14px 16px;
+  border: 1px solid #bfdbfe;
+  border-left: 5px solid #2563eb;
+  border-radius: 14px;
+  background: #eff6ff;
+}
+
+.prazo-resumo p {
+  margin: 0;
+  color: #1e3a8a;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.prazo-resumo p + p {
+  margin-top: 6px;
+}
+
+.prazo-resumo strong {
+  color: #1e40af;
+}
+
+.prazo-resumo .auxiliar {
+  margin-top: 8px;
+  font-size: 0.8rem;
+}
+
 .form-secao__numero {
   width: 34px;
   height: 34px;
@@ -4975,6 +5005,25 @@ legend {
   line-height: 1.45;
 }
 
+.mascote-ajuda__acao {
+  justify-self: start;
+  margin-top: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--marca);
+  border-radius: 999px;
+  color: var(--marca-forte);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.3;
+  text-decoration: none;
+}
+
+.mascote-ajuda__acao:hover,
+.mascote-ajuda__acao:focus-visible {
+  background: var(--marca);
+  color: #fff;
+}
+
 .mascote-ajuda--ok {
   border-color: #a7f3d0;
   background:
@@ -5305,6 +5354,13 @@ legend {
   stroke: #b91c1c;
   stroke-width: 1.8;
   stroke-dasharray: 4 3;
+}
+
+/* Volumes que ficam ao fundo da carroceria: o corte lateral mostra a
+   silhueta, mas deixa claro que eles estão atrás dos primeiros. */
+.plano-bloco--fundo .plano-bloco__caixa {
+  opacity: 0.5;
+  stroke-dasharray: 3 3;
 }
 
 .plano-bloco__nome {
@@ -6212,6 +6268,12 @@ legend {
   stroke: #b91c1c;
   stroke-width: 1.7;
   stroke-dasharray: 3 2;
+}
+
+/* Volume empilhado: mesma base de outro volume, com contorno mais forte. */
+.plano-vista__bloco--empilhado .plano-vista__caixa {
+  stroke-width: 2.4;
+  stroke-dasharray: 5 2;
 }
 
 .plano-vista__nota {

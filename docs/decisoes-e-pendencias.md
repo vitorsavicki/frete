@@ -21,9 +21,10 @@ e o item deve ser atualizado ou removido daqui.
 - A home e o tour usam a mesma ilustração flat do caminhão, desenhada em SVG
   local. Não há mais vitrine de veículos 3D nem dependência de CDN: a CSP
   continua `'self'`.
-- O plano de carga mostra **todas as faixas**, com vista de cima proporcional,
-  **vista 3D isométrica**, volume por categoria e uma lista explícita do que
-  ficou fora.
+- O plano de carga preenche o piso como um **tabuleiro 2D** (`x` no comprimento
+  e `z` na largura), com vista de cima proporcional, **vista 3D isométrica**,
+  volume por categoria e uma lista explícita do que ficou fora. Os volumes
+  menores aproveitam os vãos em vez de ficar tudo em uma lateral.
 - As três vistas ficam em **abas (3D, Lado, Cima)**. Sem JavaScript, os três
   painéis aparecem abertos; o cliente só alterna quando o JS está ativo.
 - A recomendação de veículo usa o **packer** (`sugerirVeiculoParaPlano`), não só
@@ -69,7 +70,7 @@ cenários antes de considerar a validação completa:
 O ARLA é um insumo real de caminhões diesel, mas estava poluindo o formulário e a
 estimativa com um termo técnico. A decisão foi:
 
-- remover o campo do perfil do caminhão;
+- remover o campo do perfil do veículo;
 - remover a linha da estimativa;
 - manter o custo **embutido no cálculo interno**;
 - mostrar o valor somado em **“Manutenção e insumos”**;
@@ -89,8 +90,13 @@ terminar para escolher:
 
 1. **Recebimento de propostas** — o cliente escolhe 24, 48 ou 72 horas no
    formulário (padrão 48). O fim fica em `freight.encerra_em`.
-2. **Escolha do cliente** — 48 horas depois do fim do recebimento. O fim fica
-   em `freight.prazo_escolha_em`.
+2. **Escolha do cliente** — 48 horas depois do fim do recebimento **ou no
+   horário da retirada, o que chegar primeiro**. O fim fica em
+   `freight.prazo_escolha_em`.
+
+A retirada precisa ser depois do fim das propostas. Se a mudança for marcada
+para antes da janela de 48 h, a escolha termina junto com a retirada para o
+cliente não ficar sem transportador na data marcada.
 
 Transições:
 
@@ -121,6 +127,7 @@ dono em `aberto` e em `em_escolha`, sempre antes de `prazo_escolha_em`.
 
 - migração `0007_prazo_leilao.sql` com `situacao`, `encerra_em` e
   `prazo_escolha_em`;
+- migração `0008_prazo_retirada.sql` limita prazos antigos à retirada;
 - `src/lib/prazos.ts` com cálculo, rótulos e `aplicarPrazos`;
 - `validarLance`, `podeAceitarLance` e `podeCancelarFrete` usando `situacao` e o
   relógio;

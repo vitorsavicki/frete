@@ -21,7 +21,7 @@ import {
   serializarItens,
 } from '../lib/carga';
 import { sugerirVeiculoParaPlano } from '../lib/montagem';
-import { aplicarPrazos, calcularPrazos, detalhePublico } from '../lib/prazos';
+import { aplicarPrazos, calcularPrazos, detalhePublico, retiradaEm } from '../lib/prazos';
 import { ListaFretesPage, DetalheFretePage, NovoFretePage } from '../pages/Freight';
 import type { AppBindings } from '../lib/bindings';
 
@@ -200,7 +200,11 @@ freight.post('/fretes', async (c) => {
   const f = resultado.data;
   const itensCarga = parseItensForm(bruto);
   const resumo = resumoCarga(itensCarga);
-  const prazos = calcularPrazos(new Date(), f.prazo_recebimento);
+  const prazos = calcularPrazos(
+    new Date(),
+    f.prazo_recebimento,
+    retiradaEm(f.data_retirada, f.hora_retirada),
+  );
 
   // Coordenadas best-effort via BrasilAPI (sem coords, o mapa simplesmente não aparece)
   const [cepOrigem, cepDestino] = await Promise.all([
@@ -705,7 +709,7 @@ freight.post('/fretes/:id/cancelar', async (c) => {
 
   await Promise.all(
     (licitantes.results ?? []).map((l) =>
-      criarAlerta(c.env.DB, l.transportador_id, id, 'frete_cancelado', `O frete #${id} foi cancelado pelo cliente.`),
+      criarAlerta(c.env.DB, l.transportador_id, id, 'frete_cancelado', `A mudança #${id} foi cancelada pelo cliente.`),
     ),
   );
   await audit(c.env.DB, user!.id, 'cancelar_frete', 'freight', id);

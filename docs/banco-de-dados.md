@@ -24,6 +24,7 @@ ORM.
 | `0005_configuracoes.sql` | tabela `configuracoes` e referências iniciais |
 | `0006_email_outbox.sql` | fila `email_outbox` e índice de pendentes |
 | `0007_prazo_leilao.sql` | `freight.situacao`, `freight.encerra_em`, `freight.prazo_escolha_em`, backfill e índice |
+| `0008_prazo_retirada.sql` | limita `prazo_escolha_em` já gravado ao horário da retirada |
 
 Aplicar:
 
@@ -98,10 +99,12 @@ para consultas antigas e é atualizado junto (`encerrado` para `sem_lances`,
 `expirado` e `encerrado`).
 
 `encerra_em` é o fim do recebimento de propostas. `prazo_escolha_em` é o fim da
-janela de escolha (48 h depois). O formulário envia `prazo_recebimento` (24, 48
-ou 72 horas), mas ele não é gravado como coluna: o servidor converte em
-`encerra_em` e `prazo_escolha_em`. A migração `0007` preencheu os fretes antigos
-com 48 h a partir da criação e criou o índice de `situacao`.
+janela de escolha: 48 h depois do recebimento ou o horário da retirada, o que
+chegar primeiro. O formulário envia `prazo_recebimento` (24, 48 ou 72 horas),
+mas ele não é gravado como coluna: o servidor converte em `encerra_em` e
+`prazo_escolha_em`. A migração `0007` preencheu os fretes antigos com 48 h a
+partir da criação e criou o índice de `situacao`. A migração `0008` corrigiu os
+prazos já gravados que passavam da retirada.
 
 `carga_itens` guarda uma lista JSON de itens com `id`, `nome`, `emoji`,
 `categoria`, `quantidade`, `pesoKg`, `comprimentoCm`, `larguraCm`, `alturaCm`,

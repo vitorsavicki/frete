@@ -56,17 +56,17 @@ export const CaminhaoPage: FC<CaminhaoProps> = ({
 
   return (
     <Layout
-      titulo="Meu caminhão"
+      titulo="Meu veículo"
       user={user}
       alertas={alertas}
       mensagem={mensagem}
       erro={erro}
-      descricao="Cadastre as medidas internas e a capacidade do seu caminhão para saber se a carga de cada mudança cabe antes de enviar o orçamento."
+      descricao="Cadastre as medidas internas e a capacidade do seu veículo para saber se a carga de cada mudança cabe antes de enviar o orçamento."
     >
       <header class="pagina-cabecalho painel-topo">
         <div>
           <span class="eyebrow">Perfil do transportador</span>
-          <h1>{caminhao ? 'Meu caminhão' : 'Cadastre seu caminhão'}</h1>
+          <h1>{caminhao ? 'Meu veículo' : 'Cadastre seu veículo'}</h1>
           <p class="pagina-cabecalho__texto">
             Com as medidas internas e a capacidade, a gente confere se a carga de cada mudança cabe
             no seu veículo e mostra uma referência de custo. O valor do orçamento é sempre você quem
@@ -107,7 +107,7 @@ export const CaminhaoPage: FC<CaminhaoProps> = ({
 
             <div class="form-grade form-grade--2">
               <label class="campo">
-                <span class="campo__rotulo">Nome do caminhão</span>
+                <span class="campo__rotulo">Nome do veículo</span>
                 <input
                   name="nome"
                   required
@@ -320,7 +320,7 @@ export const CaminhaoPage: FC<CaminhaoProps> = ({
                 />
               </label>
               <label class="campo">
-                <span class="campo__rotulo">Custo fixo por frete (R$)</span>
+                <span class="campo__rotulo">Custo fixo por mudança (R$)</span>
                 <input
                   name="custo_fixo"
                   type="number"
@@ -389,7 +389,7 @@ export const CaminhaoPage: FC<CaminhaoProps> = ({
                 </span>
               </label>
               <label class="campo">
-                <span class="campo__rotulo">Horas de serviço por frete</span>
+                <span class="campo__rotulo">Horas de serviço por mudança</span>
                 <input
                   name="horas_servico"
                   type="number"
@@ -436,13 +436,13 @@ export const CaminhaoPage: FC<CaminhaoProps> = ({
                     caminhao ? String(caminhao.custo_ajudante) : String(padroes.custoAjudante),
                   )}
                 />
-                <span class="campo__dica">O frete informa quantos ajudantes precisa.</span>
+                <span class="campo__dica">A mudança informa quantos ajudantes precisa.</span>
               </label>
             </div>
 
             <div class="form-acoes">
               <button type="submit" class="btn btn-primario">
-                {caminhao ? 'Salvar alterações' : 'Cadastrar caminhão'}
+                {caminhao ? 'Salvar alterações' : 'Cadastrar meu veículo'}
               </button>
               <p class="auxiliar">
                 O perfil é usado apenas para calcular encaixe e preço — ele não aparece publicamente.

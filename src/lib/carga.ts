@@ -1278,7 +1278,7 @@ export function analisarEncaixe(carga: CargaResumo, veiculo: MedidasVeiculo): An
     return {
       status: 'nao_cabe',
       cabe: false,
-      motivos: ['Informe as medidas internas do caminhão para conferir o encaixe.'],
+      motivos: ['Informe as medidas internas do veículo para conferir o encaixe.'],
       avisos: [],
       volumeVeiculoM3: 0,
       ocupacaoVolume: 0,

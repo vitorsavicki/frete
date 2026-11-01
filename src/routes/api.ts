@@ -176,7 +176,7 @@ api.post('/ia/carga', async (c) => {
   if (!caminhao) {
     return c.json(
       {
-        erro: 'Cadastre seu caminhão para analisar se a carga cabe.',
+        erro: 'Cadastre seu veículo para analisar se a carga cabe.',
         acao: '/caminhao',
       },
       409,

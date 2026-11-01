@@ -192,7 +192,9 @@ node --check public/js/app.js
 2. Em `/novo-frete`, escolhe categoria, descrição, endereços, data, ajudantes,
    prazo de recebimento (24, 48 ou 72 horas) e os itens da carga.
 3. O servidor valida tudo com Zod, calcula peso/volume, grava o frete com
-   `situacao = 'aberto'` e calcula `encerra_em` e `prazo_escolha_em`.
+   `situacao = 'aberto'` e calcula `encerra_em` e `prazo_escolha_em`. A
+   retirada precisa ser depois do fim das propostas; a escolha termina no
+   menor prazo entre 48 horas e o horário da retirada.
 4. A mudança aparece em `/fretes` e os transportadores podem enviar propostas.
 
 ### Enviar uma proposta
@@ -208,7 +210,8 @@ node --check public/js/app.js
 
 1. Quando o prazo de recebimento termina, o frete vira `em_escolha` (com
    propostas) ou `sem_lances` (sem nenhuma).
-2. Em `em_escolha`, o dono tem 48 horas para comparar e aceitar uma proposta.
+2. Em `em_escolha`, o dono tem até `prazo_escolha_em` para comparar e aceitar
+   uma proposta — 48 horas ou o horário da retirada, o que chegar primeiro.
 3. Ao aceitar, o frete vira `encerrado`, a proposta é marcada como vencedora e
    os demais transportadores recebem um alerta.
 4. Se o prazo de escolha vencer sem aceite, o frete vira `expirado`.
@@ -279,7 +282,7 @@ D1 remoto, smoke test e rollback.
   mudanças, sem catálogo de itens nem vitrine de veículos; hero e tour com
   ilustração flat local; remoção dos assets 3D; documentação atualizada.
 - **Validação:** `npm run typecheck`, `node --check public/js/app.js` e
-  `npm test` passam (71 testes). Smoke test em produção: home 200 com os dois
+  `npm test` passam (74 testes). Smoke test em produção: home 200 com os dois
   caminhos, sem as seções antigas, e CSS 200; conferida em 390 px e 1440 px.
 - **Pendências conhecidas:** domínio próprio, envio real de e-mail (depende de
   domínio na Cloudflare), Kombi como tipo próprio (hoje cadastrada como van ou

@@ -25,7 +25,7 @@ import {
   type SugestaoVeiculo,
 } from '../lib/carga';
 import { sugerirVeiculoParaPlano } from '../lib/montagem';
-import { PRAZOS_RECEBIMENTO, PRAZO_ESCOLHA_HORAS, rotuloSituacao } from '../lib/prazos';
+import { PRAZOS_RECEBIMENTO, PRAZO_ESCOLHA_HORAS, calcularPrazos, retiradaEm, rotuloSituacao } from '../lib/prazos';
 import { PlanoCarga } from './PlanoCarga';
 import { MascoteAjuda } from './Ilustracoes';
 import type { Previsao } from '../lib/clima';
@@ -91,7 +91,7 @@ export const ListaFretesPage: FC<ListaProps> = ({
       erro={erro}
       canonical={canonical}
       robots={indexavel ? undefined : 'noindex, follow'}
-      descricao={`${totalResultados} mudanças e fretes abertos para orçamento. Filtre por categoria, cidade, UF e data de retirada e envie seu orçamento grátis.`}
+      descricao={`${totalResultados} mudanças abertas para orçamento. Filtre por categoria, cidade, UF e data de retirada e envie seu orçamento grátis.`}
     >
       <header class="pagina-cabecalho">
         <div>
@@ -164,14 +164,14 @@ export const ListaFretesPage: FC<ListaProps> = ({
       {fretes.length === 0 ? (
         <div class="estado-vazio">
           <span class="estado-vazio__emoji" aria-hidden="true">🔎</span>
-          <h2>Nenhum frete com esses filtros</h2>
+          <h2>Nenhuma mudança com esses filtros</h2>
           <p class="auxiliar">
-            Tente remover algum filtro ou volte mais tarde — novos fretes aparecem todos os dias.
+            Tente remover algum filtro ou volte mais tarde — novas mudanças aparecem todos os dias.
           </p>
           <div class="estado-vazio__acoes">
             <a href="/fretes" class="btn btn-secundario">Limpar filtros</a>
             {user?.papel === 'cliente' && (
-              <a href="/novo-frete" class="btn btn-primario">Publicar frete</a>
+              <a href="/novo-frete" class="btn btn-primario">Publicar mudança</a>
             )}
           </div>
         </div>
@@ -242,9 +242,9 @@ interface DetalheProps {
 }
 
 function rotuloEncaixe(status: string): string {
-  if (status === 'cabe') return 'Cabe no seu caminhão';
+  if (status === 'cabe') return 'Cabe no seu veículo';
   if (status === 'limite') return 'Cabe, mas está no limite';
-  return 'Não cabe no seu caminhão';
+  return 'Não cabe no seu veículo';
 }
 
 function percentualOcupacao(valor: number): number {
@@ -285,6 +285,14 @@ export const DetalheFretePage: FC<DetalheProps> = ({
   const emEscolha = situacao === 'em_escolha';
   const podeCancelar = donoDoFrete && (aberto || emEscolha);
   const podeAceitar = donoDoFrete && (aberto || emEscolha);
+  const retiradaTexto = `${dataCurta(frete.data_retirada)}${
+    frete.hora_retirada ? ` às ${frete.hora_retirada}` : ''
+  }`;
+  const escolhaAntecipada =
+    frete.encerra_em && frete.prazo_escolha_em
+      ? new Date(frete.prazo_escolha_em).getTime() <
+        new Date(frete.encerra_em).getTime() + PRAZO_ESCOLHA_HORAS * 60 * 60 * 1000 - 60_000
+      : false;
   const vencedor = lances.find((l) => l.vencedor === 1);
   const parametrosBase: ParametrosCusto = { ...CUSTO_PADRAO, ...(custoInicial ?? {}) };
   const estimativa = estimativaCaminhao;
@@ -308,13 +316,13 @@ export const DetalheFretePage: FC<DetalheProps> = ({
   const origem = url ? new URL(url).origin : '';
   const canonical = origem ? `${origem}/fretes/${frete.id}` : undefined;
   const descricao = (
-    `Frete de ${frete.origem_cidade}/${frete.origem_uf} para ` +
+    `Mudança de ${frete.origem_cidade}/${frete.origem_uf} para ` +
     `${frete.destino_cidade}/${frete.destino_uf}: ${frete.descricao}`
   ).slice(0, 155);
 
   return (
     <Layout
-      titulo={`Frete #${frete.id} — ${frete.origem_cidade} para ${frete.destino_cidade}`}
+      titulo={`Mudança #${frete.id} - ${frete.origem_cidade} para ${frete.destino_cidade}`}
       user={user}
       alertas={alertas}
       mapa
@@ -330,7 +338,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
           <div class="chips">
             <span class={`status status-${situacao}`}>{rotuloSituacao(situacao)}</span>
             <span class="chip chip-categoria">{frete.categoria_nome}</span>
-            <span class="chip">Frete #{frete.id}</span>
+            <span class="chip">Mudança #{frete.id}</span>
           </div>
           <h1>{frete.descricao}</h1>
           <p class="auxiliar">
@@ -341,7 +349,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
         {podeCancelar && (
           <form method="post" action={`/fretes/${frete.id}/cancelar`} data-confirm="Cancelar esta mudança? Os transportadores que enviaram orçamento serão avisados.">
             <button type="submit" class="btn btn-perigo btn-pequeno">
-              Cancelar frete
+              Cancelar mudança
             </button>
           </form>
         )}
@@ -356,9 +364,18 @@ export const DetalheFretePage: FC<DetalheProps> = ({
             <>
               <strong>Orçamentos até {dataHora(frete.encerra_em)}</strong>
               <p>
-                Você já pode escolher um orçamento. Se preferir esperar o prazo terminar, tem até{' '}
-                {dataHora(frete.prazo_escolha_em)} para decidir.
+                Você já pode escolher um orçamento. Se preferir esperar o prazo terminar, a escolha
+                vai até {dataHora(frete.prazo_escolha_em)}.
               </p>
+              <p>
+                <strong>Retirada:</strong> {retiradaTexto}.
+              </p>
+              {escolhaAntecipada && (
+                <p class="auxiliar">
+                  A retirada chega antes das {PRAZO_ESCOLHA_HORAS} horas de escolha, então o prazo
+                  termina no horário dela.
+                </p>
+              )}
             </>
           )}
           {emEscolha && (
@@ -368,6 +385,15 @@ export const DetalheFretePage: FC<DetalheProps> = ({
                 As propostas terminaram. Abra a lista abaixo e escolha o transportador que vai fazer
                 a mudança.
               </p>
+              <p>
+                <strong>Retirada:</strong> {retiradaTexto}.
+              </p>
+              {escolhaAntecipada && (
+                <p class="auxiliar">
+                  A retirada chega antes das {PRAZO_ESCOLHA_HORAS} horas de escolha, então o prazo
+                  termina no horário dela.
+                </p>
+              )}
             </>
           )}
           {situacao === 'sem_lances' && (
@@ -576,7 +602,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
                   <div class={`encaixe encaixe--${analiseCaminhao.status}`}>
                     <div class="encaixe__topo">
                       <div>
-                        <span class="eyebrow">Conferência com o seu caminhão</span>
+                        <span class="eyebrow">Conferência com o seu veículo</span>
                         <h3>{rotuloEncaixe(analiseCaminhao.status)}</h3>
                         <p class="auxiliar">
                           {caminhao.nome} ·{' '}
@@ -614,7 +640,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
                         <progress
                           max={100}
                           value={percentualOcupacao(analiseCaminhao.ocupacaoVolume)}
-                          aria-label="Ocupação do volume do caminhão"
+                          aria-label="Ocupação do volume do veículo"
                         />
                         <small>
                           {volume(carga.volumeM3)} de {volume(analiseCaminhao.volumeVeiculoM3)} ·{' '}
@@ -631,7 +657,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
                         <progress
                           max={100}
                           value={percentualOcupacao(analiseCaminhao.ocupacaoPeso)}
-                          aria-label="Ocupação da capacidade de peso do caminhão"
+                          aria-label="Ocupação da capacidade de peso do veículo"
                         />
                         <small>
                           {peso(carga.pesoKg)} de {peso(caminhao.capacidade_kg)} ·{' '}
@@ -661,7 +687,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
 
                     <div class="encaixe__preco">
                       <div>
-                        <small>Orçamento sugerido para o seu caminhão</small>
+                        <small>Orçamento sugerido para o seu veículo</small>
                         <strong>{dinheiro(estimativaCaminhao.precoSugerido)}</strong>
                         <p>
                           Custo mínimo {dinheiro(estimativaCaminhao.precoMinimo)} · combustível,
@@ -692,7 +718,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
                 ) : (
                   <div class="convite">
                     <p>
-                      <strong>Quer saber se esta carga cabe no seu caminhão?</strong>
+                      <strong>Quer saber se esta carga cabe no seu veículo?</strong>
                       <span>
                         Cadastre as medidas internas e a capacidade do veículo — é grátis e leva 2
                         minutos.
@@ -700,7 +726,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
                     </p>
                     <div class="convite__acoes">
                       <a href="/caminhao" class="btn btn-primario btn-pequeno">
-                        Cadastrar meu caminhão
+                        Cadastrar meu veículo
                       </a>
                     </div>
                   </div>
@@ -1060,7 +1086,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
                       />
                     </label>
                     <label class="campo">
-                      <span class="campo__rotulo">Ajudantes neste frete</span>
+                      <span class="campo__rotulo">Ajudantes nesta mudança</span>
                       <input
                         type="number"
                         min="0"
@@ -1096,7 +1122,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
                     </label>
                   </div>
                   <p class="campo__dica">
-                    Os valores do seu caminhão vêm preenchidos. Ajustes aqui valem só para esta
+                    Os valores do seu veículo vêm preenchidos. Ajustes aqui valem só para esta
                     simulação e não alteram o perfil.
                   </p>
                 </div>
@@ -1115,7 +1141,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
                     {dinheiro(estimativa.referenciaMercado.maximo)}
                   </p>
                   <p class="estimador__aviso" data-aviso-mercado hidden={!estimativa.abaixoDoMercado}>
-                    Pelo custo, este frete ficaria abaixo do piso de mercado. O valor sugerido foi
+                    Pelo custo, esta mudança ficaria abaixo do piso de mercado. O valor sugerido foi
                     elevado para a faixa mínima — confira a concorrência antes de enviar.
                   </p>
                   <dl class="estimador__linhas">
@@ -1283,6 +1309,15 @@ export const NovoFretePage: FC<NovoFreteProps> = ({
   const caixasFragil = v('caixas_fragil') === '1';
   const caixaPadrao = TAMANHOS_CAIXA.find((tamanho) => tamanho.id === caixasTamanho) ?? TAMANHOS_CAIXA[1]!;
   const valorCaixa = (campo: string, padrao: number) => v(campo) || String(padrao);
+  const retiradaPrevista = retiradaEm(v('data_retirada'), v('hora_retirada'));
+  const prazosPrevistos = calcularPrazos(
+    new Date(),
+    Number(v('prazo_recebimento') || 48),
+    retiradaPrevista,
+  );
+  const retiradaAntesDasPropostas =
+    retiradaPrevista != null &&
+    retiradaPrevista.getTime() <= new Date(prazosPrevistos.encerraEm).getTime();
   const falaMascote =
     resumo.totalItens === 0
       ? 'Comece pelo que é maior.'
@@ -1496,6 +1531,8 @@ export const NovoFretePage: FC<NovoFreteProps> = ({
             detalhe={detalheMascote}
             tom={resumo.totalItens > 0 && !sugestao ? 'atencao' : 'dica'}
             idPrefixo="mascote-form"
+            acaoTexto="Ver o plano da carga"
+            acaoHref="#novo-frete-plano"
           />
 
           <div class="caixas-carga" data-caixas>
@@ -1782,11 +1819,27 @@ export const NovoFretePage: FC<NovoFreteProps> = ({
               ))}
             </select>
             <span class="campo__dica">
-              Durante esse tempo, os transportadores enviam orçamentos. Você escolhe quando quiser
-              e, se preferir esperar o prazo terminar, ainda tem {PRAZO_ESCOLHA_HORAS} horas para
-              decidir.
+              Durante esse tempo, os transportadores enviam orçamentos. Você escolhe quando quiser.
+              A escolha termina {PRAZO_ESCOLHA_HORAS} horas depois das propostas ou no horário da
+              retirada, se ela chegar antes.
             </span>
           </label>
+
+          <div class="prazo-resumo" data-prazo-resumo aria-live="polite">
+            <p>
+              <span aria-hidden="true">⏳</span> <strong>Propostas até</strong>{' '}
+              <span data-prazo-propostas>{dataHora(prazosPrevistos.encerraEm)}</span>
+            </p>
+            <p>
+              <span aria-hidden="true">🗳️</span> <strong>Escolha até</strong>{' '}
+              <span data-prazo-escolha>{dataHora(prazosPrevistos.prazoEscolhaEm)}</span>
+            </p>
+            <p class={`auxiliar${retiradaAntesDasPropostas ? ' campo__dica--erro' : ''}`} data-prazo-nota>
+              {retiradaAntesDasPropostas
+                ? 'A retirada precisa ser depois do fim das propostas. Escolha outra data ou um prazo menor.'
+                : `A retirada precisa ser depois do fim das propostas. Se ela chegar antes das ${PRAZO_ESCOLHA_HORAS} horas de escolha, a escolha termina no horário da retirada.`}
+            </p>
+          </div>
 
           <label class="campo">
             <span class="campo__rotulo">Preço máximo <small>(opcional — só você vê)</small></span>

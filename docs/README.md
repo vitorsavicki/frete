@@ -61,6 +61,7 @@ Antes de considerar uma entrega concluída:
 - **Valores:** R$ com duas casas quando for dinheiro; peso em kg; volume em m³;
   medidas em cm no código e metros na interface.
 - **Papéis:** `cliente`, `transportador` e `admin`. “Caminhoneiro” não é usado
-  na interface; o veículo continua sendo “caminhão”.
+  na interface. O cadastro e o painel falam **“Meu veículo”**; “caminhão”
+  aparece só em tipos específicos, como “Caminhão 3/4” e “Caminhão baú”.
 - **Segredos:** nunca documente chaves, tokens, senhas ou conteúdo de e-mail de
   clientes. Use nomes de variáveis e exemplos genéricos.

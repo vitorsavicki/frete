@@ -103,7 +103,8 @@ Rota: `POST /fretes` (somente `cliente`).
   mantido em sincronia).
 - O cliente escolhe o prazo de recebimento: **24, 48 ou 72 horas** (padrão 48).
 - O servidor grava `encerra_em` (fim das propostas) e `prazo_escolha_em`
-  (48 horas depois do fim das propostas).
+  (48 horas depois do fim das propostas ou o horário da retirada, o que chegar
+  primeiro). A retirada precisa ser depois do fim das propostas.
 - Depois de `encerra_em`, o frete sai da listagem pública mesmo que a rotina de
   prazos ainda não tenha rodado: a listagem filtra `situacao = 'aberto'` e
   `validarLance` confere o relógio.
@@ -303,7 +304,7 @@ Os valores padrão ficam em `src/lib/cost.ts` e podem ser sobrescritos na tabela
 O ARLA continua no **cálculo interno** de custo (é um insumo real de caminhões
 diesel), mas foi removido da interface:
 
-- não há campo “ARLA” no perfil do caminhão;
+- não há campo "ARLA" no perfil do veículo;
 - não há linha “ARLA” na estimativa;
 - o valor padrão continua embutido no cálculo e aparece somado em
   **“Manutenção e insumos”**.
@@ -323,15 +324,18 @@ campo apenas não é mais editável. Perfis novos usam o padrão do banco
 
 ### Plano de carga (`src/lib/montagem.ts`)
 
-O packer usa uma grade de **5 cm** no comprimento da carroceria:
+O packer usa uma grade 2D de **5 cm** no piso (`x` no comprimento e `z` na
+largura), com altura e apoio por célula:
 
-1. Expande cada item em unidades, escolhendo a orientação que ocupa menos
-   comprimento e ainda cabe na largura/altura.
-2. Ordena: itens não empilháveis primeiro (mais altos e pesados); depois os
+1. Expande cada item em unidades e calcula as orientações possíveis. A
+   preferida deixa a profundidade abaixo de 70% da largura; a alternativa
+   serve para vãos estreitos.
+2. Ordena: itens não empilháveis primeiro (maiores e mais pesados); depois os
    empilháveis (maiores e mais leves).
-3. Preenche o **piso de todas as faixas** antes de empilhar.
-4. Só empilha itens empilháveis e não frágeis, sobre uma base plana e com apoio
-   em toda a extensão.
+3. Preenche o piso como um tabuleiro, aproveitando os vãos com os volumes
+   menores, em vez de concentrar tudo em uma lateral.
+4. Só empilha sobre uma base plana e com apoio em toda a extensão. Volumes
+   baixos e não frágeis podem servir de apoio mesmo sem serem empilháveis.
 5. Respeita a altura interna do veículo.
 6. Itens que não cabem em nenhuma posição ficam “fora” e são contados.
 7. O peso é conferido antes do encaixe: a soma dos volumes não pode passar da
@@ -343,13 +347,16 @@ O desenho tem três vistas, em abas:
 
 - **3D**: vista isométrica gerada a partir dos mesmos blocos do packer, com
   topo, frente e lateral de cada volume;
-- **corte lateral** da faixa 0 (a primeira faixa de largura);
-- **vista de cima** proporcional ao piso, com o footprint de todos os blocos.
+- **corte lateral**: projeção do comprimento × altura, mostrando o que está
+  mais perto da lateral;
+- **vista de cima**: posições reais no piso (`x` e `z`), com o footprint de
+  todos os blocos e a explicação do espaço livre.
 
 As abas funcionam sem JavaScript: os três painéis são renderizados e ficam
 visíveis um abaixo do outro. O cliente adiciona a classe `plano-abas--js` e
-alterna os painéis. A vista 3D também mostra o volume total por categoria
-(Móveis, Eletrodomésticos, Caixas e volumes, Outros), com peso e quantidade.
+alterna os painéis, com teclado e ARIA. A vista 3D também mostra o volume total
+por categoria (Móveis, Eletrodomésticos, Caixas e volumes, Outros), com peso e
+quantidade.
 
 O plano é uma **referência de carregamento**, não uma promessa de encaixe
 milimétrico. A conferência final é no local.
@@ -415,28 +422,33 @@ na home. Quem usa Kombi deve cadastrá-la como `van` ou `outro`.
 
 1. No formulário de publicação, o cliente escolhe **24, 48 ou 72 horas** para
    receber propostas. O padrão é 48 horas.
-2. `calcularPrazos` grava `encerra_em` e `prazo_escolha_em` em UTC.
-3. Enquanto `situacao = 'aberto'` e `agora < encerra_em`, os transportadores
+2. `calcularPrazos` grava `encerra_em` e `prazo_escolha_em` em UTC. A escolha
+   termina no menor prazo entre `encerra_em + 48 h` e o horário da retirada.
+3. A retirada precisa ser depois do fim das propostas; o formulário rejeita
+   data anterior e explica o motivo.
+4. Enquanto `situacao = 'aberto'` e `agora < encerra_em`, os transportadores
    podem enviar ou melhorar propostas.
-4. `aplicarPrazos` fecha o recebimento, na primeira requisição após o horário ou
+5. `aplicarPrazos` fecha o recebimento, na primeira requisição após o horário ou
    pelo cron:
    - com propostas → `em_escolha`;
    - sem propostas → `sem_lances`.
-5. Em `em_escolha`, o cliente tem **48 horas** para aceitar uma proposta:
+6. Em `em_escolha`, o cliente tem até `prazo_escolha_em` para aceitar:
    - aceitou → `encerrado` + vencedor;
    - não aceitou → `expirado`.
-6. O cliente pode cancelar em `aberto` ou `em_escolha`; o cancelamento avisa
+7. O cliente pode cancelar em `aberto` ou `em_escolha`; o cancelamento avisa
    todos que propuseram.
-7. Mudanças em `aberto` aparecem na listagem e no sitemap. `em_escolha`
+8. Mudanças em `aberto` aparecem na listagem e no sitemap. `em_escolha`
    e `encerrado` continuam acessíveis pelo link direto; `sem_lances`,
    `expirado` e `cancelado` retornam 404 para quem não é dono.
-8. As telas mostram o prazo em texto e o status escrito, sem depender de cor.
-9. A rotina é idempotente e roda no cron a cada 5 minutos, além das rotas.
+9. As telas mostram o prazo em texto e o status escrito, sem depender de cor.
+10. A rotina é idempotente e roda no cron a cada 5 minutos, além das rotas.
 
 ### Impacto técnico aplicado
 
 - migração `0007_prazo_leilao.sql` com `situacao`, `encerra_em` e
   `prazo_escolha_em` (mais backfill e índice);
+- migração `0008_prazo_retirada.sql` limita os prazos já gravados ao horário
+  da retirada;
 - `src/lib/prazos.ts` centraliza o relógio, os rótulos e a visibilidade;
 - `validarLance` compara o horário atual com `encerra_em`;
 - `podeAceitarLance` e `podeCancelarFrete` usam `situacao`;

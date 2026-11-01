@@ -65,12 +65,11 @@ describe('Plano de carregamento', () => {
 
     const plano = montarPlanoCarga(resumoCarga([]), van);
     expect(plano.blocos).toEqual([]);
-    expect(plano.faixas).toEqual([]);
     expect(plano.totalUnidades).toBe(0);
     expect(plano.colocados).toBe(0);
     expect(plano.fora).toBe(0);
-    expect(plano.volumesAtras).toBe(0);
     expect(plano.larguraUsadaCm).toBe(0);
+    expect(plano.sobraLarguraCm).toBe(van.larguraCm);
     expect(plano.ocupacaoVolume).toBe(0);
   });
 
@@ -85,29 +84,24 @@ describe('Plano de carregamento', () => {
     expect(cinco.fora).toBe(0);
     expect(cinco.blocos.every((bloco) => !bloco.empilhado)).toBe(true);
     expect(cinco.alturaUsadaCm).toBe(40);
-    expect(cinco.volumesAtras).toBe(0);
 
     const dez = montarPlanoCarga(resumoCarga([caixas(10)]), van);
     expect(dez.colocados).toBe(10);
     expect(dez.fora).toBe(0);
     expect(dez.blocos.every((bloco) => !bloco.empilhado)).toBe(true);
     expect(dez.alturaUsadaCm).toBe(40);
-    expect(dez.faixas.length).toBe(2);
-    expect(dez.volumesAtras).toBe(4);
 
     const vinte = montarPlanoCarga(resumoCarga([caixas(20)]), van);
     expect(vinte.colocados).toBe(20);
     expect(vinte.fora).toBe(0);
-    expect(vinte.blocos.some((bloco) => bloco.empilhado)).toBe(true);
-    expect(vinte.alturaUsadaCm).toBe(80);
-    expect(vinte.faixas.length).toBe(3);
-    expect(vinte.volumesAtras).toBe(12);
+    expect(vinte.blocos.every((bloco) => !bloco.empilhado)).toBe(true);
+    expect(vinte.alturaUsadaCm).toBe(40);
     expect(vinte.alturaUsadaCm).toBeLessThanOrEqual(van.alturaCm);
     expect(vinte.comprimentoUsadoCm).toBeLessThanOrEqual(van.comprimentoCm);
     expect(vinte.larguraUsadaCm).toBeLessThanOrEqual(van.larguraCm);
   });
 
-  it('acomoda 20 caixas grandes em duas faixas no caminhão 3/4', () => {
+  it('acomoda 20 caixas grandes no caminhão 3/4', () => {
     const truck = veiculoPorTipo('tres_quartos');
     expect(truck).not.toBeNull();
     if (!truck) return;
@@ -120,13 +114,12 @@ describe('Plano de carregamento', () => {
     expect(plano.totalUnidades).toBe(20);
     expect(plano.fora).toBe(0);
     expect(plano.colocados).toBe(20);
-    expect(plano.faixas.length).toBe(2);
-    expect(plano.volumesAtras).toBe(10);
     expect(plano.alturaUsadaCm).toBe(140);
-    expect(plano.larguraUsadaCm).toBe(160);
+    expect(plano.larguraUsadaCm).toBe(180);
     expect(plano.larguraUsadaCm).toBeLessThanOrEqual(truck.larguraCm);
     expect(plano.comprimentoUsadoCm).toBeLessThanOrEqual(truck.comprimentoCm);
-    expect(plano.blocos.filter((bloco) => bloco.faixa === 0).length).toBe(10);
+    expect(plano.blocos.filter((bloco) => bloco.empilhado).length).toBe(8);
+    expect(new Set(plano.blocos.map((bloco) => bloco.z)).size).toBe(3);
   });
 
   it('conta como fora o que não cabe no veículo', () => {
@@ -200,7 +193,7 @@ describe('Plano de carregamento', () => {
     // O volume do 3/4 (11,97 m³) é maior que a carga, mas o encaixe real
     // deixa volumes fora por causa do comprimento e da largura das peças.
     const plano3q = montarPlanoCarga(carga, tresQuartos);
-    expect(plano3q.fora).toBe(6);
+    expect(plano3q.fora).toBe(4);
     expect(plano3q.colocados + plano3q.fora).toBe(plano3q.totalUnidades);
 
     const planoBau = montarPlanoCarga(carga, bau);

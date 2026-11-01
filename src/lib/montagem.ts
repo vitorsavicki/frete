@@ -5,8 +5,11 @@
 // milimétrico: serve para mostrar ordem de carregamento, uso da altura e
 // onde ficam os itens frágeis. A conferência final continua sendo no local.
 //
-// A carroceria é dividida em faixas de largura. O corte lateral mostra a
-// faixa 1; as demais completam a largura e aparecem na vista de cima.
+// O piso é preenchido como um tabuleiro: cada volume ocupa uma área de
+// comprimento × largura, e os menores aproveitam os espaços que sobram.
+// Quando o piso acaba, os volumes empilháveis sobem para a base mais baixa
+// que suporta o peso. Assim a carga ocupa a carroceria de forma parecida
+// com o carregamento real, em vez de ficar toda encostada em uma lateral.
 
 import {
   VEICULOS,
@@ -29,10 +32,10 @@ export interface BlocoMontagem {
   emoji: string;
   categoria: CategoriaCarga;
   fragil: boolean;
-  /** Faixa de largura em que o volume foi acomodado (0 é a do corte lateral). */
-  faixa: number;
   /** Posição em cm a partir da parede da frente (cabine). */
   x: number;
+  /** Posição em cm a partir da lateral esquerda da carroceria. */
+  z: number;
   /** Altura da base do bloco em cm a partir do piso. */
   base: number;
   comprimento: number;
@@ -63,16 +66,9 @@ export interface ItemMontagem {
   pesoColocadoKg: number;
 }
 
-export interface FaixaMontagem {
-  indice: number;
-  profundidadeCm: number;
-  volumes: number;
-}
-
 export interface MontagemCarga {
   veiculo: MedidasVeiculo;
   blocos: BlocoMontagem[];
-  faixas: FaixaMontagem[];
   /** Um registro por tipo de item, para conferir todos os volumes. */
   itens: ItemMontagem[];
   totalUnidades: number;
@@ -87,11 +83,13 @@ export interface MontagemCarga {
   volumeColocadoM3: number;
   /** Volume e peso por categoria, para mostrar o volume das caixas. */
   categorias: ResumoCategoria[];
-  /** Volumes acomodados nas faixas que não aparecem no corte lateral. */
-  volumesAtras: number;
   alturaUsadaCm: number;
   comprimentoUsadoCm: number;
   larguraUsadaCm: number;
+  /** Espaço que sobra em cada direção, para explicar os vãos do desenho. */
+  sobraAlturaCm: number;
+  sobraComprimentoCm: number;
+  sobraLarguraCm: number;
   ocupacaoVolume: number;
   ocupacaoPeso: number;
   temFragil: boolean;
@@ -101,28 +99,34 @@ export interface MontagemCarga {
   temTv: boolean;
 }
 
+interface Orientacao {
+  comprimento: number;
+  profundidade: number;
+}
+
 interface Unidade {
   item: ItemCarga;
   comprimento: number;
   profundidade: number;
+  /** Orientações possíveis, da mais estável para a alternativa. */
+  orientacoes: Orientacao[];
   altura: number;
   empilhavel: boolean;
-}
-
-interface FaixaInterna {
-  indice: number;
-  profundidade: number;
-  alturas: Float64Array;
-  suporta: Uint8Array;
-  volumes: number;
 }
 
 type ModoColocacao = 'piso' | 'empilhar';
 
 const PASSO_CM = 5;
 
-/** Escolhe a orientação que ocupa menos comprimento e ainda cabe na largura. */
-function orientar(item: ItemCarga, veiculo: MedidasVeiculo): { comprimento: number; profundidade: number } | null {
+/**
+ * Lista as orientações que cabem no veículo, da mais estável para a
+ * alternativa. Evita atravessar a carroceria inteira com uma peça só quando é
+ * possível girá-la; a segunda opção serve para aproveitar vãos estreitos.
+ */
+function orientar(
+  item: ItemCarga,
+  veiculo: MedidasVeiculo,
+): Orientacao[] {
   const opcoes = [
     { comprimento: item.comprimentoCm, profundidade: item.larguraCm },
     { comprimento: item.larguraCm, profundidade: item.comprimentoCm },
@@ -135,9 +139,17 @@ function orientar(item: ItemCarga, veiculo: MedidasVeiculo): { comprimento: numb
       item.alturaCm <= veiculo.alturaCm,
   );
 
-  if (opcoes.length === 0) return null;
-  opcoes.sort((a, b) => a.comprimento - b.comprimento);
-  return opcoes[0] ?? null;
+  if (opcoes.length === 0) return [];
+
+  const confortavel = Math.max(0, veiculo.larguraCm * 0.7);
+  opcoes.sort((a, b) => {
+    const aCabe = a.profundidade <= confortavel ? 0 : 1;
+    const bCabe = b.profundidade <= confortavel ? 0 : 1;
+    if (aCabe !== bCabe) return aCabe - bCabe;
+    if (a.profundidade !== b.profundidade) return a.profundidade - b.profundidade;
+    return a.comprimento - b.comprimento;
+  });
+  return opcoes;
 }
 
 function expandirUnidades(carga: CargaResumo, veiculo: MedidasVeiculo): { unidades: Unidade[]; fora: number } {
@@ -146,8 +158,8 @@ function expandirUnidades(carga: CargaResumo, veiculo: MedidasVeiculo): { unidad
 
   for (const item of carga.itens) {
     const quantidade = Math.max(0, Math.floor(item.quantidade));
-    const orientacao = orientar(item, veiculo);
-    if (!orientacao) {
+    const orientacoes = orientar(item, veiculo);
+    if (orientacoes.length === 0) {
       fora += quantidade;
       continue;
     }
@@ -155,8 +167,9 @@ function expandirUnidades(carga: CargaResumo, veiculo: MedidasVeiculo): { unidad
     for (let i = 0; i < quantidade; i++) {
       unidades.push({
         item,
-        comprimento: orientacao.comprimento,
-        profundidade: orientacao.profundidade,
+        comprimento: orientacoes[0].comprimento,
+        profundidade: orientacoes[0].profundidade,
+        orientacoes,
         altura: item.alturaCm,
         empilhavel: item.empilhavel !== false && !item.fragil,
       });
@@ -171,13 +184,21 @@ function ordenarUnidades(a: Unidade, b: Unidade): number {
   const bPiso = b.empilhavel ? 1 : 0;
   if (aPiso !== bPiso) return aPiso - bPiso;
 
+  // Peças grandes e pesadas primeiro: elas ocupam a frente e recebem os
+  // volumes menores nos espaços que sobram.
   if (aPiso === 0) {
+    if (b.comprimento !== a.comprimento) return b.comprimento - a.comprimento;
     if (b.altura !== a.altura) return b.altura - a.altura;
     return b.item.pesoKg - a.item.pesoKg;
   }
 
   const volumeA = volumeItemM3(a.item);
   const volumeB = volumeItemM3(b.item);
+  const areaA = a.comprimento * a.profundidade;
+  const areaB = b.comprimento * b.profundidade;
+  // Peças de base grande primeiro: elas formam a camada de apoio para as
+  // caixas e colchões menores, sem deixar vãos no piso.
+  if (areaB !== areaA) return areaB - areaA;
   if (volumeB !== volumeA) return volumeB - volumeA;
   return a.item.pesoKg - b.item.pesoKg;
 }
@@ -205,8 +226,10 @@ export function montarPlanoCarga(
   });
   unidades.sort(ordenarUnidades);
 
-  const celulas = Math.max(1, Math.ceil(comprimentoVeiculo / PASSO_CM));
-  const faixas: FaixaInterna[] = [];
+  const celulasX = Math.max(1, Math.ceil(comprimentoVeiculo / PASSO_CM));
+  const colunas = Math.max(1, Math.ceil(larguraVeiculo / PASSO_CM));
+  const alturas = new Float64Array(celulasX * colunas);
+  const suporta = new Uint8Array(celulasX * colunas);
   const blocos: BlocoMontagem[] = [];
   const pesoMaximo =
     limites.pesoMaximoKg != null && limites.pesoMaximoKg > 0
@@ -216,110 +239,106 @@ export function montarPlanoCarga(
   let foraPorMedida = foraOrientacao;
   let foraPorPeso = 0;
   let foraPorGeometria = 0;
-  let larguraOcupada = 0;
 
-  const criarFaixa = (profundidade: number): FaixaInterna => ({
-    indice: faixas.length,
-    profundidade,
-    alturas: new Float64Array(celulas),
-    suporta: new Uint8Array(celulas),
-    volumes: 0,
-  });
-
-  const cabeProfundidade = (faixa: FaixaInterna, unidade: Unidade): boolean => {
-    const novaLargura = Math.max(faixa.profundidade, unidade.profundidade);
-    return larguraOcupada - faixa.profundidade + novaLargura <= larguraVeiculo + 0.5;
-  };
-
-  const confirmarProfundidade = (faixa: FaixaInterna, unidade: Unidade): void => {
-    const novaLargura = Math.max(faixa.profundidade, unidade.profundidade);
-    if (novaLargura <= faixa.profundidade) return;
-    larguraOcupada += novaLargura - faixa.profundidade;
-    faixa.profundidade = novaLargura;
-  };
+  const indiceCelula = (x: number, z: number): number => x * colunas + z;
 
   interface PosicaoColocacao {
-    inicio: number;
+    x: number;
+    z: number;
     base: number;
   }
 
   const buscarPosicao = (
-    faixa: FaixaInterna,
     unidade: Unidade,
+    orientacao: Orientacao,
     modo: ModoColocacao,
   ): PosicaoColocacao | null => {
-    const larguraCelulas = Math.max(1, Math.ceil(unidade.comprimento / PASSO_CM));
-    let melhorInicio = -1;
-    let melhorBase = Number.POSITIVE_INFINITY;
+    const comprimentoCelulas = Math.max(1, Math.ceil(orientacao.comprimento / PASSO_CM));
+    const profundidadeCelulas = Math.max(1, Math.ceil(orientacao.profundidade / PASSO_CM));
+    if (comprimentoCelulas > celulasX || profundidadeCelulas > colunas) return null;
 
-    for (let inicio = 0; inicio + larguraCelulas <= celulas; inicio++) {
-      const base = faixa.alturas[inicio] ?? 0;
-      if (modo === 'piso' ? base > 0.5 : base <= 0.5) continue;
+    let melhor: PosicaoColocacao | null = null;
 
-      let plana = true;
-      for (let i = inicio + 1; i < inicio + larguraCelulas; i++) {
-        if (Math.abs((faixa.alturas[i] ?? 0) - base) > 0.5) {
-          plana = false;
-          break;
+    // Varre a carroceria da frente para a porta e da esquerda para a
+    // direita. No piso, a primeira posição livre é a escolhida. Ao
+    // empilhar, procura a base mais baixa para não criar torres.
+    for (let x = 0; x + comprimentoCelulas <= celulasX; x++) {
+      for (let z = 0; z + profundidadeCelulas <= colunas; z++) {
+        const base = modo === 'piso' ? 0 : (alturas[indiceCelula(x, z)] ?? 0);
+        if (modo === 'empilhar') {
+          if (base <= 0.5) continue;
+          if (base + unidade.altura > alturaVeiculo + 0.5) continue;
         }
-      }
-      if (!plana) continue;
 
-      if (modo === 'empilhar') {
-        let apoio = true;
-        for (let i = inicio; i < inicio + larguraCelulas; i++) {
-          if ((faixa.suporta[i] ?? 0) !== 1) {
-            apoio = false;
-            break;
+        let livre = true;
+        for (let xi = x; xi < x + comprimentoCelulas && livre; xi++) {
+          for (let zi = z; zi < z + profundidadeCelulas; zi++) {
+            const indice = indiceCelula(xi, zi);
+            const altura = alturas[indice] ?? 0;
+            if (modo === 'piso') {
+              if (altura > 0.5) {
+                livre = false;
+                break;
+              }
+            } else if (
+              Math.abs(altura - base) > 0.5 ||
+              (suporta[indice] ?? 0) !== 1
+            ) {
+              livre = false;
+              break;
+            }
           }
         }
-        if (!apoio) continue;
-      }
+        if (!livre) continue;
 
-      if (base + unidade.altura > alturaVeiculo + 0.5) continue;
-
-      // Empilha sempre na base mais baixa disponível; no piso, mantém a
-      // ordem da frente para o fundo.
-      if (base < melhorBase - 0.01) {
-        melhorBase = base;
-        melhorInicio = inicio;
+        if (modo === 'piso') return { x, z, base: 0 };
+        if (!melhor || base < melhor.base - 0.01) melhor = { x, z, base };
       }
     }
 
-    if (melhorInicio < 0) return null;
-    return { inicio: melhorInicio, base: melhorBase };
+    return melhor;
   };
 
   const registrarBloco = (
-    faixa: FaixaInterna,
     unidade: Unidade,
+    orientacao: Orientacao,
     posicao: PosicaoColocacao,
   ): void => {
-    const larguraCelulas = Math.max(1, Math.ceil(unidade.comprimento / PASSO_CM));
+    const comprimentoCelulas = Math.max(1, Math.ceil(orientacao.comprimento / PASSO_CM));
+    const profundidadeCelulas = Math.max(1, Math.ceil(orientacao.profundidade / PASSO_CM));
     const topo = posicao.base + unidade.altura;
-    for (let i = posicao.inicio; i < posicao.inicio + larguraCelulas; i++) {
-      faixa.alturas[i] = topo;
-      faixa.suporta[i] = unidade.empilhavel ? 1 : 0;
+    // A tampa de um volume baixo e firme serve de apoio, mesmo que ele
+    // próprio não possa ser levantado. É assim que colchões e caixas leves
+    // vão por cima de camas e sofás.
+    const apoia = !unidade.item.fragil && unidade.altura <= 120;
+    for (let xi = posicao.x; xi < posicao.x + comprimentoCelulas; xi++) {
+      for (let zi = posicao.z; zi < posicao.z + profundidadeCelulas; zi++) {
+        const indice = indiceCelula(xi, zi);
+        alturas[indice] = topo;
+        suporta[indice] = apoia ? 1 : 0;
+      }
     }
 
-    faixa.volumes += 1;
     pesoColocadoKg += unidade.item.pesoKg;
     blocos.push({
-      chave: `${unidade.item.id}-${faixa.indice}-${blocos.length}`,
+      chave: `${unidade.item.id}-${blocos.length}`,
       itemId: unidade.item.id,
       nome: unidade.item.nome,
       emoji: unidade.item.emoji,
       categoria: unidade.item.categoria,
       fragil: Boolean(unidade.item.fragil),
-      faixa: faixa.indice,
-      x: posicao.inicio * PASSO_CM,
+      x: posicao.x * PASSO_CM,
+      z: posicao.z * PASSO_CM,
       base: posicao.base,
       comprimento: Math.min(
-        unidade.comprimento,
-        comprimentoVeiculo - posicao.inicio * PASSO_CM,
+        orientacao.comprimento,
+        comprimentoVeiculo - posicao.x * PASSO_CM,
       ),
       altura: unidade.altura,
-      profundidade: unidade.profundidade,
+      profundidade: Math.min(
+        orientacao.profundidade,
+        larguraVeiculo - posicao.z * PASSO_CM,
+      ),
       pesoKg: unidade.item.pesoKg,
       volumeM3: volumeItemM3(unidade.item),
       quantidade: 1,
@@ -337,44 +356,28 @@ export function montarPlanoCarga(
 
     let colocado = false;
 
-    // 1. Piso das faixas que já existem.
-    for (const faixa of faixas) {
-      if (!cabeProfundidade(faixa, unidade)) continue;
-      const posicao = buscarPosicao(faixa, unidade, 'piso');
-      if (!posicao) continue;
-      registrarBloco(faixa, unidade, posicao);
-      confirmarProfundidade(faixa, unidade);
+    // 1. Piso: primeiro lugar livre, da frente para a porta. Tenta a
+    // orientação preferida e, se ela não couber no vão, gira o volume.
+    for (const orientacao of unidade.orientacoes) {
+      const posicaoPiso = buscarPosicao(unidade, orientacao, 'piso');
+      if (!posicaoPiso) continue;
+      registrarBloco(unidade, orientacao, posicaoPiso);
       colocado = true;
       break;
     }
 
-    // 2. Faixa nova no piso, usando a largura que ainda sobra.
-    if (!colocado && larguraOcupada + unidade.profundidade <= larguraVeiculo + 0.5) {
-      const faixa = criarFaixa(unidade.profundidade);
-      const posicao = buscarPosicao(faixa, unidade, 'piso');
-      if (posicao) {
-        registrarBloco(faixa, unidade, posicao);
-        faixas.push(faixa);
-        larguraOcupada += faixa.profundidade;
-        colocado = true;
-      }
-    }
-
-    // 3. Só empilha quando o piso de todas as faixas já está ocupado.
-    // Escolhe a faixa com a base mais baixa para distribuir a altura.
+    // 2. Sem piso, empilha na base mais baixa que suporta o volume.
     if (!colocado && unidade.empilhavel) {
-      let escolhida: { faixa: FaixaInterna; posicao: PosicaoColocacao } | null = null;
-      for (const faixa of faixas) {
-        if (!cabeProfundidade(faixa, unidade)) continue;
-        const posicao = buscarPosicao(faixa, unidade, 'empilhar');
-        if (!posicao) continue;
-        if (!escolhida || posicao.base < escolhida.posicao.base - 0.01) {
-          escolhida = { faixa, posicao };
+      let melhor: { orientacao: Orientacao; posicao: PosicaoColocacao } | null = null;
+      for (const orientacao of unidade.orientacoes) {
+        const posicaoEmpilhada = buscarPosicao(unidade, orientacao, 'empilhar');
+        if (!posicaoEmpilhada) continue;
+        if (!melhor || posicaoEmpilhada.base < melhor.posicao.base - 0.01) {
+          melhor = { orientacao, posicao: posicaoEmpilhada };
         }
       }
-      if (escolhida) {
-        registrarBloco(escolhida.faixa, unidade, escolhida.posicao);
-        confirmarProfundidade(escolhida.faixa, unidade);
+      if (melhor) {
+        registrarBloco(unidade, melhor.orientacao, melhor.posicao);
         colocado = true;
       }
     }
@@ -384,28 +387,12 @@ export function montarPlanoCarga(
 
   let alturaUsadaCm = 0;
   let comprimentoUsadoCm = 0;
-  for (const faixa of faixas) {
-    for (let i = 0; i < celulas; i++) {
-      const altura = faixa.alturas[i] ?? 0;
-      if (altura > alturaUsadaCm) alturaUsadaCm = altura;
-      if (altura > 0) {
-        comprimentoUsadoCm = Math.max(
-          comprimentoUsadoCm,
-          Math.min(comprimentoVeiculo, (i + 1) * PASSO_CM),
-        );
-      }
-    }
+  let larguraUsadaCm = 0;
+  for (const bloco of blocos) {
+    alturaUsadaCm = Math.max(alturaUsadaCm, bloco.base + bloco.altura);
+    comprimentoUsadoCm = Math.max(comprimentoUsadoCm, bloco.x + bloco.comprimento);
+    larguraUsadaCm = Math.max(larguraUsadaCm, bloco.z + bloco.profundidade);
   }
-
-  const resumoFaixas: FaixaMontagem[] = faixas.map((faixa) => ({
-    indice: faixa.indice,
-    profundidadeCm: Math.round(faixa.profundidade),
-    volumes: faixa.volumes,
-  }));
-  const volumesAtras = resumoFaixas.reduce(
-    (total, faixa) => (faixa.indice > 0 ? total + faixa.volumes : total),
-    0,
-  );
 
   // Conferência item a item: cada unidade aparece como "colocada" ou "fora".
   // Isso evita a leitura de que o desenho simplesmente esqueceu volumes.
@@ -458,7 +445,6 @@ export function montarPlanoCarga(
       capacidadeKg: veiculo.capacidadeKg,
     },
     blocos,
-    faixas: resumoFaixas,
     itens,
     totalUnidades: carga.totalItens,
     colocados: blocos.length,
@@ -469,10 +455,12 @@ export function montarPlanoCarga(
     pesoColocadoKg: Math.round(pesoColocadoKg * 100) / 100,
     volumeColocadoM3: Math.round(volumeColocadoM3 * 1000) / 1000,
     categorias: resumoCategorias(carga),
-    volumesAtras,
     alturaUsadaCm: Math.round(alturaUsadaCm),
     comprimentoUsadoCm: Math.round(comprimentoUsadoCm),
-    larguraUsadaCm: Math.round(larguraOcupada),
+    larguraUsadaCm: Math.round(larguraUsadaCm),
+    sobraAlturaCm: Math.max(0, Math.round(alturaVeiculo - alturaUsadaCm)),
+    sobraComprimentoCm: Math.max(0, Math.round(comprimentoVeiculo - comprimentoUsadoCm)),
+    sobraLarguraCm: Math.max(0, Math.round(larguraVeiculo - larguraUsadaCm)),
     ocupacaoVolume: volumeVeiculo > 0 ? carga.volumeM3 / volumeVeiculo : 0,
     ocupacaoPeso,
     temFragil: carga.itens.some((item) => item.fragil),
@@ -521,9 +509,9 @@ export function dicasCarregamento(carga: CargaResumo, montagem: MontagemCarga): 
       'Numere as caixas por ambiente e deixe as mais leves no topo. Caixas de livros vão no chão.',
     );
   }
-  if (montagem.volumesAtras > 0) {
+  if (montagem.sobraLarguraCm > 20) {
     dicas.push(
-      'O corte mostra a faixa 1; as faixas de trás completam a largura. Distribua o peso entre os dois lados.',
+      `A carga deixa ${montagem.sobraLarguraCm} cm livres na largura. Centralize e amarre bem para ela não deslizar na curva.`,
     );
   }
   if (montagem.alturaUsadaCm > montagem.veiculo.alturaCm * 0.85) {
@@ -643,7 +631,7 @@ export function planejarViagens(
 
   // 1. O que nem passa pela porta: medida maior que o veículo.
   restantesItens = restantesItens.filter((item) => {
-    if (orientar(item, veiculo)) return true;
+    if (orientar(item, veiculo).length > 0) return true;
     impossiveis.push({
       nome: item.nome,
       emoji: item.emoji,

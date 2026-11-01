@@ -680,7 +680,7 @@
         }
         if (!veiculo) {
           if (dicaVolume) {
-            dicaVolume.textContent = 'Escolha um tipo de caminhão na lista para usar as medidas típicas.';
+            dicaVolume.textContent = 'Escolha um tipo de veículo na lista para usar as medidas típicas.';
           }
           return;
         }
@@ -810,6 +810,109 @@
 
     atualizarCombustivelPerfil();
     atualizarTaxaSugerida();
+  }
+
+  // ---------- abas do plano de carga (detalhe e formulário) ----------
+  var contadorAbasPlano = 0;
+
+  /**
+   * Liga as abas 3D/Lado/Cima. Sem esta chamada os três painéis ficam
+   * visíveis, o que é o comportamento correto sem JavaScript. A marcação
+   * `data-plano-abas-pronto` evita listeners duplicados quando o plano é
+   * redesenhado a cada mudança na lista de itens.
+   */
+  function iniciarAbasPlano(raiz) {
+    var escopo = raiz || document;
+    var grupos = $$('[data-plano-abas]', escopo);
+    if (escopo.matches && escopo.matches('[data-plano-abas]')) grupos.unshift(escopo);
+
+    grupos.forEach(function (abas) {
+      if (abas.getAttribute('data-plano-abas-pronto') === '1') return;
+      abas.setAttribute('data-plano-abas-pronto', '1');
+
+      var botoes = $$('[data-plano-aba]', abas);
+      var paineis = $$('[data-plano-painel]', abas);
+      if (!botoes.length || !paineis.length) return;
+
+      var prefixo = 'plano-' + ++contadorAbasPlano;
+      var mapaPaineis = {};
+
+      botoes.forEach(function (botao) {
+        var nome = botao.getAttribute('data-plano-aba');
+        if (!nome) return;
+        if (!botao.id) botao.id = prefixo + '-aba-' + nome;
+        botao.setAttribute('role', 'tab');
+        botao.setAttribute('tabindex', '-1');
+      });
+
+      paineis.forEach(function (painel) {
+        var nome = painel.getAttribute('data-plano-painel');
+        if (!nome) return;
+        if (!painel.id) painel.id = prefixo + '-painel-' + nome;
+        painel.setAttribute('role', 'tabpanel');
+        painel.setAttribute('tabindex', '-1');
+        mapaPaineis[nome] = painel;
+      });
+
+      botoes.forEach(function (botao) {
+        var nome = botao.getAttribute('data-plano-aba');
+        var painel = mapaPaineis[nome];
+        if (!painel) return;
+        botao.setAttribute('aria-controls', painel.id);
+        painel.setAttribute('aria-labelledby', botao.id);
+      });
+
+      var ativoInicial = botoes.filter(function (botao) {
+        return botao.classList.contains('plano-aba--ativo');
+      })[0];
+      var inicial = ativoInicial
+        ? ativoInicial.getAttribute('data-plano-aba')
+        : botoes[0].getAttribute('data-plano-aba');
+
+      function ativar(nome, focar) {
+        botoes.forEach(function (botao) {
+          var ativo = botao.getAttribute('data-plano-aba') === nome;
+          botao.classList.toggle('plano-aba--ativo', ativo);
+          botao.setAttribute('aria-selected', ativo ? 'true' : 'false');
+          botao.setAttribute('tabindex', ativo ? '0' : '-1');
+          if (ativo && focar) botao.focus();
+        });
+        paineis.forEach(function (painel) {
+          var ativo = painel.getAttribute('data-plano-painel') === nome;
+          painel.classList.toggle('plano-abas__painel--ativo', ativo);
+          painel.setAttribute('tabindex', ativo ? '0' : '-1');
+        });
+      }
+
+      botoes.forEach(function (botao, indice) {
+        botao.addEventListener('click', function () {
+          ativar(botao.getAttribute('data-plano-aba'), false);
+        });
+
+        botao.addEventListener('keydown', function (evento) {
+          var tecla = evento.key;
+          if (
+            tecla !== 'ArrowRight' &&
+            tecla !== 'ArrowLeft' &&
+            tecla !== 'Home' &&
+            tecla !== 'End'
+          ) {
+            return;
+          }
+          evento.preventDefault();
+          var destino = indice;
+          if (tecla === 'ArrowRight') destino = (indice + 1) % botoes.length;
+          else if (tecla === 'ArrowLeft') destino = (indice - 1 + botoes.length) % botoes.length;
+          else if (tecla === 'Home') destino = 0;
+          else if (tecla === 'End') destino = botoes.length - 1;
+          var alvo = botoes[destino];
+          ativar(alvo.getAttribute('data-plano-aba'), true);
+        });
+      });
+
+      ativar(inicial, false);
+      abas.classList.add('plano-abas--js');
+    });
   }
 
   // ---------- montador de carga (opcional no cadastro do frete) ----------
@@ -1044,10 +1147,17 @@
           item.alturaCm <= veiculo.alturaCm
         );
       });
+      if (!opcoes.length) return [];
+
+      var confortavel = Math.max(0, veiculo.larguraCm * 0.7);
       opcoes.sort(function (a, b) {
+        var aCabe = a.profundidade <= confortavel ? 0 : 1;
+        var bCabe = b.profundidade <= confortavel ? 0 : 1;
+        if (aCabe !== bCabe) return aCabe - bCabe;
+        if (a.profundidade !== b.profundidade) return a.profundidade - b.profundidade;
         return a.comprimento - b.comprimento;
       });
-      return opcoes[0] || null;
+      return opcoes;
     }
 
     function volumeDoItem(item) {
@@ -1099,16 +1209,17 @@
 
       carga.itens.forEach(function (item) {
         var quantidade = Math.max(0, Math.floor(item.quantidade));
-        var orientacao = orientarItem(item, veiculo);
-        if (!orientacao) {
+        var orientacoes = orientarItem(item, veiculo);
+        if (!orientacoes.length) {
           fora += quantidade;
           return;
         }
         for (var i = 0; i < quantidade; i++) {
           unidades.push({
             item: item,
-            comprimento: orientacao.comprimento,
-            profundidade: orientacao.profundidade,
+            comprimento: orientacoes[0].comprimento,
+            profundidade: orientacoes[0].profundidade,
+            orientacoes: orientacoes,
             altura: item.alturaCm,
             empilhavel: item.empilhavel !== false && !item.fragil,
           });
@@ -1120,111 +1231,103 @@
         var pisoB = b.empilhavel ? 1 : 0;
         if (pisoA !== pisoB) return pisoA - pisoB;
         if (pisoA === 0) {
+          if (b.comprimento !== a.comprimento) return b.comprimento - a.comprimento;
           if (b.altura !== a.altura) return b.altura - a.altura;
           return b.item.pesoKg - a.item.pesoKg;
         }
         var volumeA = a.item.comprimentoCm * a.item.larguraCm * a.item.alturaCm;
         var volumeB = b.item.comprimentoCm * b.item.larguraCm * b.item.alturaCm;
+        var areaA = a.comprimento * a.profundidade;
+        var areaB = b.comprimento * b.profundidade;
+        if (areaB !== areaA) return areaB - areaA;
         if (volumeB !== volumeA) return volumeB - volumeA;
         return a.item.pesoKg - b.item.pesoKg;
       });
 
-      var celulas = Math.max(1, Math.ceil(veiculo.comprimentoCm / PASSO_PLANO));
-      var faixas = [];
+      var celulasX = Math.max(1, Math.ceil(veiculo.comprimentoCm / PASSO_PLANO));
+      var colunas = Math.max(1, Math.ceil(veiculo.larguraCm / PASSO_PLANO));
+      var alturas = [];
+      var suporta = [];
+      var totalCelulas = celulasX * colunas;
+      for (var c = 0; c < totalCelulas; c++) {
+        alturas.push(0);
+        suporta.push(0);
+      }
       var blocos = [];
-      var larguraOcupada = 0;
 
-      function criarFaixa(profundidade) {
-        var alturas = [];
-        var suporta = [];
-        for (var c = 0; c < celulas; c++) {
-          alturas.push(0);
-          suporta.push(0);
-        }
-        return {
-          indice: faixas.length,
-          profundidade: profundidade,
-          alturas: alturas,
-          suporta: suporta,
-          volumes: 0,
-        };
+      function indiceCelula(x, z) {
+        return x * colunas + z;
       }
 
-      function cabeProfundidade(faixa, unidade) {
-        var novaLargura = Math.max(faixa.profundidade, unidade.profundidade);
-        return larguraOcupada - faixa.profundidade + novaLargura <= veiculo.larguraCm + 0.5;
-      }
+      function buscarPosicao(unidade, orientacao, modo) {
+        var comprimentoCelulas = Math.max(1, Math.ceil(orientacao.comprimento / PASSO_PLANO));
+        var profundidadeCelulas = Math.max(1, Math.ceil(orientacao.profundidade / PASSO_PLANO));
+        if (comprimentoCelulas > celulasX || profundidadeCelulas > colunas) return null;
 
-      function confirmarProfundidade(faixa, unidade) {
-        var novaLargura = Math.max(faixa.profundidade, unidade.profundidade);
-        if (novaLargura <= faixa.profundidade) return;
-        larguraOcupada += novaLargura - faixa.profundidade;
-        faixa.profundidade = novaLargura;
-      }
+        var melhor = null;
 
-      function buscarPosicao(faixa, unidade, modo) {
-        var larguraCelulas = Math.max(1, Math.ceil(unidade.comprimento / PASSO_PLANO));
-        var melhorInicio = -1;
-        var melhorBase = Infinity;
-
-        for (var inicio = 0; inicio + larguraCelulas <= celulas; inicio++) {
-          var base = faixa.alturas[inicio];
-          if (modo === 'piso' ? base > 0.5 : base <= 0.5) continue;
-
-          var plana = true;
-          var i;
-          for (i = inicio + 1; i < inicio + larguraCelulas; i++) {
-            if (Math.abs(faixa.alturas[i] - base) > 0.5) {
-              plana = false;
-              break;
+        for (var x = 0; x + comprimentoCelulas <= celulasX; x++) {
+          for (var z = 0; z + profundidadeCelulas <= colunas; z++) {
+            var base = modo === 'piso' ? 0 : alturas[indiceCelula(x, z)];
+            if (modo === 'empilhar') {
+              if (base <= 0.5) continue;
+              if (base + unidade.altura > veiculo.alturaCm + 0.5) continue;
             }
-          }
-          if (!plana) continue;
 
-          if (modo === 'empilhar') {
-            var apoio = true;
-            for (i = inicio; i < inicio + larguraCelulas; i++) {
-              if (faixa.suporta[i] !== 1) {
-                apoio = false;
-                break;
+            var livre = true;
+            for (var xi = x; xi < x + comprimentoCelulas && livre; xi++) {
+              for (var zi = z; zi < z + profundidadeCelulas; zi++) {
+                var indice = indiceCelula(xi, zi);
+                var altura = alturas[indice];
+                if (modo === 'piso') {
+                  if (altura > 0.5) {
+                    livre = false;
+                    break;
+                  }
+                } else if (Math.abs(altura - base) > 0.5 || suporta[indice] !== 1) {
+                  livre = false;
+                  break;
+                }
               }
             }
-            if (!apoio) continue;
-          }
+            if (!livre) continue;
 
-          if (base + unidade.altura > veiculo.alturaCm + 0.5) continue;
-
-          if (base < melhorBase - 0.01) {
-            melhorBase = base;
-            melhorInicio = inicio;
+            if (modo === 'piso') return { x: x, z: z, base: 0 };
+            if (!melhor || base < melhor.base - 0.01) melhor = { x: x, z: z, base: base };
           }
         }
 
-        if (melhorInicio < 0) return null;
-        return { inicio: melhorInicio, base: melhorBase };
+        return melhor;
       }
 
-      function registrarBloco(faixa, unidade, posicao) {
-        var larguraCelulas = Math.max(1, Math.ceil(unidade.comprimento / PASSO_PLANO));
+      function registrarBloco(unidade, orientacao, posicao) {
+        var comprimentoCelulas = Math.max(1, Math.ceil(orientacao.comprimento / PASSO_PLANO));
+        var profundidadeCelulas = Math.max(1, Math.ceil(orientacao.profundidade / PASSO_PLANO));
         var topo = posicao.base + unidade.altura;
-        for (var c = posicao.inicio; c < posicao.inicio + larguraCelulas; c++) {
-          faixa.alturas[c] = topo;
-          faixa.suporta[c] = unidade.empilhavel ? 1 : 0;
+        var apoia = !unidade.item.fragil && unidade.altura <= 120;
+        for (var xi = posicao.x; xi < posicao.x + comprimentoCelulas; xi++) {
+          for (var zi = posicao.z; zi < posicao.z + profundidadeCelulas; zi++) {
+            var indice = indiceCelula(xi, zi);
+            alturas[indice] = topo;
+            suporta[indice] = apoia ? 1 : 0;
+          }
         }
 
-        faixa.volumes += 1;
         pesoColocado += unidade.item.pesoKg;
         blocos.push({
           item: unidade.item,
-          faixa: faixa.indice,
-          x: posicao.inicio * PASSO_PLANO,
+          x: posicao.x * PASSO_PLANO,
+          z: posicao.z * PASSO_PLANO,
           base: posicao.base,
           comprimento: Math.min(
-            unidade.comprimento,
-            veiculo.comprimentoCm - posicao.inicio * PASSO_PLANO,
+            orientacao.comprimento,
+            veiculo.comprimentoCm - posicao.x * PASSO_PLANO,
           ),
           altura: unidade.altura,
-          profundidade: unidade.profundidade,
+          profundidade: Math.min(
+            orientacao.profundidade,
+            veiculo.larguraCm - posicao.z * PASSO_PLANO,
+          ),
           volumeM3: volumeDoItem(unidade.item),
           pesoKg: unidade.item.pesoKg,
           empilhado: posicao.base > 0.5,
@@ -1240,46 +1343,28 @@
 
         var colocado = false;
 
-        // 1. Piso das faixas que já existem.
-        for (var f = 0; f < faixas.length; f++) {
-          var faixa = faixas[f];
-          if (!cabeProfundidade(faixa, unidade)) continue;
-          var posicaoPiso = buscarPosicao(faixa, unidade, 'piso');
-          if (!posicaoPiso) continue;
-          registrarBloco(faixa, unidade, posicaoPiso);
-          confirmarProfundidade(faixa, unidade);
+        // 1. Piso: primeiro lugar livre, da frente para a porta. Tenta a
+        // orientação preferida e, se ela não couber no vão, gira o volume.
+        unidade.orientacoes.some(function (orientacao) {
+          var posicaoPiso = buscarPosicao(unidade, orientacao, 'piso');
+          if (!posicaoPiso) return false;
+          registrarBloco(unidade, orientacao, posicaoPiso);
           colocado = true;
-          break;
-        }
+          return true;
+        });
 
-        // 2. Faixa nova no piso, usando a largura que ainda sobra.
-        if (!colocado && larguraOcupada + unidade.profundidade <= veiculo.larguraCm + 0.5) {
-          var novaFaixa = criarFaixa(unidade.profundidade);
-          var posicaoNova = buscarPosicao(novaFaixa, unidade, 'piso');
-          if (posicaoNova) {
-            registrarBloco(novaFaixa, unidade, posicaoNova);
-            faixas.push(novaFaixa);
-            larguraOcupada += novaFaixa.profundidade;
-            colocado = true;
-          }
-        }
-
-        // 3. Só empilha quando o piso de todas as faixas já está ocupado.
-        // Escolhe a faixa com a base mais baixa para distribuir a altura.
+        // 2. Sem piso, empilha na base mais baixa que suporta o volume.
         if (!colocado && unidade.empilhavel) {
-          var escolhida = null;
-          for (var g = 0; g < faixas.length; g++) {
-            var faixaEmpilhar = faixas[g];
-            if (!cabeProfundidade(faixaEmpilhar, unidade)) continue;
-            var posicaoEmpilhar = buscarPosicao(faixaEmpilhar, unidade, 'empilhar');
-            if (!posicaoEmpilhar) continue;
-            if (!escolhida || posicaoEmpilhar.base < escolhida.posicao.base - 0.01) {
-              escolhida = { faixa: faixaEmpilhar, posicao: posicaoEmpilhar };
+          var melhor = null;
+          unidade.orientacoes.forEach(function (orientacao) {
+            var posicaoEmpilhada = buscarPosicao(unidade, orientacao, 'empilhar');
+            if (!posicaoEmpilhada) return;
+            if (!melhor || posicaoEmpilhada.base < melhor.posicao.base - 0.01) {
+              melhor = { orientacao: orientacao, posicao: posicaoEmpilhada };
             }
-          }
-          if (escolhida) {
-            registrarBloco(escolhida.faixa, unidade, escolhida.posicao);
-            confirmarProfundidade(escolhida.faixa, unidade);
+          });
+          if (melhor) {
+            registrarBloco(unidade, melhor.orientacao, melhor.posicao);
             colocado = true;
           }
         }
@@ -1289,28 +1374,11 @@
 
       var alturaUsada = 0;
       var comprimentoUsado = 0;
-      faixas.forEach(function (faixa) {
-        for (var a = 0; a < celulas; a++) {
-          if (faixa.alturas[a] > alturaUsada) alturaUsada = faixa.alturas[a];
-          if (faixa.alturas[a] > 0) {
-            comprimentoUsado = Math.max(
-              comprimentoUsado,
-              Math.min(veiculo.comprimentoCm, (a + 1) * PASSO_PLANO),
-            );
-          }
-        }
-      });
-
-      var resumoFaixas = faixas.map(function (faixa) {
-        return {
-          indice: faixa.indice,
-          profundidadeCm: Math.round(faixa.profundidade),
-          volumes: faixa.volumes,
-        };
-      });
-      var volumesAtras = 0;
-      resumoFaixas.forEach(function (faixa) {
-        if (faixa.indice > 0) volumesAtras += faixa.volumes;
+      var larguraUsada = 0;
+      blocos.forEach(function (bloco) {
+        alturaUsada = Math.max(alturaUsada, bloco.base + bloco.altura);
+        comprimentoUsado = Math.max(comprimentoUsado, bloco.x + bloco.comprimento);
+        larguraUsada = Math.max(larguraUsada, bloco.z + bloco.profundidade);
       });
 
       // Conferência item a item: todos os volumes entram na lista, inclusive
@@ -1357,7 +1425,6 @@
 
       return {
         blocos: blocos,
-        faixas: resumoFaixas,
         itens: itens,
         totalUnidades: carga.total,
         colocados: blocos.length,
@@ -1371,10 +1438,12 @@
             }, 0) * 1000,
           ) / 1000,
         categorias: resumoCategorias(carga),
-        volumesAtras: volumesAtras,
         alturaUsada: alturaUsada,
         comprimentoUsado: comprimentoUsado,
-        larguraUsada: larguraOcupada,
+        larguraUsada: larguraUsada,
+        sobraAltura: Math.max(0, Math.round(veiculo.alturaCm - alturaUsada)),
+        sobraComprimento: Math.max(0, Math.round(veiculo.comprimentoCm - comprimentoUsado)),
+        sobraLargura: Math.max(0, Math.round(veiculo.larguraCm - larguraUsada)),
       };
     }
 
@@ -1424,7 +1493,7 @@
       var impossiveis = [];
 
       restantesItens = restantesItens.filter(function (item) {
-        if (orientarItem(item, veiculo)) return true;
+        if (orientarItem(item, veiculo).length > 0) return true;
         impossiveis.push({
           nome: item.nome,
           emoji: item.emoji,
@@ -1556,7 +1625,7 @@
         var outro = blocos[i];
         if (
           outro !== bloco &&
-          outro.faixa === bloco.faixa &&
+          outro.z === bloco.z &&
           outro.x === bloco.x &&
           Math.abs(outro.base + outro.altura - bloco.base) < 0.6 &&
           outro.item.id === bloco.item.id
@@ -1816,17 +1885,9 @@
         return pontoIso(x, y, z, origem, escala);
       }
 
-      var faixaOffset = {};
-      var acumulado = 0;
-      dados.faixas.forEach(function (faixa) {
-        faixaOffset[faixa.indice] = acumulado;
-        acumulado += faixa.profundidadeCm;
-      });
-
+      var offsetLargura = Math.max(0, (largura - (dados.larguraUsada || 0)) / 2);
       var blocosOrdenados = dados.blocos.slice().sort(function (a, b) {
-        var za = faixaOffset[a.faixa] || 0;
-        var zb = faixaOffset[b.faixa] || 0;
-        return a.x + za - (b.x + zb);
+        return a.x + a.z - (b.x + b.z);
       });
 
       var html =
@@ -1867,25 +1928,8 @@
         ]) +
         '" class="plano-iso__piso"/>';
 
-      dados.faixas.forEach(function (faixa) {
-        var z = faixaOffset[faixa.indice] || 0;
-        if (z <= 0) return;
-        var inicio = p(0, 0, z);
-        var fim = p(comprimento, 0, z);
-        html +=
-          '<path d="M' +
-          inicio.x.toFixed(1) +
-          ' ' +
-          inicio.y.toFixed(1) +
-          'L' +
-          fim.x.toFixed(1) +
-          ' ' +
-          fim.y.toFixed(1) +
-          '" class="plano-iso__faixa"/>';
-      });
-
       blocosOrdenados.forEach(function (bloco) {
-        var z0 = faixaOffset[bloco.faixa] || 0;
+        var z0 = offsetLargura + bloco.z;
         var z1 = z0 + bloco.profundidade;
         var x0 = bloco.x;
         var x1 = bloco.x + bloco.comprimento;
@@ -1987,7 +2031,7 @@
     }
 
     function vistaHtml(dados, veiculo) {
-      if (!dados.faixas.length) return '';
+      if (!dados.blocos.length) return '';
 
       var comprimento = Math.max(1, veiculo.comprimentoCm);
       var largura = Math.max(1, veiculo.larguraCm);
@@ -1998,24 +2042,19 @@
       var padY = 26;
       var viewLargura = padX + vistaLargura + 40;
       var viewAltura = padY + vistaAltura + 34;
-      var offsets = {};
-      var acumulado = 0;
-      dados.faixas.forEach(function (faixa) {
-        offsets[faixa.indice] = acumulado;
-        acumulado += faixa.profundidadeCm;
-      });
-      var sobra = Math.max(0, largura - dados.larguraUsada);
+      var offsetLargura = Math.max(0, (largura - (dados.larguraUsada || 0)) / 2);
 
       var html = '<div class="plano-vista" data-plano-vista>';
       html +=
-        '<div class="plano-vista__topo"><strong>Vista de cima real</strong><span>' +
+        '<div class="plano-vista__topo"><strong>Vista de cima da carroceria</strong><span>' +
         Math.round(comprimento) +
         ' × ' +
         Math.round(largura) +
-        ' cm · ' +
-        dados.faixas.length +
-        (dados.faixas.length === 1 ? ' faixa de largura' : ' faixas de largura') +
-        '</span></div>';
+        ' cm · ocupa ' +
+        Math.round(dados.comprimentoUsado || 0) +
+        ' × ' +
+        Math.round(dados.larguraUsada || 0) +
+        ' cm</span></div>';
       html +=
         '<svg viewBox="0 0 ' +
         viewLargura.toFixed(1) +
@@ -2049,22 +2088,9 @@
         '" y="' +
         (padY - 8) +
         '" text-anchor="end" class="plano-vista__rotulo">porta</text>';
-      if (sobra > 0.5) {
-        html +=
-          '<rect x="' +
-          padX +
-          '" y="' +
-          (padY + dados.larguraUsada * escala).toFixed(1) +
-          '" width="' +
-          vistaLargura.toFixed(1) +
-          '" height="' +
-          Math.max(1, sobra * escala).toFixed(1) +
-          '" rx="3" class="plano-vista__sobra"/>';
-      }
       dados.blocos.forEach(function (bloco) {
-        var offset = offsets[bloco.faixa] || 0;
         var x = padX + bloco.x * escala;
-        var y = padY + offset * escala;
+        var y = padY + (offsetLargura + bloco.z) * escala;
         var larguraBloco = Math.max(1.4, bloco.comprimento * escala - 0.8);
         var alturaBloco = Math.max(1.4, bloco.profundidade * escala - 0.8);
         var fragil = bloco.item.fragil;
@@ -2072,18 +2098,21 @@
           '<g class="plano-vista__bloco plano-bloco--' +
           classeCategoria(bloco.item.categoria) +
           (fragil ? ' plano-bloco--fragil' : '') +
+          (bloco.empilhado ? ' plano-vista__bloco--empilhado' : '') +
           '">';
         html +=
           '<title>' +
           escaparHtml(bloco.item.nome) +
           (fragil ? ' (frágil)' : '') +
-          ' · faixa ' +
-          (bloco.faixa + 1) +
-          ' · base ' +
+          ' · a ' +
+          Math.round(bloco.x) +
+          ' cm da frente · base ' +
           Math.round(bloco.comprimento) +
           ' × ' +
           Math.round(bloco.profundidade) +
-          ' cm</title>';
+          ' cm · ' +
+          (bloco.empilhado ? 'empilhado' : 'no piso') +
+          '</title>';
         html +=
           '<rect x="' +
           x.toFixed(1) +
@@ -2098,7 +2127,11 @@
       });
       html += '</svg>';
       html +=
-        '<p class="plano-vista__nota">Cada retângulo é a base de um volume. Volumes empilhados aparecem na mesma posição; a altura usada está no corte lateral.</p>';
+        '<p class="plano-vista__nota">Cada retângulo é a base de um volume. A área clara é o espaço livre: ' +
+        Math.round(dados.sobraLargura || 0) +
+        ' cm na largura e ' +
+        Math.round(dados.sobraComprimento || 0) +
+        ' cm no comprimento. A carga fica junta à frente para não deslizar; volumes empilhados aparecem na mesma posição.</p>';
       html += '</div>';
       return html;
     }
@@ -2124,8 +2157,8 @@
       var cabH = Math.min(110, Math.max(48, internaA * 0.62));
       var cabY = pisoY - cabH;
       var dados = montarBlocos(carga, veiculo, veiculo.capacidadeKg);
-      var visiveis = dados.blocos.filter(function (bloco) {
-        return bloco.faixa === 0;
+      var visiveis = dados.blocos.slice().sort(function (a, b) {
+        return b.z - a.z;
       });
       var svg = [];
 
@@ -2140,7 +2173,7 @@
       svg.push(
         '<div class="plano-abas__painel" data-plano-painel="3d">' +
           vistaIsoHtml(dados, veiculo, carga) +
-          '<p class="plano-abas__nota">Gire a cabeça, não a tela: a frente do veículo fica em cima e a porta embaixo. Cada cubo é um volume da lista.</p>' +
+          '<p class="plano-abas__nota">A frente do veículo fica em cima e a porta embaixo. Os volumes ao fundo aparecem mais claros; os da lateral esquerda ficam na frente.</p>' +
           '</div>',
       );
       svg.push('<div class="plano-abas__painel" data-plano-painel="lado">');
@@ -2152,7 +2185,7 @@
           altura.toFixed(1) +
           '" class="plano-carga__svg" role="img" aria-label="' +
           (carga.total === 0
-            ? 'Caminhão vazio, pronto para receber a mudança'
+            ? 'Veículo vazio, pronto para receber a mudança'
             : 'Desenho esquemático da carga dentro do veículo') +
           '">',
       );
@@ -2319,23 +2352,28 @@
         var x = CARGO_X_PLANO + bloco.x * escala;
         var y = TOPO_PLANO + (internaA - (bloco.base + bloco.altura) * escala);
         var maxChars = Math.floor((larguraBloco - 6) / 5);
-        var rotulo = temBlocoAbaixo(bloco, visiveis)
-          ? ''
-          : cortarTexto(rotuloCurto(bloco.item.nome), maxChars);
+        var noFundo = bloco.z > 0.5;
+        var rotulo =
+          noFundo || temBlocoAbaixo(bloco, visiveis)
+            ? ''
+            : cortarTexto(rotuloCurto(bloco.item.nome), maxChars);
         var fragil = bloco.item.fragil;
         svg.push(
           '<g class="plano-bloco plano-bloco--' +
             classeCategoria(bloco.item.categoria) +
             (fragil ? ' plano-bloco--fragil' : '') +
+            (noFundo ? ' plano-bloco--fundo' : '') +
             '">',
         );
         svg.push(
           '<title>' +
             escaparHtml(bloco.item.nome) +
             (fragil ? ' (frágil)' : '') +
-            ' · base a ' +
+            ' · a ' +
+            Math.round(bloco.x) +
+            ' cm da frente · começa a ' +
             Math.round(bloco.base) +
-            ' cm · ' +
+            ' cm do piso · ' +
             Math.round(bloco.altura) +
             ' cm de altura</title>',
         );
@@ -2435,9 +2473,11 @@
       if (nomes.indexOf('caixa') >= 0) {
         dicas.push('Numere as caixas por ambiente e deixe as mais leves no topo. Caixas de livros vão no chão.');
       }
-      if (dados.volumesAtras > 0) {
+      if (dados.sobraLargura > 20) {
         dicas.push(
-          'O corte mostra a faixa 1; as faixas de trás completam a largura. Distribua o peso entre os dois lados.',
+          'A carga deixa ' +
+            dados.sobraLargura +
+            ' cm livres na largura. Centralize e amarre bem para ela não deslizar na curva.',
         );
       }
       if (dados.alturaUsada > veiculo.alturaCm * 0.85) {
@@ -2507,53 +2547,16 @@
           (carga.total === 1 ? ' volume' : ' volumes') +
           (viagens && viagens.totalViagens > 1 ? ' na 1ª viagem' : ' acomodados'),
       ];
-      if (dados.volumesAtras > 0) {
-        partes.push(
-          dados.volumesAtras +
-            (dados.volumesAtras === 1 ? ' na faixa de trás' : ' nas faixas de trás'),
-        );
-      }
       if (viagens && viagens.totalViagens > 1) {
         partes.push(viagens.totalViagens + ' viagens no total');
       } else if (dados.fora > 0) {
         partes.push(dados.fora + ' fora');
       }
       partes.push(fmtNumero.format(dados.volumeColocadoM3 || 0) + ' m³ nesta viagem');
+      partes.push(Math.round(dados.larguraUsada) + ' cm de largura');
       partes.push(Math.round(dados.alturaUsada) + ' cm de altura usada');
       numeros.textContent = partes.join(' · ');
       numeros.hidden = false;
-    }
-
-    function iniciarAbasPlano(raiz) {
-      if (!raiz) return;
-      var abas = $('[data-plano-abas]', raiz);
-      if (!abas) return;
-
-      abas.classList.add('plano-abas--js');
-      var botoes = $$('[data-plano-aba]', abas);
-      var paineis = $$('[data-plano-painel]', abas);
-
-      function ativar(nome) {
-        botoes.forEach(function (botao) {
-          var ativo = botao.getAttribute('data-plano-aba') === nome;
-          botao.classList.toggle('plano-aba--ativo', ativo);
-          botao.setAttribute('aria-selected', ativo ? 'true' : 'false');
-        });
-        paineis.forEach(function (painel) {
-          painel.classList.toggle(
-            'plano-abas__painel--ativo',
-            painel.getAttribute('data-plano-painel') === nome,
-          );
-        });
-      }
-
-      botoes.forEach(function (botao) {
-        botao.addEventListener('click', function () {
-          ativar(botao.getAttribute('data-plano-aba'));
-        });
-      });
-
-      ativar('3d');
     }
 
     function atualizarPlano(carga, sugestao) {
@@ -2583,7 +2586,7 @@
       atualizarNumerosDoPlano(resultado.dados, carga, viagens);
       if (tituloEl) {
         tituloEl.textContent =
-          carga.total === 0 ? 'Seu caminhão, pronto para a mudança' : 'Como a carga se encaixa';
+          carga.total === 0 ? 'Seu veículo, pronto para a mudança' : 'Como a carga se encaixa';
       }
       if (chip) {
         chip.textContent =
@@ -2665,7 +2668,7 @@
       } else if (carga.total > 0) {
         caixa.classList.add('carga-resumo__veiculo--nao_cabe');
         if (emoji) emoji.textContent = '⚠️';
-        if (nome) nome.textContent = 'Nenhum caminhão padrão';
+        if (nome) nome.textContent = 'Nenhum veículo padrão';
         if (obs) {
           obs.textContent =
             'A carga não cabe em uma carreta padrão. O plano abaixo mostra quantas viagens são necessárias.';
@@ -3409,37 +3412,68 @@
 
     if (evento.key === 'Escape') fecharAjuda(false);
   });
-})();
 
-// Abas do plano de carga (3D / Lado / Cima).
-// O CSS só esconde os painéis quando o contêiner tem .plano-abas--js;
-// sem JS, tudo fica visível (fallback). Funciona também para HTML
-// reinjetado pelo construtor (delegação de clique + MutationObserver).
-(function () {
-  function ativar(abas, nome) {
-    abas.querySelectorAll('[data-plano-aba]').forEach(function (b) {
-      var on = b.getAttribute('data-plano-aba') === nome;
-      b.classList.toggle('plano-aba--ativo', on);
-      b.setAttribute('aria-selected', on ? 'true' : 'false');
+  // O detalhe do frete já chega com o plano renderizado no servidor.
+  // Sem esta chamada as três abas ficariam abertas ao mesmo tempo.
+  iniciarAbasPlano(document);
+
+  // ---------- resumo ao vivo do prazo no formulário de publicação ----------
+  var resumoPrazo = $('[data-prazo-resumo]');
+  if (resumoPrazo) {
+    var selectPrazo = $('[name="prazo_recebimento"]');
+    var campoData = $('[name="data_retirada"]');
+    var campoHora = $('[name="hora_retirada"]');
+    var alvoPropostas = $('[data-prazo-propostas]', resumoPrazo);
+    var alvoEscolha = $('[data-prazo-escolha]', resumoPrazo);
+    var alvoNota = $('[data-prazo-nota]', resumoPrazo);
+    var fmtPrazo = new Intl.DateTimeFormat('pt-BR', {
+      timeZone: 'America/Sao_Paulo',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     });
-    abas.querySelectorAll('[data-plano-painel]').forEach(function (p) {
-      p.classList.toggle('plano-abas__painel--ativo', p.getAttribute('data-plano-painel') === nome);
+
+    function formatarPrazo(data) {
+      return fmtPrazo.format(data).replace(',', '');
+    }
+
+    function atualizarResumoPrazo() {
+      var horas = selectPrazo ? Number(selectPrazo.value) || 48 : 48;
+      var agora = new Date();
+      var encerra = new Date(agora.getTime() + horas * 60 * 60 * 1000);
+      var escolha = new Date(encerra.getTime() + 48 * 60 * 60 * 1000);
+      var retirada = null;
+
+      if (campoData && /^\d{4}-\d{2}-\d{2}$/.test(campoData.value)) {
+        var horario =
+          campoHora && /^([01]\d|2[0-3]):[0-5]\d$/.test(campoHora.value)
+            ? campoHora.value
+            : '23:59';
+        retirada = new Date(campoData.value + 'T' + horario + ':00-03:00');
+        if (isNaN(retirada.getTime())) retirada = null;
+      }
+
+      var limitada = retirada && retirada > encerra && retirada < escolha;
+      if (limitada) escolha = retirada;
+      var invalida = retirada && retirada <= encerra;
+
+      if (alvoPropostas) alvoPropostas.textContent = formatarPrazo(encerra);
+      if (alvoEscolha) alvoEscolha.textContent = formatarPrazo(escolha);
+      if (alvoNota) {
+        alvoNota.classList.toggle('campo__dica--erro', Boolean(invalida));
+        alvoNota.textContent = invalida
+          ? 'A retirada precisa ser depois do fim das propostas. Escolha outra data ou um prazo menor.'
+          : limitada
+            ? 'A retirada chega antes das 48 h, então a escolha termina no horário dela.'
+            : 'A retirada precisa ser depois do fim das propostas. Se ela chegar antes das 48 h de escolha, a escolha termina no horário da retirada.';
+      }
+    }
+
+    [selectPrazo, campoData, campoHora].forEach(function (campo) {
+      if (campo) campo.addEventListener('change', atualizarResumoPrazo);
     });
+    atualizarResumoPrazo();
   }
-  function ligar(abas) {
-    if (abas.dataset.planoPronto) return;
-    abas.dataset.planoPronto = '1';
-    abas.classList.add('plano-abas--js');
-    var ini = abas.querySelector('.plano-aba--ativo');
-    ativar(abas, ini ? ini.getAttribute('data-plano-aba') : 'lado');
-  }
-  document.addEventListener('click', function (e) {
-    var b = e.target.closest && e.target.closest('[data-plano-aba]');
-    if (!b) return;
-    var abas = b.closest('[data-plano-abas]');
-    if (abas) ativar(abas, b.getAttribute('data-plano-aba'));
-  });
-  function varrer() { document.querySelectorAll('[data-plano-abas]').forEach(ligar); }
-  varrer();
-  new MutationObserver(varrer).observe(document.documentElement, { childList: true, subtree: true });
 })();
