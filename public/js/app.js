@@ -1235,23 +1235,25 @@
           if (b.altura !== a.altura) return b.altura - a.altura;
           return b.item.pesoKg - a.item.pesoKg;
         }
-        var volumeA = a.item.comprimentoCm * a.item.larguraCm * a.item.alturaCm;
-        var volumeB = b.item.comprimentoCm * b.item.larguraCm * b.item.alturaCm;
         var areaA = a.comprimento * a.profundidade;
         var areaB = b.comprimento * b.profundidade;
         if (areaB !== areaA) return areaB - areaA;
-        if (volumeB !== volumeA) return volumeB - volumeA;
-        return a.item.pesoKg - b.item.pesoKg;
+        if (Math.abs(b.item.pesoKg - a.item.pesoKg) > 0.5) return b.item.pesoKg - a.item.pesoKg;
+        var volumeA = a.item.comprimentoCm * a.item.larguraCm * a.item.alturaCm;
+        var volumeB = b.item.comprimentoCm * b.item.larguraCm * b.item.alturaCm;
+        return volumeB - volumeA;
       });
 
       var celulasX = Math.max(1, Math.ceil(veiculo.comprimentoCm / PASSO_PLANO));
       var colunas = Math.max(1, Math.ceil(veiculo.larguraCm / PASSO_PLANO));
       var alturas = [];
       var suporta = [];
+      var pesoApoio = [];
       var totalCelulas = celulasX * colunas;
       for (var c = 0; c < totalCelulas; c++) {
         alturas.push(0);
         suporta.push(0);
+        pesoApoio.push(0);
       }
       var blocos = [];
 
@@ -1284,7 +1286,11 @@
                     livre = false;
                     break;
                   }
-                } else if (Math.abs(altura - base) > 0.5 || suporta[indice] !== 1) {
+                } else if (
+                  Math.abs(altura - base) > 0.5 ||
+                  suporta[indice] !== 1 ||
+                  pesoApoio[indice] + 0.01 < unidade.item.pesoKg
+                ) {
                   livre = false;
                   break;
                 }
@@ -1310,6 +1316,7 @@
             var indice = indiceCelula(xi, zi);
             alturas[indice] = topo;
             suporta[indice] = apoia ? 1 : 0;
+            pesoApoio[indice] = apoia ? unidade.item.pesoKg : 0;
           }
         }
 
@@ -1829,6 +1836,99 @@
       return html;
     }
 
+    var FORMAS_ITEM = (function () {
+      var mapa = {};
+      var grupos = {
+        geladeira: ['geladeira_1p', 'geladeira_2p', 'freezer', 'fogao', 'maquina_lavar', 'lava_loucas', 'secadora', 'tanquinho', 'forno_eletrico', 'microondas', 'coifa', 'purificador', 'ar_condicionado', 'cooktop'],
+        armario: ['guarda_roupa', 'guarda_roupa_3p', 'armario', 'comoda', 'criado_mudo', 'rack', 'estante', 'sapateira', 'aparador', 'escrivaninha'],
+        sofa: ['sofa_1', 'sofa_2', 'sofa_3', 'sofa_retratil', 'sofa_cama', 'poltrona', 'banco_bar'],
+        cama: ['cama_solteiro', 'cama_casal', 'cama_box_casal', 'cama_box_solteiro', 'beliche', 'berco', 'cama_infantil', 'colchao_casal', 'colchao_solteiro', 'colchao_queen', 'colchao_king'],
+        mesa: ['mesa_jantar', 'mesa_escritorio', 'mesa_centro', 'mesa_redonda', 'cadeira'],
+        tela: ['tv', 'tv_65', 'espelho_grande', 'computador', 'home_theater'],
+        caixa: ['caixa_pequena', 'caixa_media', 'caixa_grande', 'caixas', 'caixa_livros', 'caixa_cozinha', 'caixa_arquivo', 'mala_grande', 'air_fryer', 'cafeteira', 'liquidificador', 'ventilador', 'impressora', 'instrumento_musical'],
+      };
+      Object.keys(grupos).forEach(function (forma) {
+        grupos[forma].forEach(function (id) {
+          mapa[id] = forma;
+        });
+      });
+      return mapa;
+    })();
+
+    function formaDoItem(id) {
+      return FORMAS_ITEM[id] || 'generico';
+    }
+
+    // Mesmo detalhe que o servidor desenha: fica dentro da caixa do packer,
+    // então não muda o espaço ocupado.
+    function detalheFormaHtml(forma, p, x0, x1, z0, z1, y0, y1, traco, topo) {
+      if (forma === 'generico') return '';
+      var L = x1 - x0;
+      var D = z1 - z0;
+      var H = y1 - y0;
+      var xm = x0 + L / 2;
+      var zm = z0 + D / 2;
+      var html = '';
+
+      function linha(a, b) {
+        return (
+          '<line x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) +
+          '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) +
+          '" stroke="' + traco + '" class="plano-iso__detalhe-linha"/>'
+        );
+      }
+      function area(pontos, cor, opacidade) {
+        return (
+          '<polygon points="' + pontosPoly(pontos) + '" fill="' + cor +
+          '" fill-opacity="' + opacidade + '" stroke="none" class="plano-iso__detalhe-area"/>'
+        );
+      }
+
+      if (forma === 'caixa') {
+        html += linha(p(x0 + L * 0.1, y1, zm), p(x1 - L * 0.1, y1, zm));
+        html += linha(p(xm, y1, z0 + D * 0.1), p(xm, y1, z1 - D * 0.1));
+      } else if (forma === 'sofa') {
+        var encosto = D * 0.22;
+        var braco = L * 0.09;
+        html += area([p(x0, y1, z0), p(x1, y1, z0), p(x1, y1, z0 + encosto), p(x0, y1, z0 + encosto)], traco, 0.3);
+        html += area([p(x0, y1, z0), p(x0 + braco, y1, z0), p(x0 + braco, y1, z1), p(x0, y1, z1)], traco, 0.16);
+        html += area([p(x1 - braco, y1, z0), p(x1, y1, z0), p(x1, y1, z1), p(x1 - braco, y1, z1)], traco, 0.16);
+        html += linha(p(x1, y0 + H * 0.5, z0 + encosto), p(x1, y1 - H * 0.05, z0 + encosto));
+      } else if (forma === 'armario') {
+        html += linha(p(x1, y0 + H * 0.04, z0 + D / 3), p(x1, y1 - H * 0.04, z0 + D / 3));
+        html += linha(p(x1, y0 + H * 0.04, z0 + (2 * D) / 3), p(x1, y1 - H * 0.04, z0 + (2 * D) / 3));
+        html += linha(p(x1, y0 + H * 0.7, z0 + D * 0.06), p(x1, y0 + H * 0.7, z1 - D * 0.06));
+      } else if (forma === 'geladeira') {
+        html += linha(p(x1, y0 + H * 0.62, z0 + D * 0.05), p(x1, y0 + H * 0.62, z1 - D * 0.05));
+        html += linha(p(x1, y0 + H * 0.42, z0 + D * 0.16), p(x1, y0 + H * 0.58, z0 + D * 0.16));
+      } else if (forma === 'cama') {
+        html += area([p(x0 + L * 0.03, y1, z0 + D * 0.16), p(x0 + L * 0.2, y1, z0 + D * 0.16), p(x0 + L * 0.2, y1, z1 - D * 0.16), p(x0 + L * 0.03, y1, z1 - D * 0.16)], topo, 0.75);
+        html += linha(p(x0 + L * 0.26, y1, z0 + D * 0.06), p(x0 + L * 0.26, y1, z1 - D * 0.06));
+      } else if (forma === 'mesa') {
+        html +=
+          '<polygon points="' +
+          pontosPoly([
+            p(x0 + L * 0.07, y1, z0 + D * 0.07),
+            p(x1 - L * 0.07, y1, z0 + D * 0.07),
+            p(x1 - L * 0.07, y1, z1 - D * 0.07),
+            p(x0 + L * 0.07, y1, z1 - D * 0.07),
+          ]) +
+          '" fill="none" stroke="' + traco + '" class="plano-iso__detalhe-linha"/>';
+      } else {
+        html +=
+          '<polygon points="' +
+          pontosPoly([
+            p(x1, y0 + H * 0.16, z0 + D * 0.14),
+            p(x1, y0 + H * 0.16, z1 - D * 0.14),
+            p(x1, y1 - H * 0.16, z1 - D * 0.14),
+            p(x1, y1 - H * 0.16, z0 + D * 0.14),
+          ]) +
+          '" fill="' + traco + '" fill-opacity="0.32" stroke="' + traco + '" class="plano-iso__detalhe-area"/>';
+      }
+
+      return '<g class="plano-iso__detalhe">' + html + '</g>';
+    }
+
     function coresCategoria(categoria) {
       if (categoria === 'Móveis') {
         return { topo: '#dbeafe', frente: '#93c5fd', lado: '#60a5fa', traco: '#2563eb' };
@@ -1903,7 +2003,7 @@
             ', com ' +
             dados.colocados +
             ' volumes') +
-        '"><title>Vista 3D do carregamento</title><desc>Cada caixa representa um volume. A frente fica na parte de cima do desenho e a porta na parte de baixo. As faces mais claras são o topo dos volumes.</desc>';
+        '"><title>Vista 3D do carregamento</title><desc>Cada volume aparece com o formato do móvel e mantém as medidas reais. A frente fica na parte de cima do desenho e a porta na parte de baixo. As faces mais claras são o topo dos volumes.</desc>';
 
       html +=
         '<polygon points="' +
@@ -1979,7 +2079,20 @@
           cores.topo +
           '" stroke="' +
           cores.traco +
-          '" class="plano-iso__face plano-iso__face--topo"/></g>';
+          '" class="plano-iso__face plano-iso__face--topo"/>' +
+          detalheFormaHtml(
+            formaDoItem(bloco.item.id),
+            p,
+            x0,
+            x1,
+            z0,
+            z1,
+            y0,
+            y1,
+            cores.traco,
+            cores.topo,
+          ) +
+          '</g>';
       });
 
       var contorno = [p(0, altura, 0), p(comprimento, altura, 0), p(comprimento, altura, largura)];

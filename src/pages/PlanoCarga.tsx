@@ -6,6 +6,7 @@ import {
   type MedidasVeiculo,
 } from '../lib/carga';
 import { peso, volume } from '../lib/format';
+import { formaDoItem, type FormaItem } from '../lib/formas';
 import {
   dicasCarregamento,
   montarPlanoCarga,
@@ -162,6 +163,175 @@ function pontosPoly(pontos: PontoIso[]): string {
   return pontos.map((ponto) => `${ponto.x.toFixed(1)},${ponto.y.toFixed(1)}`).join(' ');
 }
 
+interface DetalheFormaProps {
+  forma: FormaItem;
+  p: (x: number, y: number, z: number) => PontoIso;
+  x0: number;
+  x1: number;
+  z0: number;
+  z1: number;
+  y0: number;
+  y1: number;
+  traco: string;
+  topo: string;
+}
+
+/**
+ * Desenha o detalhe que faz o volume lembrar o móvel: porta do armário,
+ * divisão da geladeira, encosto do sofá, travesseiro da cama, tampo da mesa.
+ * Tudo fica dentro da caixa que o packer calculou, então o desenho não
+ * aumenta nem diminui o espaço ocupado.
+ */
+const DetalheForma: FC<DetalheFormaProps> = ({
+  forma,
+  p,
+  x0,
+  x1,
+  z0,
+  z1,
+  y0,
+  y1,
+  traco,
+  topo,
+}) => {
+  if (forma === 'generico') return null;
+
+  const L = x1 - x0;
+  const D = z1 - z0;
+  const H = y1 - y0;
+  const xm = x0 + L / 2;
+  const zm = z0 + D / 2;
+
+  const linha = (a: PontoIso, b: PontoIso) => (
+    <line
+      x1={a.x.toFixed(1)}
+      y1={a.y.toFixed(1)}
+      x2={b.x.toFixed(1)}
+      y2={b.y.toFixed(1)}
+      stroke={traco}
+      class="plano-iso__detalhe-linha"
+    />
+  );
+
+  const area = (pontos: PontoIso[], cor: string, opacidade: number) => (
+    <polygon
+      points={pontosPoly(pontos)}
+      fill={cor}
+      fill-opacity={opacidade}
+      stroke="none"
+      class="plano-iso__detalhe-area"
+    />
+  );
+
+  if (forma === 'caixa') {
+    return (
+      <g class="plano-iso__detalhe">
+        {linha(p(x0 + L * 0.1, y1, zm), p(x1 - L * 0.1, y1, zm))}
+        {linha(p(xm, y1, z0 + D * 0.1), p(xm, y1, z1 - D * 0.1))}
+      </g>
+    );
+  }
+
+  if (forma === 'sofa') {
+    const encosto = D * 0.22;
+    const braco = L * 0.09;
+    return (
+      <g class="plano-iso__detalhe">
+        {area(
+          [
+            p(x0, y1, z0),
+            p(x1, y1, z0),
+            p(x1, y1, z0 + encosto),
+            p(x0, y1, z0 + encosto),
+          ],
+          traco,
+          0.3,
+        )}
+        {area([p(x0, y1, z0), p(x0 + braco, y1, z0), p(x0 + braco, y1, z1), p(x0, y1, z1)], traco, 0.16)}
+        {area(
+          [p(x1 - braco, y1, z0), p(x1, y1, z0), p(x1, y1, z1), p(x1 - braco, y1, z1)],
+          traco,
+          0.16,
+        )}
+        {linha(p(x1, y0 + H * 0.5, z0 + encosto), p(x1, y1 - H * 0.05, z0 + encosto))}
+      </g>
+    );
+  }
+
+  if (forma === 'armario') {
+    return (
+      <g class="plano-iso__detalhe">
+        {linha(p(x1, y0 + H * 0.04, z0 + D / 3), p(x1, y1 - H * 0.04, z0 + D / 3))}
+        {linha(p(x1, y0 + H * 0.04, z0 + (2 * D) / 3), p(x1, y1 - H * 0.04, z0 + (2 * D) / 3))}
+        {linha(p(x1, y0 + H * 0.7, z0 + D * 0.06), p(x1, y0 + H * 0.7, z1 - D * 0.06))}
+      </g>
+    );
+  }
+
+  if (forma === 'geladeira') {
+    return (
+      <g class="plano-iso__detalhe">
+        {linha(p(x1, y0 + H * 0.62, z0 + D * 0.05), p(x1, y0 + H * 0.62, z1 - D * 0.05))}
+        {linha(p(x1, y0 + H * 0.42, z0 + D * 0.16), p(x1, y0 + H * 0.58, z0 + D * 0.16))}
+      </g>
+    );
+  }
+
+  if (forma === 'cama') {
+    return (
+      <g class="plano-iso__detalhe">
+        {area(
+          [
+            p(x0 + L * 0.03, y1, z0 + D * 0.16),
+            p(x0 + L * 0.2, y1, z0 + D * 0.16),
+            p(x0 + L * 0.2, y1, z1 - D * 0.16),
+            p(x0 + L * 0.03, y1, z1 - D * 0.16),
+          ],
+          topo,
+          0.75,
+        )}
+        {linha(p(x0 + L * 0.26, y1, z0 + D * 0.06), p(x0 + L * 0.26, y1, z1 - D * 0.06))}
+      </g>
+    );
+  }
+
+  if (forma === 'mesa') {
+    return (
+      <g class="plano-iso__detalhe">
+        <polygon
+          points={pontosPoly([
+            p(x0 + L * 0.07, y1, z0 + D * 0.07),
+            p(x1 - L * 0.07, y1, z0 + D * 0.07),
+            p(x1 - L * 0.07, y1, z1 - D * 0.07),
+            p(x0 + L * 0.07, y1, z1 - D * 0.07),
+          ])}
+          fill="none"
+          stroke={traco}
+          class="plano-iso__detalhe-linha"
+        />
+      </g>
+    );
+  }
+
+  // tela: TV, monitor, espelho
+  return (
+    <g class="plano-iso__detalhe">
+      <polygon
+        points={pontosPoly([
+          p(x1, y0 + H * 0.16, z0 + D * 0.14),
+          p(x1, y0 + H * 0.16, z1 - D * 0.14),
+          p(x1, y1 - H * 0.16, z1 - D * 0.14),
+          p(x1, y1 - H * 0.16, z0 + D * 0.14),
+        ])}
+        fill={traco}
+        fill-opacity="0.32"
+        stroke={traco}
+        class="plano-iso__detalhe-area"
+      />
+    </g>
+  );
+};
+
 interface VistaIsoProps {
   montagem: MontagemCarga;
   veiculo: MedidasVeiculo & { nome?: string };
@@ -231,8 +401,9 @@ const VistaIso: FC<VistaIsoProps> = ({ montagem, veiculo, vazio }) => {
     >
       <title>Vista 3D do carregamento</title>
       <desc>
-        Cada caixa representa um volume. A frente fica na parte de cima do desenho e a porta na
-        parte de baixo. As faces mais claras são o topo dos volumes.
+        Cada volume aparece com o formato do móvel e mantém as medidas reais. A frente fica na
+        parte de cima do desenho e a porta na parte de baixo. As faces mais claras são o topo dos
+        volumes.
       </desc>
 
       <polygon points={pontosPoly(paredeFundo)} class="plano-iso__parede" />
@@ -281,6 +452,18 @@ const VistaIso: FC<VistaIsoProps> = ({ montagem, veiculo, vazio }) => {
               fill={cores.topo}
               stroke={cores.traco}
               class="plano-iso__face plano-iso__face--topo"
+            />
+            <DetalheForma
+              forma={formaDoItem(bloco.itemId)}
+              p={p}
+              x0={x0}
+              x1={x1}
+              z0={z0}
+              z1={z1}
+              y0={y0}
+              y1={y1}
+              traco={cores.traco}
+              topo={cores.topo}
             />
           </g>
         );
@@ -443,8 +626,9 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
           <div class="plano-abas__painel" data-plano-painel="3d">
             <VistaIso montagem={montagem} veiculo={veiculo} vazio={vazio} />
             <p class="plano-abas__nota">
-              A frente do veículo fica em cima e a porta embaixo. Os volumes ao fundo aparecem mais
-              claros; os da lateral esquerda ficam na frente.
+              A frente do veículo fica em cima e a porta embaixo. Cada volume tem o formato do
+              móvel e as medidas reais. Pesados vão na frente e embaixo; leves e frágeis vão por
+              cima.
             </p>
           </div>
 

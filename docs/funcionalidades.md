@@ -102,6 +102,8 @@ saber **o que a pessoa consegue fazer** — as regras detalhadas ficam em
 | Encaixe no veículo | ✅ | `cabe`, `limite` ou `nao_cabe`, com motivos |
 | Plano em grade 2D | ✅ | Preenche o piso em comprimento × largura, aproveita vãos e respeita o peso máximo |
 | Vista 3D | ✅ | Cubos isométricos com topo, frente e lateral, gerados dos mesmos blocos |
+| Formato do móvel no 3D | ✅ | Sofá com encosto, armário com portas, geladeira com divisão, cama com travesseiro, mesa com tampo, TV com tela e caixa com fita; o detalhe fica dentro da medida real |
+| Pesado embaixo | ✅ | Um volume só é apoiado em outro que pese igual ou mais; frágil nunca serve de apoio |
 | Corte lateral | ✅ | Mostra comprimento × altura, com os volumes mais próximos da lateral |
 | Vista de cima real | ✅ | Posições reais no piso (`x` e `z`), com o espaço livre explicado |
 | Volume por categoria | ✅ | Quanto cada grupo ocupa, com peso e número de volumes |

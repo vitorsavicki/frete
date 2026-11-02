@@ -299,4 +299,49 @@ describe('Plano de carregamento', () => {
     expect(viagens.viavel).toBe(true);
     expect(viagens.motivo).toMatch(/Sem volumes/);
   });
+
+  it('nunca apoia um volume pesado em cima de um volume mais leve', () => {
+    const van = veiculoPorTipo('van');
+    expect(van).not.toBeNull();
+    if (!van) return;
+
+    const carga = resumoCarga([item('cama_casal', 1), caixas(10)]);
+    const plano = montarPlanoCarga(carga, van);
+    const empilhados = plano.blocos.filter((bloco) => bloco.empilhado);
+    expect(empilhados.length).toBeGreaterThan(0);
+
+    const apoioDe = (bloco: (typeof plano.blocos)[number]) =>
+      plano.blocos.find(
+        (outro) =>
+          outro !== bloco &&
+          Math.abs(outro.base + outro.altura - bloco.base) < 0.6 &&
+          outro.x < bloco.x + bloco.comprimento &&
+          bloco.x < outro.x + outro.comprimento &&
+          outro.z < bloco.z + bloco.profundidade &&
+          bloco.z < outro.z + outro.profundidade,
+      );
+
+    for (const bloco of empilhados) {
+      const apoio = apoioDe(bloco);
+      expect(apoio, `${bloco.nome} empilhado sem apoio`).toBeDefined();
+      expect(bloco.pesoKg, `${bloco.nome} sobre ${apoio?.nome}`).toBeLessThanOrEqual(
+        apoio?.pesoKg ?? 0,
+      );
+    }
+  });
+
+  it('coloca o mais pesado embaixo quando dois volumes têm a mesma base', () => {
+    const van = veiculoPorTipo('van');
+    expect(van).not.toBeNull();
+    if (!van) return;
+
+    // Duas caixas do mesmo tamanho (40 × 40 × 40 cm), uma de 20 kg e outra
+    // de 5 kg. Empatadas no tamanho, a mais pesada precisa ir primeiro.
+    const carga = resumoCarga([
+      caixasPersonalizadas(1, { comprimento: 40, largura: 40, altura: 40, peso: 20 }),
+      caixasPersonalizadas(1, { comprimento: 40, largura: 40, altura: 40, peso: 5 }),
+    ]);
+    const plano = montarPlanoCarga(carga, van);
+    expect(plano.blocos[0]?.pesoKg).toBe(20);
+  });
 });

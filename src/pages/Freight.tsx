@@ -883,12 +883,15 @@ export const DetalheFretePage: FC<DetalheProps> = ({
                       <button type="submit" class="btn btn-primario">
                         Enviar orçamento
                       </button>
-                      {frete.menor_lance != null && (
-                        <p class="auxiliar">
-                          Para ficar à frente, seu orçamento precisa ser menor que{' '}
-                          {dinheiro(frete.menor_lance)}.
-                        </p>
-                      )}
+                      {frete.menor_lance != null &&
+                        (meuLance && meuLance.valor <= frete.menor_lance ? (
+                          <p class="auxiliar">Você está com o menor orçamento desta mudança.</p>
+                        ) : (
+                          <p class="auxiliar">
+                            Para ficar à frente, seu orçamento precisa ser menor que{' '}
+                            {dinheiro(frete.menor_lance)}.
+                          </p>
+                        ))}
                     </div>
                     <p class="campo__dica" data-ia-status aria-live="polite"></p>
                   </form>

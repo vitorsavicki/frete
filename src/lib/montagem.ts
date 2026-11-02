@@ -192,15 +192,18 @@ function ordenarUnidades(a: Unidade, b: Unidade): number {
     return b.item.pesoKg - a.item.pesoKg;
   }
 
-  const volumeA = volumeItemM3(a.item);
-  const volumeB = volumeItemM3(b.item);
+  // Peças de base grande primeiro: elas formam a camada de apoio para as
+  // caixas e colchões menores, sem deixar vãos no piso. Isso também é a
+  // ordem real de carregamento: peças compridas viram parede e recebem o
+  // resto. Empatado no tamanho, o mais pesado vai antes, para ficar embaixo.
   const areaA = a.comprimento * a.profundidade;
   const areaB = b.comprimento * b.profundidade;
-  // Peças de base grande primeiro: elas formam a camada de apoio para as
-  // caixas e colchões menores, sem deixar vãos no piso.
   if (areaB !== areaA) return areaB - areaA;
-  if (volumeB !== volumeA) return volumeB - volumeA;
-  return a.item.pesoKg - b.item.pesoKg;
+  if (Math.abs(b.item.pesoKg - a.item.pesoKg) > 0.5) return b.item.pesoKg - a.item.pesoKg;
+
+  const volumeA = volumeItemM3(a.item);
+  const volumeB = volumeItemM3(b.item);
+  return volumeB - volumeA;
 }
 
 export interface LimitesMontagem {
@@ -230,6 +233,9 @@ export function montarPlanoCarga(
   const colunas = Math.max(1, Math.ceil(larguraVeiculo / PASSO_CM));
   const alturas = new Float64Array(celulasX * colunas);
   const suporta = new Uint8Array(celulasX * colunas);
+  // Peso do volume que fechou cada célula. Serve para não apoiar nada
+  // pesado em cima de algo mais leve.
+  const pesoApoio = new Float64Array(celulasX * colunas);
   const blocos: BlocoMontagem[] = [];
   const pesoMaximo =
     limites.pesoMaximoKg != null && limites.pesoMaximoKg > 0
@@ -282,7 +288,8 @@ export function montarPlanoCarga(
               }
             } else if (
               Math.abs(altura - base) > 0.5 ||
-              (suporta[indice] ?? 0) !== 1
+              (suporta[indice] ?? 0) !== 1 ||
+              (pesoApoio[indice] ?? 0) + 0.01 < unidade.item.pesoKg
             ) {
               livre = false;
               break;
@@ -316,6 +323,7 @@ export function montarPlanoCarga(
         const indice = indiceCelula(xi, zi);
         alturas[indice] = topo;
         suporta[indice] = apoia ? 1 : 0;
+        pesoApoio[indice] = apoia ? unidade.item.pesoKg : 0;
       }
     }
 

@@ -128,7 +128,13 @@ Rota: `POST /fretes/:id/lances` (somente `transportador` logado).
    outros transportadores. Se ainda não há proposta de outro, qualquer valor
    positivo dentro do teto vale.
 8. Cada transportador tem **uma proposta por frete**. Enviar de novo atualiza a
-   mesma linha (`ON CONFLICT ... DO UPDATE`), inclusive mensagem e data.
+   mesma linha (`ON CONFLICT ... DO UPDATE`), inclusive mensagem e data. A
+   comparação do item 7 é sempre com o orçamento dos **outros**: quem já está
+   com o menor valor pode ajustar o próprio número, inclusive para cima, para
+   corrigir um valor digitado errado.
+9. Quando quem já está com o menor valor abre o formulário, a tela troca o
+   aviso “precisa ser menor que…” por “Você está com o menor orçamento desta
+   mudança”, porque a regra do item 7 não se aplica a ele.
 
 ### Ordem e visibilidade
 
@@ -331,22 +337,29 @@ largura), com altura e apoio por célula:
    preferida deixa a profundidade abaixo de 70% da largura; a alternativa
    serve para vãos estreitos.
 2. Ordena: itens não empilháveis primeiro (maiores e mais pesados); depois os
-   empilháveis (maiores e mais leves).
+   empilháveis (maior área de piso primeiro e, no empate, o mais pesado).
 3. Preenche o piso como um tabuleiro, aproveitando os vãos com os volumes
    menores, em vez de concentrar tudo em uma lateral.
 4. Só empilha sobre uma base plana e com apoio em toda a extensão. Volumes
    baixos e não frágeis podem servir de apoio mesmo sem serem empilháveis.
-5. Respeita a altura interna do veículo.
-6. Itens que não cabem em nenhuma posição ficam “fora” e são contados.
-7. O peso é conferido antes do encaixe: a soma dos volumes não pode passar da
+5. Nunca apoia um volume mais pesado em cima de um mais leve: o peso do apoio
+   precisa ser maior ou igual ao do volume de cima. É a regra de “pesado
+   embaixo, leve por cima” aplicada ao plano.
+6. Respeita a altura interna do veículo.
+7. Itens que não cabem em nenhuma posição ficam “fora” e são contados.
+8. O peso é conferido antes do encaixe: a soma dos volumes não pode passar da
    `capacidadeKg` do veículo. O que passa vira “fora por peso”.
-8. A conferência item a item mostra `total`, `colocados`, `fora`, o volume e o
+9. A conferência item a item mostra `total`, `colocados`, `fora`, o volume e o
    peso de cada tipo.
 
 O desenho tem três vistas, em abas:
 
 - **3D**: vista isométrica gerada a partir dos mesmos blocos do packer, com
-  topo, frente e lateral de cada volume;
+  topo, frente e lateral de cada volume. Cada bloco recebe o detalhe da forma
+  do móvel (encosto do sofá, portas do armário, divisão da geladeira,
+  travesseiro da cama, tampo da mesa, tela da TV, fita da caixa), sempre dentro
+  da caixa calculada pelo packer — o detalhe não aumenta nem diminui o espaço
+  ocupado. A forma vem de `src/lib/formas.ts` e é espelhada em `public/js/app.js`;
 - **corte lateral**: projeção do comprimento × altura, mostrando o que está
   mais perto da lateral;
 - **vista de cima**: posições reais no piso (`x` e `z`), com o footprint de

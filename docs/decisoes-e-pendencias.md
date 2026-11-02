@@ -206,7 +206,26 @@ regras de prazo.
 | CSP | fechada em `'self'`; sem CDN ou API externa no cliente |
 | Domínio/e-mail | adiado; ver seção 6 |
 
-## 8. Próximos passos sugeridos
+## 8. Depois do aceite ⏳
+
+A simulação do fluxo completo em produção (cliente + dois transportadores)
+mostrou que o processo termina no aceite, mas a mudança não termina ali:
+
+- o cliente vê “Combine os detalhes finais direto com o transportador” e o
+  vencedor vê “🏆 Você venceu!”, mas nenhum dos dois recebe telefone, chat ou
+  qualquer próximo passo. O telefone existe em `users.telefone` e não aparece
+  em lugar nenhum;
+- não existe situação `concluido`: o frete fica `encerrado` para sempre e não há
+  histórico de mudança realizada;
+- o transportador não consegue retirar uma proposta já enviada;
+- a mudança publicada não pode ser editada, só cancelada.
+
+Falta decidir o mínimo viável. A opção mais barata é liberar o telefone dos dois
+lados depois do aceite; a mais completa é um canal de mensagens entre as partes.
+Enquanto isso não for decidido, nenhuma tela deve prometer contato dentro do
+site.
+
+## 9. Próximos passos sugeridos
 
 1. Completar a validação do redesign em 360 px, 768 px e com leitores de fora.
 2. Decidir a privacidade do endereço.

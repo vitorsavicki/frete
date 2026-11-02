@@ -34,6 +34,54 @@ describe('Plano de carga renderizado', () => {
     expect(html).not.toContain('undefined');
   });
 
+  it('desenha o formato do móvel dentro de cada volume', () => {
+    const bau = veiculoPorTipo('bau');
+    expect(bau).not.toBeNull();
+    if (!bau) return;
+
+    const html = renderToString(
+      jsx(PlanoCarga, {
+        carga: resumoCarga([
+          {
+            id: 'sofa_3',
+            nome: 'Sofá 3 lugares',
+            categoria: 'Móveis',
+            emoji: '🛋️',
+            fragil: false,
+            empilhavel: false,
+            quantidade: 1,
+            pesoKg: 95,
+            comprimentoCm: 220,
+            larguraCm: 95,
+            alturaCm: 90,
+          },
+          {
+            id: 'geladeira_2p',
+            nome: 'Geladeira duplex',
+            categoria: 'Eletrodomésticos',
+            emoji: '🧊',
+            fragil: false,
+            empilhavel: false,
+            quantidade: 1,
+            pesoKg: 90,
+            comprimentoCm: 70,
+            larguraCm: 70,
+            alturaCm: 180,
+          },
+        ]),
+        veiculo: bau,
+      }),
+    );
+
+    expect(html).toContain('plano-iso__detalhe');
+    expect(html).toContain('plano-iso__detalhe-area');
+    expect(html).toContain('plano-iso__detalhe-linha');
+    expect(html).toContain('Cada volume tem o formato do móvel');
+    expect(html).not.toContain('NaN');
+    expect(html).not.toContain('undefined');
+    expect(html).not.toContain('fill-opacity="0.undefined"');
+  });
+
   it('lista as viagens quando a carga não cabe de uma vez', () => {
     const fiorino = veiculoPorTipo('fiorino');
     expect(fiorino).not.toBeNull();

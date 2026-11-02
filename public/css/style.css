@@ -6525,6 +6525,22 @@ legend {
   stroke-width: 1.6;
 }
 
+.plano-iso__detalhe {
+  pointer-events: none;
+}
+
+.plano-iso__detalhe-linha {
+  fill: none;
+  stroke-width: 1;
+  stroke-linecap: round;
+  opacity: 0.7;
+}
+
+.plano-iso__detalhe-area {
+  stroke-width: 0.8;
+  opacity: 0.85;
+}
+
 .plano-iso__contorno {
   fill: none;
   stroke: #94a3b8;

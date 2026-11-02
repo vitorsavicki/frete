@@ -276,19 +276,23 @@ D1 remoto, smoke test e rollback.
 ## Estado atual
 
 - **Produção:** `https://frete.vitorsavicki.workers.dev`.
-- **Último deploy registrado:** `09783327-c629-4a94-8c45-8f861d181924`
-  (plano de carga em grade 2D, prazos limitados pela retirada e “Meu veículo”).
-- **Publicado neste deploy:** packer 2D com posições reais no piso, vistas
-  3D/lateral/cima sem amontoar a carga em uma lateral, escolha do prazo de
-  recebimento com datas exatas no formulário, limite da janela de 48 h pela
-  retirada, migração `0008` aplicada no D1 remoto e textos “Meu veículo”.
+- **Último deploy registrado:** `1c21c6d0-bd75-4a19-8530-a53464460a3e`
+  (formato dos móveis no plano 3D e regra “pesado embaixo, leve por cima”).
+- **Publicado neste deploy:** cada volume do plano 3D recebe o detalhe do
+  móvel (encosto do sofá, portas do armário, divisão da geladeira, travesseiro
+  da cama, tampo da mesa, tela da TV e fita da caixa) dentro da medida real do
+  packer; o plano nunca apoia um volume mais pesado em cima de um mais leve; e
+  o formulário de orçamento mostra “Você está com o menor orçamento” para quem
+  já lidera.
 - **Validação:** `npm run typecheck`, `node --check public/js/app.js` e
-  `npm test` passam (74 testes). Smoke test em produção: home, `/fretes`,
-  `/sitemap.xml`, CSS e JS respondem 200; a listagem mostra “Publicar mudança”
-  e o estado vazio com “Nenhuma mudança com esses filtros”.
+  `npm test` passam (80 testes). Deploy `1c21c6d0` verificado em produção com
+  uma mudança de teste: 12 volumes, 12 grupos de forma no SVG, sem `NaN`;
+  dados de teste apagados do D1 remoto depois da conferência.
 - **Pendências conhecidas:** domínio próprio, envio real de e-mail (depende de
   domínio na Cloudflare), Kombi como tipo próprio (hoje cadastrada como van ou
-  outro) e leitura dos textos por alguém de fora do projeto.
+  outro), contato e conclusão depois do aceite (ver
+  [decisoes-e-pendencias.md](docs/decisoes-e-pendencias.md#8-depois-do-aceite-))
+  e leitura dos textos por alguém de fora do projeto.
 
 O estado detalhado fica em
 [docs/decisoes-e-pendencias.md](docs/decisoes-e-pendencias.md).
