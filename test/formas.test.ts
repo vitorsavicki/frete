@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { CATALOGO_CARGA } from '../src/lib/carga';
-import { formaDoItem } from '../src/lib/formas';
+import { formaDoItem, formaOca } from '../src/lib/formas';
 
 describe('Forma desenhada dos volumes', () => {
   it('dá forma de móvel aos itens conhecidos', () => {
@@ -23,5 +23,14 @@ describe('Forma desenhada dos volumes', () => {
     for (const item of CATALOGO_CARGA) {
       expect(formas, `${item.nome} sem forma`).toContain(formaDoItem(item.id));
     }
+  });
+
+  it('monta sofá, cama e mesa com peças em vez de cubo maciço', () => {
+    expect(formaOca('sofa')).toBe(true);
+    expect(formaOca('cama')).toBe(true);
+    expect(formaOca('mesa')).toBe(true);
+    expect(formaOca('geladeira')).toBe(false);
+    expect(formaOca('armario')).toBe(false);
+    expect(formaOca('caixa')).toBe(false);
   });
 });

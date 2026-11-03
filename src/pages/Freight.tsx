@@ -27,7 +27,7 @@ import {
 import { sugerirVeiculoParaPlano } from '../lib/montagem';
 import { PRAZOS_RECEBIMENTO, PRAZO_ESCOLHA_HORAS, calcularPrazos, retiradaEm, rotuloSituacao } from '../lib/prazos';
 import { PlanoCarga } from './PlanoCarga';
-import { MascoteAjuda } from './Ilustracoes';
+import { IconeVeiculo, MascoteAjuda } from './Ilustracoes';
 import type { Previsao } from '../lib/clima';
 import type { BidComNome, Category, FreightResumo, Truck, User } from '../lib/db';
 
@@ -307,7 +307,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
           alturaCm: caminhao.altura_cm,
           capacidadeKg: caminhao.capacidade_kg,
           nome: caminhao.nome,
-          emoji: '🚛',
+          id: caminhao.tipo,
         }
       : (veiculoRecomendado?.veiculo ?? veiculoPorTipo('carreta'))
     : null;
@@ -519,7 +519,11 @@ export const DetalheFretePage: FC<DetalheProps> = ({
                       veiculoRecomendado.analise.status === 'limite' ? 'chip-alerta' : 'chip-verde'
                     }`}
                   >
-                    {veiculoRecomendado.veiculo.emoji} {veiculoRecomendado.veiculo.nome}
+                    <IconeVeiculo
+                      tipo={veiculoRecomendado.veiculo.id}
+                      class="icone-veiculo icone-veiculo--chip"
+                    />{' '}
+                    {veiculoRecomendado.veiculo.nome}
                   </span>
                 )}
               </div>
@@ -569,8 +573,8 @@ export const DetalheFretePage: FC<DetalheProps> = ({
 
               {veiculoRecomendado && (
                 <div class={`carga-veiculo carga-veiculo--${veiculoRecomendado.analise.status}`}>
-                  <span class="carga-veiculo__emoji" aria-hidden="true">
-                    {veiculoRecomendado.veiculo.emoji}
+                  <span class="carga-veiculo__icone" aria-hidden="true">
+                    <IconeVeiculo tipo={veiculoRecomendado.veiculo.id} />
                   </span>
                   <div>
                     <small>Menor veículo padrão que comporta a carga</small>
@@ -1757,7 +1761,7 @@ export const NovoFretePage: FC<NovoFreteProps> = ({
               data-carga-veiculo-caixa
             >
               <span class="carga-resumo__emoji" aria-hidden="true" data-carga-veiculo-emoji>
-                {sugestao?.veiculo.emoji ?? '🚚'}
+                <IconeVeiculo tipo={sugestao?.veiculo.id} />
               </span>
               <div>
                 <small>Veículo recomendado</small>

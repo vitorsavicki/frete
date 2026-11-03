@@ -10,6 +10,7 @@ import {
 } from '../lib/format';
 import { dimensoesTexto, rotuloTipoVeiculo, volumeVeiculoM3 } from '../lib/carga';
 import { rotuloSituacao } from '../lib/prazos';
+import { IconeVeiculo } from './Ilustracoes';
 import type { Alert, BidComNome, FreightResumo, Truck, User } from '../lib/db';
 
 interface DashboardProps {
@@ -292,7 +293,7 @@ export const DashboardPage: FC<DashboardProps> = ({
                 <>
                   <div class="caminhao-resumo">
                     <span class="caminhao-resumo__emoji" aria-hidden="true">
-                      🚛
+                      <IconeVeiculo tipo={caminhao.tipo} />
                     </span>
                     <div>
                       <strong>{caminhao.nome}</strong>

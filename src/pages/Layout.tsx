@@ -1,6 +1,7 @@
 import type { FC, PropsWithChildren } from 'hono/jsx';
 import type { User } from '../lib/db';
 import { AjudaFixa, TourMascote } from './Tour';
+import { MarcaQueroMudar } from './Ilustracoes';
 
 interface LayoutProps {
   titulo: string;
@@ -86,25 +87,7 @@ export const Layout: FC<PropsWithChildren<LayoutProps>> = ({
         <div class="container header-inner">
           <a href="/" class="brand" aria-label="Quero Mudar Já — início">
             <span class="brand-mark" aria-hidden="true">
-              <svg viewBox="0 0 48 48" fill="none">
-                <rect width="48" height="48" rx="14" fill="currentColor" />
-                <path
-                  d="M10 30V17.5A1.5 1.5 0 0 1 11.5 16H25v14"
-                  stroke="#fff"
-                  stroke-width="2.6"
-                  stroke-linejoin="round"
-                />
-                <path
-                  d="M25 20h7.2c.6 0 1.1.3 1.4.9l3.2 6.1c.1.3.2.6.2.9V30h-2.4"
-                  stroke="#fff"
-                  stroke-width="2.6"
-                  stroke-linejoin="round"
-                />
-                <path d="M10 30h3.5M19.5 30h9M33.5 30H36" stroke="#fff" stroke-width="2.6" />
-                <circle cx="17" cy="32.5" r="3" stroke="#fff" stroke-width="2.4" />
-                <circle cx="31" cy="32.5" r="3" stroke="#fff" stroke-width="2.4" />
-                <path d="M27 24h3.4l2 4H27v-4Z" fill="#fff" opacity=".9" />
-              </svg>
+              <MarcaQueroMudar />
             </span>
             <span class="brand-text">
               Quero <strong>Mudar</strong> Já
@@ -189,14 +172,7 @@ export const Layout: FC<PropsWithChildren<LayoutProps>> = ({
           <div>
             <a href="/" class="brand brand-footer">
               <span class="brand-mark" aria-hidden="true">
-                <svg viewBox="0 0 48 48" fill="none">
-                  <rect width="48" height="48" rx="14" fill="currentColor" />
-                  <path d="M10 30V17.5A1.5 1.5 0 0 1 11.5 16H25v14" stroke="#fff" stroke-width="2.6" />
-                  <path d="M25 20h7.2c.6 0 1.1.3 1.4.9l3.2 6.1c.1.3.2.6.2.9V30h-2.4" stroke="#fff" stroke-width="2.6" />
-                  <path d="M10 30h3.5M19.5 30h9M33.5 30H36" stroke="#fff" stroke-width="2.6" />
-                  <circle cx="17" cy="32.5" r="3" stroke="#fff" stroke-width="2.4" />
-                  <circle cx="31" cy="32.5" r="3" stroke="#fff" stroke-width="2.4" />
-                </svg>
+                <MarcaQueroMudar />
               </span>
               <span class="brand-text">Quero <strong>Mudar</strong> Já</span>
             </a>

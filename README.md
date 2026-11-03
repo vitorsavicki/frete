@@ -276,18 +276,18 @@ D1 remoto, smoke test e rollback.
 ## Estado atual
 
 - **Produção:** `https://frete.vitorsavicki.workers.dev`.
-- **Último deploy registrado:** `1c21c6d0-bd75-4a19-8530-a53464460a3e`
-  (formato dos móveis no plano 3D e regra “pesado embaixo, leve por cima”).
-- **Publicado neste deploy:** cada volume do plano 3D recebe o detalhe do
-  móvel (encosto do sofá, portas do armário, divisão da geladeira, travesseiro
-  da cama, tampo da mesa, tela da TV e fita da caixa) dentro da medida real do
-  packer; o plano nunca apoia um volume mais pesado em cima de um mais leve; e
-  o formulário de orçamento mostra “Você está com o menor orçamento” para quem
-  já lidera.
+- **Último deploy registrado:** `7896fa50-50ef-4511-b8d2-23c96513ab45`
+  (mascote de pano, logo e ícones de veículo).
+- **Publicado neste deploy:** o mascote virou boneco de pano com cabelo de lã,
+  olhos de botão, boca costurada, macacão indigo e caixa nos braços; o caminhão
+  da marca aparece como remendo no peito. O logo, o favicon e o ícone do app
+  foram redesenhados no mesmo traço, os emojis de veículo deram lugar a ícones
+  de linha (fiorino, van, 3/4, baú e carreta) e o corte lateral do plano mostra
+  dono, motorista e até dois ajudantes ajustando a carga.
 - **Validação:** `npm run typecheck`, `node --check public/js/app.js` e
-  `npm test` passam (80 testes). Deploy `1c21c6d0` verificado em produção com
-  uma mudança de teste: 12 volumes, 12 grupos de forma no SVG, sem `NaN`;
-  dados de teste apagados do D1 remoto depois da conferência.
+  `npm test` passam (81 testes). Home conferida em 360 px e 768 px com emulação
+  real de viewport: sem rolagem horizontal (`scrollWidth` = `innerWidth`) e sem
+  elementos vazando. O plano foi conferido com 0 e 2 ajudantes.
 - **Pendências conhecidas:** domínio próprio, envio real de e-mail (depende de
   domínio na Cloudflare), Kombi como tipo próprio (hoje cadastrada como van ou
   outro), contato e conclusão depois do aceite (ver

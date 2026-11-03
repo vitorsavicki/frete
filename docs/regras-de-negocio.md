@@ -355,13 +355,19 @@ largura), com altura e apoio por célula:
 O desenho tem três vistas, em abas:
 
 - **3D**: vista isométrica gerada a partir dos mesmos blocos do packer, com
-  topo, frente e lateral de cada volume. Cada bloco recebe o detalhe da forma
-  do móvel (encosto do sofá, portas do armário, divisão da geladeira,
-  travesseiro da cama, tampo da mesa, tela da TV, fita da caixa), sempre dentro
-  da caixa calculada pelo packer — o detalhe não aumenta nem diminui o espaço
-  ocupado. A forma vem de `src/lib/formas.ts` e é espelhada em `public/js/app.js`;
+  topo, frente e lateral de cada volume. Sofá, cama e mesa são montados com
+  peças (assento, encosto, braços, colchão, travesseiro, tampo e pés); armário,
+  geladeira, TV e caixa recebem o detalhe na face da frente (portas, divisão,
+  tela, fita). Tudo fica dentro da caixa calculada pelo packer — o desenho não
+  aumenta nem diminui o espaço ocupado. A forma vem de `src/lib/formas.ts` e é
+  espelhada em `public/js/app.js`;
 - **corte lateral**: projeção do comprimento × altura, mostrando o que está
-  mais perto da lateral;
+  mais perto da lateral. Volumes que ficam atrás aparecem com contorno
+  tracejado e uma nota explica que a vista 3D mostra a posição de cada um. O
+  desenho inclui o dono da mudança e o motorista ajustando a carga; quando há
+  ajudantes, entram até dois no desenho. A cena é decorativa: não altera o
+  encaixe, o peso ou o número de viagens, e para com
+  `prefers-reduced-motion`;
 - **vista de cima**: posições reais no piso (`x` e `z`), com o footprint de
   todos os blocos e a explicação do espaço livre.
 

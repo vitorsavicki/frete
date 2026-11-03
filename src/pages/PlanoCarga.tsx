@@ -6,7 +6,8 @@ import {
   type MedidasVeiculo,
 } from '../lib/carga';
 import { peso, volume } from '../lib/format';
-import { formaDoItem, type FormaItem } from '../lib/formas';
+import { formaDoItem, formaOca, type FormaItem } from '../lib/formas';
+import { IconeVeiculo } from './Ilustracoes';
 import {
   dicasCarregamento,
   montarPlanoCarga,
@@ -16,7 +17,7 @@ import {
 
 interface PlanoCargaProps {
   carga: CargaResumo;
-  veiculo: MedidasVeiculo & { nome?: string; emoji?: string };
+  veiculo: MedidasVeiculo & { nome?: string; id?: string };
   ajudantes?: number;
   compacto?: boolean;
   idPrefixo?: string;
@@ -37,54 +38,65 @@ interface PessoaCarregandoProps {
   pisoY: number;
   papel: PapelEquipe;
   escala: number;
+  atraso?: number;
 }
 
-const PessoaCarregando: FC<PessoaCarregandoProps> = ({ x, pisoY, papel, escala }) => {
+const PessoaCarregando: FC<PessoaCarregandoProps> = ({ x, pisoY, papel, escala, atraso = 0 }) => {
   const camisa = papel === 'cliente' ? '#0f766e' : papel === 'motorista' ? '#1d4ed8' : '#f59e0b';
   const detalhe = papel === 'cliente' ? '#134e4a' : papel === 'motorista' ? '#172554' : '#b45309';
   const rotulo =
     papel === 'cliente' ? 'dono da mudança' : papel === 'motorista' ? 'motorista' : 'ajudante';
 
   return (
-    <g class={`plano-pessoa plano-pessoa--${papel}`} transform={`translate(${x} ${pisoY})`}>
+    <g
+      class={`plano-pessoa plano-pessoa--${papel}`}
+      transform={`translate(${x} ${pisoY})`}
+      style={`--atraso:${atraso}s`}
+    >
       <g transform={`scale(${escala})`}>
         <ellipse cx="0" cy="2" rx="24" ry="5" class="plano-pessoa__sombra" />
-        <path d="M-11 -68l-9 16M11 -68l9 16" class="plano-pessoa__braco" />
-        <rect x="-11" y="-78" width="22" height="48" rx="8" fill={camisa} />
-        {papel === 'ajudante' && (
-          <>
-            <rect x="-8" y="-73" width="16" height="21" rx="4" fill="#fef3c7" opacity=".9" />
-            <path d="M-11 -64h22" stroke="#fff" stroke-width="2.2" opacity=".85" />
-          </>
-        )}
-        <rect
-          x="-19"
-          y="-64"
-          width="38"
-          height="34"
-          rx="3"
-          fill="#fbbf24"
-          stroke="#d97706"
-          stroke-width="1.4"
-          class="plano-pessoa__caixa"
-        />
-        <path d="M-19 -52h38M0 -64v34" class="plano-pessoa__fita" />
-        <circle cx="-21" cy="-50" r="4.5" fill="#fcd9b6" />
-        <circle cx="21" cy="-50" r="4.5" fill="#fcd9b6" />
-        <circle cx="0" cy="-94" r="13" fill="#fcd9b6" />
-        {papel === 'cliente' ? (
-          <path
-            d="M-12 -99c2-7 9-11 16-9 4 1 7 4 8 9-4-3-9-4-14-3-4 0-7 2-10 3Z"
-            fill="#3f2a1d"
+        <g class="plano-pessoa__corpo">
+          <g class="plano-pessoa__bracos">
+            <path d="M-11 -68l-9 16M11 -68l9 16" class="plano-pessoa__braco" />
+          </g>
+          <rect x="-11" y="-78" width="22" height="48" rx="8" fill={camisa} />
+          {papel === 'ajudante' && (
+            <>
+              <rect x="-8" y="-73" width="16" height="21" rx="4" fill="#fef3c7" opacity=".9" />
+              <path d="M-11 -64h22" stroke="#fff" stroke-width="2.2" opacity=".85" />
+            </>
+          )}
+          <circle cx="0" cy="-94" r="13" fill="#fcd9b6" />
+          {papel === 'cliente' ? (
+            <path
+              d="M-12 -99c2-7 9-11 16-9 4 1 7 4 8 9-4-3-9-4-14-3-4 0-7 2-10 3Z"
+              fill="#3f2a1d"
+            />
+          ) : (
+            <>
+              <path d="M-13 -99a13 13 0 0 1 26 0Z" fill={detalhe} />
+              <path d="M-15 -99h30" stroke={detalhe} stroke-width="3" stroke-linecap="round" />
+            </>
+          )}
+          <rect x="-9" y="-32" width="7" height="32" rx="3.5" fill="#1e293b" />
+          <rect x="2" y="-32" width="7" height="32" rx="3.5" fill="#1e293b" />
+        </g>
+        <g class="plano-pessoa__carga">
+          <rect
+            x="-19"
+            y="-64"
+            width="38"
+            height="34"
+            rx="3"
+            fill="#fbbf24"
+            stroke="#d97706"
+            stroke-width="1.4"
+            class="plano-pessoa__caixa"
           />
-        ) : (
-          <>
-            <path d="M-13 -99a13 13 0 0 1 26 0Z" fill={detalhe} />
-            <path d="M-15 -99h30" stroke={detalhe} stroke-width="3" stroke-linecap="round" />
-          </>
-        )}
-        <rect x="-9" y="-32" width="7" height="32" rx="3.5" fill="#1e293b" />
-        <rect x="2" y="-32" width="7" height="32" rx="3.5" fill="#1e293b" />
+          <path d="M-19 -52h38M0 -64v34" class="plano-pessoa__fita" />
+          <circle cx="-21" cy="-50" r="4.5" fill="#fcd9b6" />
+          <circle cx="21" cy="-50" r="4.5" fill="#fcd9b6" />
+        </g>
       </g>
       <text x="0" y="24" text-anchor="middle" class="plano-pessoa__legenda">
         {rotulo}
@@ -172,15 +184,15 @@ interface DetalheFormaProps {
   z1: number;
   y0: number;
   y1: number;
-  traco: string;
-  topo: string;
+  cores: { topo: string; frente: string; lado: string; traco: string };
 }
 
 /**
- * Desenha o detalhe que faz o volume lembrar o móvel: porta do armário,
- * divisão da geladeira, encosto do sofá, travesseiro da cama, tampo da mesa.
- * Tudo fica dentro da caixa que o packer calculou, então o desenho não
- * aumenta nem diminui o espaço ocupado.
+ * Desenha o volume com cara de móvel. Sofá, cama e mesa são montados com
+ * peças de verdade (assento, encosto, braços, colchão, travesseiro, tampo e
+ * pés); armário, geladeira, TV e caixa recebem o detalhe na face da frente.
+ * Tudo fica dentro da caixa que o packer calculou, então o desenho não aumenta
+ * nem diminui o espaço ocupado.
  */
 const DetalheForma: FC<DetalheFormaProps> = ({
   forma,
@@ -191,8 +203,7 @@ const DetalheForma: FC<DetalheFormaProps> = ({
   z1,
   y0,
   y1,
-  traco,
-  topo,
+  cores,
 }) => {
   if (forma === 'generico') return null;
 
@@ -201,6 +212,7 @@ const DetalheForma: FC<DetalheFormaProps> = ({
   const H = y1 - y0;
   const xm = x0 + L / 2;
   const zm = z0 + D / 2;
+  const { topo, frente, lado, traco } = cores;
 
   const linha = (a: PontoIso, b: PontoIso) => (
     <line
@@ -223,6 +235,42 @@ const DetalheForma: FC<DetalheFormaProps> = ({
     />
   );
 
+  /** Peça 3D dentro da caixa do packer: topo, frente e lateral. */
+  const peca = (
+    xa: number,
+    xb: number,
+    ya: number,
+    yb: number,
+    za: number,
+    zb: number,
+  ) => {
+    const topoP = [p(xa, yb, za), p(xb, yb, za), p(xb, yb, zb), p(xa, yb, zb)];
+    const frenteP = [p(xb, ya, za), p(xb, ya, zb), p(xb, yb, zb), p(xb, yb, za)];
+    const ladoP = [p(xa, ya, zb), p(xb, ya, zb), p(xb, yb, zb), p(xa, yb, zb)];
+    return (
+      <g class="plano-iso__detalhe-peca">
+        <polygon
+          points={pontosPoly(ladoP)}
+          fill={lado}
+          stroke={traco}
+          class="plano-iso__detalhe-face"
+        />
+        <polygon
+          points={pontosPoly(frenteP)}
+          fill={frente}
+          stroke={traco}
+          class="plano-iso__detalhe-face"
+        />
+        <polygon
+          points={pontosPoly(topoP)}
+          fill={topo}
+          stroke={traco}
+          class="plano-iso__detalhe-face"
+        />
+      </g>
+    );
+  };
+
   if (forma === 'caixa') {
     return (
       <g class="plano-iso__detalhe">
@@ -233,27 +281,14 @@ const DetalheForma: FC<DetalheFormaProps> = ({
   }
 
   if (forma === 'sofa') {
-    const encosto = D * 0.22;
+    const assento = y0 + H * 0.45;
     const braco = L * 0.09;
     return (
       <g class="plano-iso__detalhe">
-        {area(
-          [
-            p(x0, y1, z0),
-            p(x1, y1, z0),
-            p(x1, y1, z0 + encosto),
-            p(x0, y1, z0 + encosto),
-          ],
-          traco,
-          0.3,
-        )}
-        {area([p(x0, y1, z0), p(x0 + braco, y1, z0), p(x0 + braco, y1, z1), p(x0, y1, z1)], traco, 0.16)}
-        {area(
-          [p(x1 - braco, y1, z0), p(x1, y1, z0), p(x1, y1, z1), p(x1 - braco, y1, z1)],
-          traco,
-          0.16,
-        )}
-        {linha(p(x1, y0 + H * 0.5, z0 + encosto), p(x1, y1 - H * 0.05, z0 + encosto))}
+        {peca(x0, x1, y0, assento, z0, z1)}
+        {peca(x0, x1, assento, y1, z1 - D * 0.22, z1)}
+        {peca(x0, x0 + braco, assento, y0 + H * 0.72, z0, z1)}
+        {peca(x1 - braco, x1, assento, y0 + H * 0.72, z0, z1)}
       </g>
     );
   }
@@ -278,37 +313,25 @@ const DetalheForma: FC<DetalheFormaProps> = ({
   }
 
   if (forma === 'cama') {
+    const colchao = y0 + H * 0.78;
     return (
       <g class="plano-iso__detalhe">
-        {area(
-          [
-            p(x0 + L * 0.03, y1, z0 + D * 0.16),
-            p(x0 + L * 0.2, y1, z0 + D * 0.16),
-            p(x0 + L * 0.2, y1, z1 - D * 0.16),
-            p(x0 + L * 0.03, y1, z1 - D * 0.16),
-          ],
-          topo,
-          0.75,
-        )}
-        {linha(p(x0 + L * 0.26, y1, z0 + D * 0.06), p(x0 + L * 0.26, y1, z1 - D * 0.06))}
+        {peca(x0, x1, y0, colchao, z0, z1)}
+        {peca(x0 + L * 0.03, x0 + L * 0.2, colchao, y1, z0 + D * 0.16, z1 - D * 0.16)}
       </g>
     );
   }
 
   if (forma === 'mesa') {
+    const tampo = y1 - H * 0.14;
+    const pe = Math.max(2, Math.min(L, D) * 0.08);
     return (
       <g class="plano-iso__detalhe">
-        <polygon
-          points={pontosPoly([
-            p(x0 + L * 0.07, y1, z0 + D * 0.07),
-            p(x1 - L * 0.07, y1, z0 + D * 0.07),
-            p(x1 - L * 0.07, y1, z1 - D * 0.07),
-            p(x0 + L * 0.07, y1, z1 - D * 0.07),
-          ])}
-          fill="none"
-          stroke={traco}
-          class="plano-iso__detalhe-linha"
-        />
+        {peca(x0, x0 + pe, y0, tampo, z0, z0 + pe)}
+        {peca(x1 - pe, x1, y0, tampo, z0, z0 + pe)}
+        {peca(x0, x0 + pe, y0, tampo, z1 - pe, z1)}
+        {peca(x1 - pe, x1, y0, tampo, z1 - pe, z1)}
+        {peca(x0, x1, tampo, y1, z0, z1)}
       </g>
     );
   }
@@ -419,6 +442,8 @@ const VistaIso: FC<VistaIsoProps> = ({ montagem, veiculo, vazio }) => {
         const y0 = bloco.base;
         const y1 = bloco.base + bloco.altura;
         const cores = coresCategoria(bloco.categoria);
+        const forma = formaDoItem(bloco.itemId);
+        const oca = formaOca(forma);
         const topo = [p(x0, y1, z0), p(x1, y1, z0), p(x1, y1, z1), p(x0, y1, z1)];
         const faceFrente = [p(x1, y0, z0), p(x1, y0, z1), p(x1, y1, z1), p(x1, y1, z0)];
         const faceLado = [p(x0, y0, z1), p(x1, y0, z1), p(x1, y1, z1), p(x0, y1, z1)];
@@ -435,26 +460,30 @@ const VistaIso: FC<VistaIsoProps> = ({ montagem, veiculo, vazio }) => {
               {numero(bloco.profundidade)} × {numero(bloco.altura)} cm · a {numero(bloco.z)} cm da
               lateral · base a {numero(bloco.base)} cm
             </title>
-            <polygon
-              points={pontosPoly(faceLado)}
-              fill={cores.lado}
-              stroke={cores.traco}
-              class="plano-iso__face plano-iso__face--lado"
-            />
-            <polygon
-              points={pontosPoly(faceFrente)}
-              fill={cores.frente}
-              stroke={cores.traco}
-              class="plano-iso__face plano-iso__face--frente"
-            />
-            <polygon
-              points={pontosPoly(topo)}
-              fill={cores.topo}
-              stroke={cores.traco}
-              class="plano-iso__face plano-iso__face--topo"
-            />
+            {!oca && (
+              <>
+                <polygon
+                  points={pontosPoly(faceLado)}
+                  fill={cores.lado}
+                  stroke={cores.traco}
+                  class="plano-iso__face plano-iso__face--lado"
+                />
+                <polygon
+                  points={pontosPoly(faceFrente)}
+                  fill={cores.frente}
+                  stroke={cores.traco}
+                  class="plano-iso__face plano-iso__face--frente"
+                />
+                <polygon
+                  points={pontosPoly(topo)}
+                  fill={cores.topo}
+                  stroke={cores.traco}
+                  class="plano-iso__face plano-iso__face--topo"
+                />
+              </>
+            )}
             <DetalheForma
-              forma={formaDoItem(bloco.itemId)}
+              forma={forma}
               p={p}
               x0={x0}
               x1={x1}
@@ -462,8 +491,7 @@ const VistaIso: FC<VistaIsoProps> = ({ montagem, veiculo, vazio }) => {
               z1={z1}
               y0={y0}
               y1={y1}
-              traco={cores.traco}
-              topo={cores.topo}
+              cores={cores}
             />
           </g>
         );
@@ -512,12 +540,14 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
   const dicas = dicasCarregamento(carga, montagem);
   const vazio = carga.totalItens === 0;
   const totalAjudantes = Math.max(0, Math.floor(ajudantes));
+  const ajudantesDesenhados = Math.min(2, totalAjudantes);
   const papeis: PapelEquipe[] =
     totalAjudantes === 0
-      ? ['cliente']
+      ? ['cliente', 'motorista']
       : [
+          'cliente',
           'motorista',
-          ...Array.from({ length: Math.min(2, totalAjudantes) }, () => 'ajudante' as const),
+          ...Array.from({ length: ajudantesDesenhados }, () => 'ajudante' as const),
         ];
   const alturaCm = Math.max(1, veiculo.alturaCm);
   const comprimentoCm = Math.max(1, veiculo.comprimentoCm);
@@ -540,6 +570,7 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
   // fundo são desenhados primeiro e com traço mais claro; os da lateral
   // esquerda ficam na frente.
   const blocosVisiveis = [...montagem.blocos].sort((a, b) => b.z - a.z);
+  const temVolumesAtras = blocosVisiveis.some((bloco) => bloco.z > 0.5);
   const nomesAbaixo = new Set(
     blocosVisiveis
       .filter((bloco) =>
@@ -586,7 +617,7 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
           </p>
         </div>
         <span class="chip plano-carga__veiculo" data-plano-veiculo>
-          {veiculo.emoji ? `${veiculo.emoji} ` : ''}
+          <IconeVeiculo tipo={veiculo.id} class="icone-veiculo icone-veiculo--chip" />
           {veiculo.nome ?? 'Veículo'} · {dimensoesTexto(veiculo)}
         </span>
       </header>
@@ -640,14 +671,14 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
           aria-label={
             vazio
               ? 'Veículo vazio, pronto para receber a mudança'
-              : `Desenho esquemático da carga dentro de ${veiculo.nome ?? 'um veículo'}, com ${montagem.colocados} volumes acomodados`
+              : `Desenho esquemático da carga dentro de ${veiculo.nome ?? 'um veículo'}, com ${montagem.colocados} volumes acomodados e a equipe ajustando a carga`
           }
         >
           <title>Plano de carregamento</title>
           <desc>
             {vazio
               ? 'Escolha os itens da mudança para ver como eles se organizam dentro do veículo.'
-              : `${montagem.colocados} volumes posicionados. O corte lateral mostra todos os volumes; os que ficam ao fundo aparecem mais claros. A vista de cima mostra a posição de cada um. Itens frágeis aparecem com contorno tracejado e ficam por cima.`}
+              : `${montagem.colocados} volumes posicionados. O corte lateral mostra todos os volumes; os que ficam ao fundo aparecem com contorno tracejado. A vista de cima mostra a posição de cada um. Itens frágeis aparecem com contorno tracejado e ficam por cima. As pessoas ao lado do veículo mostram o dono da mudança, o motorista e os ajudantes ajustando a carga.`}
           </desc>
 
           <rect
@@ -798,16 +829,25 @@ export const PlanoCarga: FC<PlanoCargaProps> = ({
               pisoY={pisoY}
               papel={papel}
               escala={escalaPessoa}
+              atraso={indice * 0.42}
             />
           ))}
         </svg>
         <p class="plano-carga__equipe" data-plano-equipe>
           {totalAjudantes === 0
-            ? 'Sem ajudante: quem organiza a carga é o dono da mudança.'
-            : `Com ${totalAjudantes} ${
-                totalAjudantes === 1 ? 'ajudante' : 'ajudantes'
-              }: o motorista e a equipe organizam a carga.`}
+            ? 'O dono da mudança e o motorista ajustam a carga juntos.'
+            : totalAjudantes > 2
+              ? 'O dono da mudança, o motorista e a equipe ajustam a carga juntos.'
+              : `O dono da mudança, o motorista e ${totalAjudantes} ${
+                  totalAjudantes === 1 ? 'ajudante ajustam' : 'ajudantes ajustam'
+                } a carga juntos.`}
         </p>
+        {temVolumesAtras && (
+          <p class="plano-abas__nota">
+            Volumes com contorno tracejado estão atrás da primeira fileira. A vista 3D mostra cada
+            um na posição real.
+          </p>
+        )}
           </div>
 
           <div class="plano-abas__painel" data-plano-painel="cima">

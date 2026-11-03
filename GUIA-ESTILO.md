@@ -7,7 +7,8 @@ Quando em dúvida, MUDE MENOS. Não reescreva o que funciona.
 ## 1. Identidade visual — UMA linguagem só
 
 - **Estilo oficial: flat/line.** Referência: `public/img/app-icon-512.png` e `public/img/favicon.svg`.
-  Todo ícone/ilustração nova deve seguir esse estilo (traço grosso, cantos arredondados, 2 cores).
+  Todo ícone/ilustração nova deve seguir esse estilo (traço médio consistente, cantos
+  arredondados e no máximo três tons da paleta).
 - **Paleta:** indigo `#1e4fd8` (primária), âmbar `#f5b942` (acento), tinta slate `#1e293b`/`#475569`, fundo `#f4f6fb`. Já definidas em `public/css/style.css` — use as variáveis, não crie cores novas.
 - **PROIBIDO:**
   - Emojis 3D / assets glossy estilo "brinquedo" (o seletor de veículos antigo foi refeito por isso)
@@ -39,7 +40,14 @@ Quando em dúvida, MUDE MENOS. Não reescreva o que funciona.
 - Persona: o amigo que já fez 200 mudanças. Fala de "você", humor leve, SEMPRE deixa o usuário sabendo o próximo passo.
 - Regra de ouro: **Zé nunca aparece sem uma ação útil** (botão ou link). Se não tem ação, não usa o Zé.
 - Onde o Zé deve aparecer: tour de primeiros passos, estados vazios ("Nenhuma mudança por aqui. Quando aparecer uma na sua rota, eu te aviso!"), 404, sucesso de aceite (com o contato das partes), e — no futuro — assinatura dos e-mails.
-- Rosto do Zé: usar o caminhão flat do ícone (`favicon.svg` / `app-icon-512.png`). Não inventar outro desenho.
+- Aparência: **boneco de pano** (cloth doll), não o caminhão. Cabelo de lã, olhos de botão,
+  boca costurada, remendos de tecido, macacão indigo e uma **caixa de mudança nos braços**.
+- A identidade do caminhão continua no mascote como um **remendo costurado no peito**,
+  com o mesmo traço do `favicon.svg`. Não criar um segundo caminhão nem trocar o
+  mascote por um veículo com rosto.
+- O logo da marca é o caminhão flat do `favicon.svg`; o boneco é o ajudante, não o logo.
+- Animação do mascote: aceno curto e leve. Com `prefers-reduced-motion`, o boneco fica
+  parado e a ação continua legível.
 
 ## 4. Antes de commitar (checklist obrigatório)
 

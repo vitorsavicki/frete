@@ -87,3 +87,12 @@ const FORMAS: Record<string, FormaItem> = {
 export function formaDoItem(itemId: string): FormaItem {
   return FORMAS[itemId] ?? 'generico';
 }
+
+/**
+ * Formas montadas com peças (assento, encosto, travesseiro, tampo, pés) em vez
+ * de um cubo maciço. O packer continua reservando a caixa inteira; o desenho
+ * mostra só as peças para o volume lembrar o móvel.
+ */
+export function formaOca(forma: FormaItem): boolean {
+  return forma === 'sofa' || forma === 'cama' || forma === 'mesa';
+}

@@ -13,20 +13,27 @@ e o item deve ser atualizado ou removido daqui.
 
 - O layout precisa ser entendido por quem tem pouca familiaridade com tecnologia
   e por quem lê pouco. Isso vale para todas as telas, não só para a home.
-- O mascote é uma **caixa de mudança com boné e luvas**. Ele aparece no tour e
-  fica disponível na ajuda fixa.
+- O mascote é um **boneco de pano** (cabelo de lã, olhos de botão, boca costurada,
+  macacão indigo e uma caixa nos braços). O caminhão aparece como **remendo
+  costurado no peito**, preservando a identidade da marca sem transformar o
+  mascote em veículo. Ele aparece no tour e fica disponível na ajuda fixa.
 - O tour **não abre sozinho** na chegada. Ele fica disponível na ajuda fixa e
   pode ser revisto pelo botão **“Rever o passo a passo”**.
 - A ajuda fixa fica no canto da tela e não cobre os botões principais no celular.
 - A home e o tour usam a mesma ilustração flat do caminhão, desenhada em SVG
-  local. Não há mais vitrine de veículos 3D nem dependência de CDN: a CSP
-  continua `'self'`.
+  local. O logo (`favicon.svg` / `app-icon-512.png`) segue o mesmo traço, e os
+  seletores de veículo usam ícones de linha no lugar de emojis. Não há mais
+  vitrine de veículos 3D nem dependência de CDN: a CSP continua `'self'`.
 - O plano de carga preenche o piso como um **tabuleiro 2D** (`x` no comprimento
   e `z` na largura), com vista de cima proporcional, **vista 3D isométrica**,
   volume por categoria e uma lista explícita do que ficou fora. Os volumes
   menores aproveitam os vãos em vez de ficar tudo em uma lateral.
 - As três vistas ficam em **abas (3D, Lado, Cima)**. Sem JavaScript, os três
   painéis aparecem abertos; o cliente só alterna quando o JS está ativo.
+- No **corte lateral**, o dono da mudança e o motorista aparecem sempre
+  ajustando a carga. Ajudantes só entram no desenho quando a mudança tem
+  ajudantes, no máximo dois, para não poluir a cena. A legenda nomeia cada
+  pessoa e a animação para com `prefers-reduced-motion`.
 - A recomendação de veículo usa o **packer** (`sugerirVeiculoParaPlano`), não só
   a conta de volume/peso, e respeita a capacidade de peso.
 - Quando a carga não cabe de uma vez, `planejarViagens` calcula **quantas

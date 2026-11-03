@@ -2816,8 +2816,14 @@ legend {
 
 .caminhao-resumo__emoji {
   flex-shrink: 0;
-  font-size: 1.8rem;
+  width: 46px;
   line-height: 1;
+}
+
+.caminhao-resumo__emoji svg {
+  display: block;
+  width: 46px;
+  height: auto;
 }
 
 .caminhao-resumo strong {
@@ -3026,8 +3032,25 @@ legend {
 
 .carga-resumo__emoji {
   flex-shrink: 0;
-  font-size: 1.7rem;
+  width: 44px;
   line-height: 1;
+}
+
+.carga-resumo__emoji svg {
+  display: block;
+  width: 44px;
+  height: auto;
+}
+
+.icone-veiculo {
+  display: inline-block;
+  width: 30px;
+  height: auto;
+  flex: none;
+}
+
+.icone-veiculo--chip {
+  width: 22px;
 }
 
 .carga-resumo__veiculo strong {
@@ -3161,10 +3184,16 @@ legend {
   border-color: #fecaca;
 }
 
-.carga-veiculo__emoji {
+.carga-veiculo__icone {
   flex-shrink: 0;
-  font-size: 1.8rem;
+  width: 46px;
   line-height: 1;
+}
+
+.carga-veiculo__icone svg {
+  display: block;
+  width: 46px;
+  height: auto;
 }
 
 .carga-veiculo small {
@@ -5050,7 +5079,7 @@ legend {
 
 .mascote__braco--aceno {
   transform-box: fill-box;
-  transform-origin: 18% 82%;
+  transform-origin: 8% 92%;
   animation-duration: 2.7s;
 }
 
@@ -5359,8 +5388,8 @@ legend {
 /* Volumes que ficam ao fundo da carroceria: o corte lateral mostra a
    silhueta, mas deixa claro que eles estão atrás dos primeiros. */
 .plano-bloco--fundo .plano-bloco__caixa {
-  opacity: 0.5;
-  stroke-dasharray: 3 3;
+  opacity: 0.8;
+  stroke-dasharray: 4 2;
 }
 
 .plano-bloco__nome {
@@ -5389,21 +5418,31 @@ legend {
   stroke-linecap: round;
 }
 
+.plano-pessoa__corpo {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: plano-pessoa-ajusta 3.4s ease-in-out infinite;
+  animation-delay: var(--atraso, 0s);
+}
+
+.plano-pessoa__bracos {
+  transform-box: fill-box;
+  transform-origin: center top;
+  animation: plano-pessoa-bracos 3.4s ease-in-out infinite;
+  animation-delay: var(--atraso, 0s);
+}
+
+.plano-pessoa__carga {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: plano-pessoa-carrega 2.9s ease-in-out infinite;
+  animation-delay: var(--atraso, 0s);
+}
+
 .plano-pessoa__caixa,
 .plano-pessoa__fita {
   transform-box: fill-box;
   transform-origin: center;
-  animation: plano-pessoa-carrega 2.9s ease-in-out infinite;
-}
-
-.plano-pessoa--motorista .plano-pessoa__caixa,
-.plano-pessoa--motorista .plano-pessoa__fita {
-  animation-delay: 0.35s;
-}
-
-.plano-pessoa--ajudante .plano-pessoa__caixa,
-.plano-pessoa--ajudante .plano-pessoa__fita {
-  animation-delay: 0.7s;
 }
 
 .plano-pessoa__legenda {
@@ -5412,13 +5451,36 @@ legend {
   font-weight: 700;
 }
 
+@keyframes plano-pessoa-ajusta {
+  0%,
+  100% {
+    transform: rotate(-1.1deg) translateY(0);
+  }
+  50% {
+    transform: rotate(1.4deg) translateY(-1px);
+  }
+}
+
+@keyframes plano-pessoa-bracos {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  40% {
+    transform: rotate(-5deg);
+  }
+  72% {
+    transform: rotate(3deg);
+  }
+}
+
 @keyframes plano-pessoa-carrega {
   0%,
   100% {
-    transform: translateY(0);
+    transform: translateY(0) rotate(-1deg);
   }
   50% {
-    transform: translateY(-1.6px);
+    transform: translateY(-3px) rotate(1.5deg);
   }
 }
 
@@ -6539,6 +6601,15 @@ legend {
 .plano-iso__detalhe-area {
   stroke-width: 0.8;
   opacity: 0.85;
+}
+
+.plano-iso__detalhe-face {
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.plano-iso__detalhe-peca .plano-iso__detalhe-face {
+  opacity: 0.98;
 }
 
 .plano-iso__contorno {

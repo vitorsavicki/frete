@@ -100,7 +100,7 @@ Arquivos: `src/lib/*.ts`.
 | --- | --- |
 | `carga.ts` | catálogo de itens, parse do formulário/DB, resumo, encaixe, veículos |
 | `montagem.ts` | packer do plano de carga e recomendação por plano |
-| `formas.ts` | forma desenhada de cada item na vista 3D (sofá, armário, geladeira, cama, mesa, caixa, tela) |
+| `formas.ts` | forma desenhada de cada item na vista 3D (sofá, armário, geladeira, cama, mesa, caixa, tela) e montagem por peças |
 | `cost.ts` | modelo de custo, margem, preço mínimo e faixa de mercado |
 | `referencias.ts` | referências editáveis no D1 (combustível, custos, taxas, mercado) |
 | `rules.ts` | regras puras de proposta, aceite e cancelamento |

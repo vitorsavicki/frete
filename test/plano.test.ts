@@ -74,7 +74,8 @@ describe('Plano de carga renderizado', () => {
     );
 
     expect(html).toContain('plano-iso__detalhe');
-    expect(html).toContain('plano-iso__detalhe-area');
+    expect(html).toContain('plano-iso__detalhe-peca');
+    expect(html).toContain('plano-iso__detalhe-face');
     expect(html).toContain('plano-iso__detalhe-linha');
     expect(html).toContain('Cada volume tem o formato do móvel');
     expect(html).not.toContain('NaN');

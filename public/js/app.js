@@ -1859,15 +1859,24 @@
       return FORMAS_ITEM[id] || 'generico';
     }
 
+    function formaOca(forma) {
+      return forma === 'sofa' || forma === 'cama' || forma === 'mesa';
+    }
+
     // Mesmo detalhe que o servidor desenha: fica dentro da caixa do packer,
-    // então não muda o espaço ocupado.
-    function detalheFormaHtml(forma, p, x0, x1, z0, z1, y0, y1, traco, topo) {
+    // então não muda o espaço ocupado. Sofá, cama e mesa são montados com
+    // peças de verdade; os outros recebem detalhe na face da frente.
+    function detalheFormaHtml(forma, p, x0, x1, z0, z1, y0, y1, cores) {
       if (forma === 'generico') return '';
       var L = x1 - x0;
       var D = z1 - z0;
       var H = y1 - y0;
       var xm = x0 + L / 2;
       var zm = z0 + D / 2;
+      var topo = cores.topo;
+      var frente = cores.frente;
+      var lado = cores.lado;
+      var traco = cores.traco;
       var html = '';
 
       function linha(a, b) {
@@ -1883,17 +1892,32 @@
           '" fill-opacity="' + opacidade + '" stroke="none" class="plano-iso__detalhe-area"/>'
         );
       }
+      function peca(xa, xb, ya, yb, za, zb) {
+        var topoP = [p(xa, yb, za), p(xb, yb, za), p(xb, yb, zb), p(xa, yb, zb)];
+        var frenteP = [p(xb, ya, za), p(xb, ya, zb), p(xb, yb, zb), p(xb, yb, za)];
+        var ladoP = [p(xa, ya, zb), p(xb, ya, zb), p(xb, yb, zb), p(xa, yb, zb)];
+        return (
+          '<g class="plano-iso__detalhe-peca">' +
+          '<polygon points="' + pontosPoly(ladoP) + '" fill="' + lado +
+          '" stroke="' + traco + '" class="plano-iso__detalhe-face"/>' +
+          '<polygon points="' + pontosPoly(frenteP) + '" fill="' + frente +
+          '" stroke="' + traco + '" class="plano-iso__detalhe-face"/>' +
+          '<polygon points="' + pontosPoly(topoP) + '" fill="' + topo +
+          '" stroke="' + traco + '" class="plano-iso__detalhe-face"/>' +
+          '</g>'
+        );
+      }
 
       if (forma === 'caixa') {
         html += linha(p(x0 + L * 0.1, y1, zm), p(x1 - L * 0.1, y1, zm));
         html += linha(p(xm, y1, z0 + D * 0.1), p(xm, y1, z1 - D * 0.1));
       } else if (forma === 'sofa') {
-        var encosto = D * 0.22;
+        var assento = y0 + H * 0.45;
         var braco = L * 0.09;
-        html += area([p(x0, y1, z0), p(x1, y1, z0), p(x1, y1, z0 + encosto), p(x0, y1, z0 + encosto)], traco, 0.3);
-        html += area([p(x0, y1, z0), p(x0 + braco, y1, z0), p(x0 + braco, y1, z1), p(x0, y1, z1)], traco, 0.16);
-        html += area([p(x1 - braco, y1, z0), p(x1, y1, z0), p(x1, y1, z1), p(x1 - braco, y1, z1)], traco, 0.16);
-        html += linha(p(x1, y0 + H * 0.5, z0 + encosto), p(x1, y1 - H * 0.05, z0 + encosto));
+        html += peca(x0, x1, y0, assento, z0, z1);
+        html += peca(x0, x1, assento, y1, z1 - D * 0.22, z1);
+        html += peca(x0, x0 + braco, assento, y0 + H * 0.72, z0, z1);
+        html += peca(x1 - braco, x1, assento, y0 + H * 0.72, z0, z1);
       } else if (forma === 'armario') {
         html += linha(p(x1, y0 + H * 0.04, z0 + D / 3), p(x1, y1 - H * 0.04, z0 + D / 3));
         html += linha(p(x1, y0 + H * 0.04, z0 + (2 * D) / 3), p(x1, y1 - H * 0.04, z0 + (2 * D) / 3));
@@ -1902,18 +1926,17 @@
         html += linha(p(x1, y0 + H * 0.62, z0 + D * 0.05), p(x1, y0 + H * 0.62, z1 - D * 0.05));
         html += linha(p(x1, y0 + H * 0.42, z0 + D * 0.16), p(x1, y0 + H * 0.58, z0 + D * 0.16));
       } else if (forma === 'cama') {
-        html += area([p(x0 + L * 0.03, y1, z0 + D * 0.16), p(x0 + L * 0.2, y1, z0 + D * 0.16), p(x0 + L * 0.2, y1, z1 - D * 0.16), p(x0 + L * 0.03, y1, z1 - D * 0.16)], topo, 0.75);
-        html += linha(p(x0 + L * 0.26, y1, z0 + D * 0.06), p(x0 + L * 0.26, y1, z1 - D * 0.06));
+        var colchao = y0 + H * 0.78;
+        html += peca(x0, x1, y0, colchao, z0, z1);
+        html += peca(x0 + L * 0.03, x0 + L * 0.2, colchao, y1, z0 + D * 0.16, z1 - D * 0.16);
       } else if (forma === 'mesa') {
-        html +=
-          '<polygon points="' +
-          pontosPoly([
-            p(x0 + L * 0.07, y1, z0 + D * 0.07),
-            p(x1 - L * 0.07, y1, z0 + D * 0.07),
-            p(x1 - L * 0.07, y1, z1 - D * 0.07),
-            p(x0 + L * 0.07, y1, z1 - D * 0.07),
-          ]) +
-          '" fill="none" stroke="' + traco + '" class="plano-iso__detalhe-linha"/>';
+        var tampo = y1 - H * 0.14;
+        var pe = Math.max(2, Math.min(L, D) * 0.08);
+        html += peca(x0, x0 + pe, y0, tampo, z0, z0 + pe);
+        html += peca(x1 - pe, x1, y0, tampo, z0, z0 + pe);
+        html += peca(x0, x0 + pe, y0, tampo, z1 - pe, z1);
+        html += peca(x1 - pe, x1, y0, tampo, z1 - pe, z1);
+        html += peca(x0, x1, tampo, y1, z0, z1);
       } else {
         html +=
           '<polygon points="' +
@@ -1940,6 +1963,66 @@
         return { topo: '#dcfce7', frente: '#86efac', lado: '#4ade80', traco: '#047857' };
       }
       return { topo: '#f1f5f9', frente: '#cbd5e1', lado: '#94a3b8', traco: '#64748b' };
+    }
+
+    // Mesmo ícone de veículo do servidor, para o resumo da carga continuar
+    // coerente quando o JavaScript troca o veículo recomendado.
+    function iconeVeiculoHtml(tipo) {
+      var t = tipo || 'outro';
+      var traco = 'stroke="#1e293b" stroke-width="2.2" stroke-linejoin="round"';
+      var rodas = function (xs) {
+        return xs
+          .map(function (x) {
+            return (
+              '<circle cx="' + x + '" cy="32.6" r="4.4" fill="#1e293b"/>' +
+              '<circle cx="' + x + '" cy="32.6" r="1.7" fill="#cbd5e1"/>'
+            );
+          })
+          .join('');
+      };
+      var corpo = '';
+      if (t === 'fiorino') {
+        corpo =
+          '<path d="M4 31V23c0-5 4-9 9-9h8v17" fill="#1e4fd8" ' + traco + '/>' +
+          '<path d="M21 10h35c1.7 0 3 1.3 3 3v18H21z" fill="#f5b942" ' + traco + '/>' +
+          '<path d="M8 20h9v6H8z" fill="#dbeafe" stroke="#1e293b" stroke-width="1.4"/>' +
+          '<path d="M26 14h28" stroke="#d97706" stroke-width="1.6" opacity=".55"/>' +
+          rodas([13, 46]);
+      } else if (t === 'van') {
+        corpo =
+          '<path d="M4 31V21c0-4 3-8 8-8h9v18" fill="#1e4fd8" ' + traco + '/>' +
+          '<path d="M21 7h35c1.7 0 3 1.3 3 3v21H21z" fill="#f5b942" ' + traco + '/>' +
+          '<path d="M8 17h10v7H8z" fill="#dbeafe" stroke="#1e293b" stroke-width="1.4"/>' +
+          '<path d="M26 11h28" stroke="#d97706" stroke-width="1.6" opacity=".55"/>' +
+          rodas([13, 46]);
+      } else if (t === 'tres_quartos') {
+        corpo =
+          '<path d="M4 31V21c0-4 3-8 8-8h8v18" fill="#1e4fd8" ' + traco + '/>' +
+          '<path d="M20 11h36c1.7 0 3 1.3 3 3v17H20z" fill="#f5b942" ' + traco + '/>' +
+          '<path d="M8 17h9v7H8z" fill="#dbeafe" stroke="#1e293b" stroke-width="1.4"/>' +
+          '<path d="M25 15h28" stroke="#d97706" stroke-width="1.6" opacity=".55"/>' +
+          rodas([13, 46]);
+      } else if (t === 'carreta') {
+        corpo =
+          '<path d="M3 31V20c0-5 4-8 8-8h7v19" fill="#1e4fd8" ' + traco + '/>' +
+          '<path d="M18 8h43c1.6 0 3 1.4 3 3v20H18z" fill="#f5b942" ' + traco + '/>' +
+          '<path d="M7 17h9v8H7z" fill="#dbeafe" stroke="#1e293b" stroke-width="1.4"/>' +
+          '<path d="M23 12v19M55 10v19M51 10v19" stroke="#1e293b" stroke-width="1.2" opacity=".45"/>' +
+          rodas([12, 39, 53]);
+      } else {
+        corpo =
+          '<path d="M4 31V19c0-4 3-7 7-7h8v19" fill="#1e4fd8" ' + traco + '/>' +
+          '<path d="M19 6h40c1.7 0 3 1.3 3 3v22H19z" fill="#f1f5f9" ' + traco + ' stroke-dasharray="4 3"/>' +
+          '<path d="M8 16h9v8H8z" fill="#dbeafe" stroke="#1e293b" stroke-width="1.4"/>' +
+          '<path d="M56 10v18M52 10v18" stroke="#1e293b" stroke-width="1.2" opacity=".45"/>' +
+          rodas([12, 47]);
+      }
+      return (
+        '<svg class="icone-veiculo" viewBox="0 0 64 40" aria-hidden="true">' +
+        '<path d="M4 37h56" stroke="#cbd5e1" stroke-width="1.2" stroke-linecap="round"/>' +
+        corpo +
+        '</svg>'
+      );
     }
 
     var ISO_COSSENO = Math.cos(Math.PI / 6);
@@ -2036,6 +2119,8 @@
         var y0 = bloco.base;
         var y1 = bloco.base + bloco.altura;
         var cores = coresCategoria(bloco.item.categoria);
+        var forma = formaDoItem(bloco.item.id);
+        var oca = formaOca(forma);
         var topo = [p(x0, y1, z0), p(x1, y1, z0), p(x1, y1, z1), p(x0, y1, z1)];
         var faceFrente = [p(x1, y0, z0), p(x1, y0, z1), p(x1, y1, z1), p(x1, y1, z0)];
         var faceLado = [p(x0, y0, z1), p(x1, y0, z1), p(x1, y1, z1), p(x0, y1, z1)];
@@ -2056,32 +2141,35 @@
           ' cm · base a ' +
           Math.round(bloco.base) +
           ' cm</title>';
+        if (!oca) {
+          html +=
+            '<polygon points="' +
+            pontosPoly(faceLado) +
+            '" fill="' +
+            cores.lado +
+            '" stroke="' +
+            cores.traco +
+            '" class="plano-iso__face plano-iso__face--lado"/>';
+          html +=
+            '<polygon points="' +
+            pontosPoly(faceFrente) +
+            '" fill="' +
+            cores.frente +
+            '" stroke="' +
+            cores.traco +
+            '" class="plano-iso__face plano-iso__face--frente"/>';
+          html +=
+            '<polygon points="' +
+            pontosPoly(topo) +
+            '" fill="' +
+            cores.topo +
+            '" stroke="' +
+            cores.traco +
+            '" class="plano-iso__face plano-iso__face--topo"/>';
+        }
         html +=
-          '<polygon points="' +
-          pontosPoly(faceLado) +
-          '" fill="' +
-          cores.lado +
-          '" stroke="' +
-          cores.traco +
-          '" class="plano-iso__face plano-iso__face--lado"/>';
-        html +=
-          '<polygon points="' +
-          pontosPoly(faceFrente) +
-          '" fill="' +
-          cores.frente +
-          '" stroke="' +
-          cores.traco +
-          '" class="plano-iso__face plano-iso__face--frente"/>';
-        html +=
-          '<polygon points="' +
-          pontosPoly(topo) +
-          '" fill="' +
-          cores.topo +
-          '" stroke="' +
-          cores.traco +
-          '" class="plano-iso__face plano-iso__face--topo"/>' +
           detalheFormaHtml(
-            formaDoItem(bloco.item.id),
+            forma,
             p,
             x0,
             x1,
@@ -2089,8 +2177,7 @@
             z1,
             y0,
             y1,
-            cores.traco,
-            cores.topo,
+            cores,
           ) +
           '</g>';
       });
@@ -2702,8 +2789,9 @@
           carga.total === 0 ? 'Seu veículo, pronto para a mudança' : 'Como a carga se encaixa';
       }
       if (chip) {
-        chip.textContent =
-          (veiculo.emoji ? veiculo.emoji + ' ' : '') +
+        chip.innerHTML =
+          iconeVeiculoHtml(veiculo.id) +
+          ' ' +
           veiculo.nome +
           ' · ' +
           veiculo.comprimentoCm +
@@ -2758,7 +2846,7 @@
       var sugestao = recomendarVeiculo(carga);
       if (sugestao) {
         caixa.classList.add('carga-resumo__veiculo--' + sugestao.analise.status);
-        if (emoji) emoji.textContent = sugestao.veiculo.emoji;
+        if (emoji) emoji.innerHTML = iconeVeiculoHtml(sugestao.veiculo.id);
         if (nome) {
           nome.textContent =
             sugestao.veiculo.nome +
@@ -2780,7 +2868,7 @@
         }
       } else if (carga.total > 0) {
         caixa.classList.add('carga-resumo__veiculo--nao_cabe');
-        if (emoji) emoji.textContent = '⚠️';
+        if (emoji) emoji.innerHTML = iconeVeiculoHtml('outro');
         if (nome) nome.textContent = 'Nenhum veículo padrão';
         if (obs) {
           obs.textContent =
@@ -2788,7 +2876,7 @@
         }
       } else {
         caixa.classList.add('carga-resumo__veiculo--vazio');
-        if (emoji) emoji.textContent = '🚚';
+        if (emoji) emoji.innerHTML = iconeVeiculoHtml('outro');
         if (nome) nome.textContent = 'Selecione os itens';
         if (obs) {
           obs.textContent = 'Opcional: monte a carga para estimar peso, volume e veículo.';

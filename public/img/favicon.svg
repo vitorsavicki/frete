@@ -1,15 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Quero Mudar Já">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#2563eb"/>
-      <stop offset="1" stop-color="#1e40af"/>
-    </linearGradient>
-  </defs>
-  <rect width="64" height="64" rx="18" fill="url(#g)"/>
-  <path d="M12 40V23.5A2.5 2.5 0 0 1 14.5 21H34v19" fill="none" stroke="#fff" stroke-width="3.4" stroke-linejoin="round"/>
-  <path d="M34 27h9.6c.8 0 1.5.4 1.9 1.2l4.2 8.1c.2.4.3.8.3 1.2V40h-2.6" fill="none" stroke="#fff" stroke-width="3.4" stroke-linejoin="round"/>
-  <path d="M12 40h4.2M26 40h12M48 40h3.5" stroke="#fff" stroke-width="3.4" stroke-linecap="round"/>
-  <circle cx="21.5" cy="43.5" r="3.7" fill="none" stroke="#fff" stroke-width="3"/>
-  <circle cx="42" cy="43.5" r="3.7" fill="none" stroke="#fff" stroke-width="3"/>
-  <path d="M37 32h4.1l2.4 4.6H37V32Z" fill="#fbbf24"/>
+  <rect width="64" height="64" rx="16" fill="#1e4fd8"/>
+  <path d="M12 42V25.3c0-2.2 1.8-4 4-4h20v20.7" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M36 29.3h8.5c1 0 1.8.5 2.3 1.4l5.3 8.1c.3.5.5 1.2.5 1.9V42h-3" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M12 42h4.8M25.6 42H36.4M46.1 42H50" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="21.6" cy="45" r="4" fill="none" stroke="#fff" stroke-width="3"/>
+  <circle cx="41.6" cy="45" r="4" fill="none" stroke="#fff" stroke-width="3"/>
+  <path d="M39 33.9h5.1l2.8 5.5H39v-5.5Z" fill="#f5b942"/>
 </svg>

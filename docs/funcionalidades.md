@@ -11,6 +11,7 @@ saber **o que a pessoa consegue fazer** — as regras detalhadas ficam em
 | Recurso | Status | O que faz |
 | --- | --- | --- |
 | Tour do Zé Mudança | ✅ | Passo a passo animado com lista, veículo, propostas e encontro direto; o convite final muda conforme o papel |
+| Mascote de pano | ✅ | Boneco com cabelo de lã, olhos de botão, boca costurada, macacão indigo e caixa nos braços; o caminhão vira um remendo costurado no peito |
 | Rever o passo a passo | ✅ | Botão na ajuda fixa abre o tour a qualquer momento |
 | Ajuda fixa | ✅ | Mascote no canto da tela abre um painel com atalhos, texto e a opção de rever o tour conforme o papel |
 | Mascote no formulário | ✅ | Diz o que priorizar, mostra o volume e o veículo sugerido e leva ao plano da carga |
@@ -25,7 +26,7 @@ saber **o que a pessoa consegue fazer** — as regras detalhadas ficam em
 | Dois caminhos no topo | ✅ | “Vou me mudar” leva a publicar a mudança; “Faço mudanças” leva a ver as mudanças abertas |
 | Hero direto | ✅ | Explica em uma frase o que o site faz: publicar a mudança e receber orçamentos |
 | Como funciona em 3 passos | ✅ | Publicar → receber orçamentos → escolher e combinar direto |
-| Cena do hero | ✅ | Ilustração flat local de uma mudança, sem foto de estoque e sem CDN |
+| Cena do hero | ✅ | Ilustração flat local com o boneco de pano e o caminhão, sem foto de estoque e sem CDN |
 | Faixa do transportador | ✅ | Convite para ver as mudanças abertas e cadastrar o veículo |
 | App Android | ✅ | Link para a página do APK |
 | Perguntas frequentes | ✅ | Dúvidas sobre custo, orçamentos, escolha, transportadores e pagamento |
@@ -54,7 +55,9 @@ saber **o que a pessoa consegue fazer** — as regras detalhadas ficam em
 | Lista de itens | ✅ | Móveis, eletrodomésticos, caixas e itens especiais com peso e medidas |
 | Caixas personalizadas | ✅ | Pequena, média, grande ou medida informada |
 | Cálculo ao vivo | ✅ | Peso, volume e veículo recomendado enquanto a lista muda |
+| Ícones de veículo | ✅ | Fiorino, van, 3/4, baú e carreta têm ícone de linha próprio no resumo, no plano e no painel |
 | Plano de carga 3D | ✅ | Aba 3D isométrica, corte lateral e vista de cima, gerados do mesmo packer em grade 2D |
+| Equipe no corte lateral | ✅ | Dono da mudança e motorista sempre aparecem ajustando a carga; ajudantes entram até o limite de dois, com legenda e animação desligada em movimento reduzido |
 | Volume das caixas | ✅ | Volume total e volume por grupo (móveis, eletrodomésticos, caixas, outros), com peso |
 | Viagens necessárias | ✅ | Quando não cabe de uma vez, calcula quantas viagens e o que vai em cada uma |
 | Itens fora do plano | ✅ | Lista explícita do que não coube, com contagem por item |
@@ -102,9 +105,9 @@ saber **o que a pessoa consegue fazer** — as regras detalhadas ficam em
 | Encaixe no veículo | ✅ | `cabe`, `limite` ou `nao_cabe`, com motivos |
 | Plano em grade 2D | ✅ | Preenche o piso em comprimento × largura, aproveita vãos e respeita o peso máximo |
 | Vista 3D | ✅ | Cubos isométricos com topo, frente e lateral, gerados dos mesmos blocos |
-| Formato do móvel no 3D | ✅ | Sofá com encosto, armário com portas, geladeira com divisão, cama com travesseiro, mesa com tampo, TV com tela e caixa com fita; o detalhe fica dentro da medida real |
+| Formato do móvel no 3D | ✅ | Sofá com assento, encosto e braços; cama com colchão e travesseiro; mesa com tampo e pés; armário, geladeira, TV e caixa com detalhe na face da frente; tudo dentro da medida real |
 | Pesado embaixo | ✅ | Um volume só é apoiado em outro que pese igual ou mais; frágil nunca serve de apoio |
-| Corte lateral | ✅ | Mostra comprimento × altura, com os volumes mais próximos da lateral |
+| Corte lateral | ✅ | Mostra comprimento × altura; volumes atrás da primeira fileira ficam tracejados e uma nota indica a vista 3D |
 | Vista de cima real | ✅ | Posições reais no piso (`x` e `z`), com o espaço livre explicado |
 | Volume por categoria | ✅ | Quanto cada grupo ocupa, com peso e número de volumes |
 | Lista de conferência | ✅ | Todos os itens, com “No plano”, “N fora” ou “na próxima” |
