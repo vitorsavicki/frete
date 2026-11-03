@@ -212,29 +212,38 @@ regras de prazo.
 | Prova social | nenhuma inventada |
 | CSP | fechada em `'self'`; sem CDN ou API externa no cliente |
 | Domínio/e-mail | adiado; ver seção 6 |
+| Contato depois do aceite | telefone liberado só para o dono e o transportador vencedor |
 
-## 8. Depois do aceite ⏳
+## 8. Depois do aceite 🟡
 
 A simulação do fluxo completo em produção (cliente + dois transportadores)
-mostrou que o processo termina no aceite, mas a mudança não termina ali:
+mostrou que o processo termina no aceite, mas a mudança não termina ali.
 
-- o cliente vê “Combine os detalhes finais direto com o transportador” e o
-  vencedor vê “🏆 Você venceu!”, mas nenhum dos dois recebe telefone, chat ou
-  qualquer próximo passo. O telefone existe em `users.telefone` e não aparece
-  em lugar nenhum;
+### Resolvido
+
+- **Telefone liberado depois do aceite.** O dono vê o telefone do transportador
+  vencedor e o vencedor vê o telefone do dono, com botão “Ligar agora”. A
+  consulta só roda para essas duas contas; visitantes e perdedores não recebem
+  o contato. Se o telefone não foi informado no cadastro, a tela diz isso com
+  clareza em vez de inventar outro canal.
+
+### Ainda em aberto
+
 - não existe situação `concluido`: o frete fica `encerrado` para sempre e não há
   histórico de mudança realizada;
 - o transportador não consegue retirar uma proposta já enviada;
-- a mudança publicada não pode ser editada, só cancelada.
+- a mudança publicada não pode ser editada, só cancelada;
+- não há chat nem histórico de mensagens entre as partes. O contato é o telefone
+  liberado no aceite; quem não informou o número depende de combinar por fora;
+- não há tela para editar o perfil e completar o telefone depois do cadastro.
 
-Falta decidir o mínimo viável. A opção mais barata é liberar o telefone dos dois
-lados depois do aceite; a mais completa é um canal de mensagens entre as partes.
-Enquanto isso não for decidido, nenhuma tela deve prometer contato dentro do
-site.
+Enquanto o chat não existir, nenhuma tela deve prometer mensagens dentro do
+site. O telefone é o canal oficial depois do aceite.
 
 ## 9. Próximos passos sugeridos
 
-1. Completar a validação do redesign em 360 px, 768 px e com leitores de fora.
+1. Completar a validação do redesign com leitores de fora (360 px e 768 px já
+   foram conferidos, sem rolagem horizontal).
 2. Decidir a privacidade do endereço.
 3. Configurar domínio e e-mail quando fizer sentido para o negócio.
 4. Criar e-mails de “recebimento encerrado” e “prazo de escolha acabando”.

@@ -9,6 +9,8 @@ import {
   distancia,
   peso,
   volume,
+  linkTelefone,
+  telefone,
 } from '../lib/format';
 import { CUSTO_PADRAO, type ParametrosCusto, type EstimativaCusto } from '../lib/cost';
 import type { Referencias } from '../lib/referencias';
@@ -217,6 +219,12 @@ export const ListaFretesPage: FC<ListaProps> = ({
 
 // ---------------- Detalhe do frete ----------------
 
+interface ContatoAposAceite {
+  papel: 'dono' | 'transportador';
+  nome: string;
+  telefone: string | null;
+}
+
 interface DetalheProps {
   user: User | null;
   alertas: number;
@@ -227,6 +235,7 @@ interface DetalheProps {
   lances: BidComNome[];
   meuLance: BidComNome | null;
   donoDoFrete: boolean;
+  contato?: ContatoAposAceite | null;
   previsao?: Previsao | null;
   iaAtiva?: boolean;
   caminhao: Truck | null;
@@ -267,6 +276,7 @@ export const DetalheFretePage: FC<DetalheProps> = ({
   lances,
   meuLance,
   donoDoFrete,
+  contato,
   previsao,
   iaAtiva,
   caminhao,
@@ -432,6 +442,40 @@ export const DetalheFretePage: FC<DetalheProps> = ({
           )}
         </div>
       </div>
+
+      {contato && (
+        <section class="contato-aceite" aria-labelledby="contato-aceite-titulo">
+          <span class="contato-aceite__icone" aria-hidden="true">📞</span>
+          <div class="contato-aceite__conteudo">
+            <h2 id="contato-aceite-titulo">
+              {contato.papel === 'transportador'
+                ? 'Fale com o transportador'
+                : 'Fale com o dono da mudança'}
+            </h2>
+            <p>
+              <strong>{contato.nome}</strong>
+              {contato.papel === 'transportador'
+                ? ' foi o transportador escolhido para esta mudança.'
+                : ' publicou esta mudança.'}
+            </p>
+            {contato.telefone ? (
+              <>
+                <p class="contato-aceite__numero">{telefone(contato.telefone)}</p>
+                {linkTelefone(contato.telefone) && (
+                  <a class="btn btn-primario btn-grande" href={linkTelefone(contato.telefone)!}>
+                    Ligar agora
+                  </a>
+                )}
+              </>
+            ) : (
+              <p class="contato-aceite__aviso">
+                Esta pessoa não informou telefone no cadastro. O contato direto fica combinado
+                entre as partes.
+              </p>
+            )}
+          </div>
+        </section>
+      )}
 
       <div class="detalhe-grade">
         <div class="detalhe-principal">

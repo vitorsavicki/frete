@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { validarLance, podeAceitarLance, podeCancelarFrete } from '../src/lib/rules';
+import {
+  validarLance,
+  podeAceitarLance,
+  podeCancelarFrete,
+  podeLiberarContato,
+} from '../src/lib/rules';
 
 describe('Regras de negócio dos orçamentos (validarLance)', () => {
   it('deve impedir que o dono envie orçamento na própria mudança', () => {
@@ -130,5 +135,20 @@ describe('Cancelamento (podeCancelarFrete)', () => {
     expect(podeCancelarFrete(true, 'encerrado')).toBe(false);
     expect(podeCancelarFrete(true, 'expirado')).toBe(false);
     expect(podeCancelarFrete(false, 'aberto')).toBe(false);
+  });
+});
+
+describe('Contato depois do aceite (podeLiberarContato)', () => {
+  it('libera o telefone só depois do aceite e só para as duas partes', () => {
+    expect(podeLiberarContato('encerrado', true, false)).toBe(true);
+    expect(podeLiberarContato('encerrado', false, true)).toBe(true);
+    expect(podeLiberarContato('encerrado', true, true)).toBe(true);
+  });
+
+  it('não libera antes do aceite, para perdedores ou para visitantes', () => {
+    expect(podeLiberarContato('aberto', true, false)).toBe(false);
+    expect(podeLiberarContato('em_escolha', true, false)).toBe(false);
+    expect(podeLiberarContato('encerrado', false, false)).toBe(false);
+    expect(podeLiberarContato('cancelado', true, false)).toBe(false);
   });
 });

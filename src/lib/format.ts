@@ -83,3 +83,26 @@ export function distanciaAproximada(kmLinhaReta: number | null | undefined): str
   const rodovia = Math.round(kmLinhaReta * 1.25 * 10) / 10;
   return `~${rodovia.toFixed(1).replace('.', ',')} km`;
 }
+
+/**
+ * Link de discagem a partir do telefone digitado livremente no cadastro.
+ * Mantém o `+` e os dígitos; o aparelho decide como discar.
+ */
+export function linkTelefone(telefone: string | null | undefined): string | null {
+  if (!telefone) return null;
+  const limpo = telefone.replace(/[^\d+]/g, '');
+  return limpo.replace(/\D/g, '').length >= 8 ? `tel:${limpo}` : null;
+}
+
+/** Telefone brasileiro legível, mesmo quando foi salvo sem máscara. */
+export function telefone(valor: string | null | undefined): string {
+  if (!valor) return '';
+  const digitos = valor.replace(/\D/g, '');
+  if (digitos.length === 11) {
+    return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 7)}-${digitos.slice(7)}`;
+  }
+  if (digitos.length === 10) {
+    return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 6)}-${digitos.slice(6)}`;
+  }
+  return valor;
+}

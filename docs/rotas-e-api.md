@@ -20,7 +20,7 @@ Ordem em `src/index.tsx`:
 | --- | --- | --- | --- |
 | `GET` | `/` | todos | Home pública com dois caminhos (publicar mudança ou ver mudanças), tour e ajuda fixa |
 | `GET` | `/fretes` | todos | Lista mudanças abertas com filtros; aplica o relógio antes de consultar |
-| `GET` | `/fretes/:id` | todos | Detalhe do frete, rota, carga, plano, status e prazos; propostas só para o dono. 404 para visitante em `sem_lances`, `expirado` ou `cancelado` |
+| `GET` | `/fretes/:id` | todos | Detalhe do frete, rota, carga, plano, status e prazos; propostas só para o dono; telefone só para o dono e o vencedor depois de `encerrado`. 404 para visitante em `sem_lances`, `expirado` ou `cancelado` |
 | `GET` | `/novo-frete` | cliente logado | Formulário de publicação, com prazo de 24/48/72 h |
 | `POST` | `/fretes` | cliente logado | Valida, calcula os prazos e publica a mudança |
 | `POST` | `/fretes/:id/lances` | transportador logado | Envia ou melhora a proposta enquanto o relógio permite |
@@ -98,6 +98,8 @@ As APIs usam JSON `{ "erro": "mensagem simples" }` com status HTTP adequado:
 - Rotas de transportador checam `user.papel`.
 - Toda query usa `bind`; nenhuma entrada vai direto para o SQL.
 - O detalhe público não mostra a tabela de propostas para quem não é o dono.
+- O telefone das partes só aparece em `encerrado`, para o dono e o transportador
+  vencedor; a consulta nem roda para os demais visitantes.
 - O e-mail de usuários não aparece em listagens públicas.
 - O simulador de custo e os dados do caminhão são exclusivos do transportador.
 

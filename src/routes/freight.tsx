@@ -3,7 +3,7 @@
 import { Hono } from 'hono';
 import { exigirLogin, type Vars } from '../lib/session';
 import { schemaFrete, schemaLance, primeiraMensagemErro } from '../lib/validate';
-import { validarLance, podeAceitarLance, podeCancelarFrete } from '../lib/rules';
+import { validarLance, podeAceitarLance, podeCancelarFrete, podeLiberarContato } from '../lib/rules';
 import { audit, criarAlerta, type Category, type FreightResumo, type BidComNome, type Truck, type User } from '../lib/db';
 import { consultarCep, geocodificarEndereco, haversineKm, distanciaRodoviariaKm } from '../lib/geo';
 import { calcularRota } from '../lib/rota';
@@ -285,6 +285,53 @@ freight.get('/fretes/:id', async (c) => {
   // continua enxergando o próprio histórico.
   if (!donoDoFrete && !detalhePublico(frete.situacao)) return c.notFound();
 
+  // O telefone só é liberado depois do aceite, e apenas para o dono da
+  // mudança e para o transportador vencedor. A consulta nem roda para os
+  // demais visitantes, então o contato não aparece no HTML deles.
+  const vencedorDoFrete =
+    frete.situacao === 'encerrado'
+      ? await db
+          .prepare('SELECT transportador_id FROM bids WHERE freight_id = ? AND vencedor = 1')
+          .bind(id)
+          .first<{ transportador_id: number }>()
+      : null;
+  const ehTransportadorVencedor = Boolean(
+    user && vencedorDoFrete && user.id === vencedorDoFrete.transportador_id,
+  );
+  const contato =
+    podeLiberarContato(frete.situacao, donoDoFrete, ehTransportadorVencedor)
+      ? await db
+          .prepare(
+            `SELECT t.nome AS transportador_nome, t.telefone AS transportador_telefone,
+                    d.nome AS dono_nome, d.telefone AS dono_telefone
+               FROM bids b
+               JOIN users t ON t.id = b.transportador_id
+               JOIN freight f ON f.id = b.freight_id
+               JOIN users d ON d.id = f.user_id
+              WHERE b.freight_id = ? AND b.vencedor = 1`,
+          )
+          .bind(id)
+          .first<{
+            transportador_nome: string;
+            transportador_telefone: string | null;
+            dono_nome: string;
+            dono_telefone: string | null;
+          }>()
+      : null;
+  const contatoAposAceite = contato
+    ? donoDoFrete
+      ? {
+          papel: 'transportador' as const,
+          nome: contato.transportador_nome,
+          telefone: contato.transportador_telefone,
+        }
+      : {
+          papel: 'dono' as const,
+          nome: contato.dono_nome,
+          telefone: contato.dono_telefone,
+        }
+    : null;
+
   // Fretes antigos podem não ter coordenadas. Geocodifica sob demanda e
   // persiste o resultado para que o mapa funcione nas próximas visitas.
   if (
@@ -441,6 +488,7 @@ freight.get('/fretes/:id', async (c) => {
       lances={lances.results ?? []}
       meuLance={meuLance}
       donoDoFrete={donoDoFrete}
+      contato={contatoAposAceite}
       previsao={previsao}
       iaAtiva={Boolean(c.env.AI)}
       caminhao={caminhao}

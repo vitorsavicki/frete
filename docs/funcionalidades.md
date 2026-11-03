@@ -78,6 +78,7 @@ saber **o que a pessoa consegue fazer** — as regras detalhadas ficam em
 | Status escrito | ✅ | Recebendo orçamentos, escolhendo proposta, sem propostas, expirada, encerrada, cancelada |
 | Alertas no sino | ✅ | Novo orçamento, superado, vencedor, perdedor e cancelamento |
 | Aceite | ✅ | Dono escolhe qualquer proposta assim que ela chega (em `aberto`) ou na janela de escolha, antes de `prazo_escolha_em` |
+| Contato depois do aceite | ✅ | Só o dono e o transportador vencedor veem o nome e o telefone da outra parte, com botão de ligar; perdedores e visitantes não recebem o contato |
 | Cancelamento | ✅ | Dono cancela enquanto aberto ou em escolha e avisa quem propôs |
 
 ## Perfil do transportador e custos

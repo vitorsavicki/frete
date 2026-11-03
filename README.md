@@ -276,21 +276,28 @@ D1 remoto, smoke test e rollback.
 ## Estado atual
 
 - **Produção:** `https://frete.vitorsavicki.workers.dev`.
-- **Último deploy registrado:** `7896fa50-50ef-4511-b8d2-23c96513ab45`
-  (mascote de pano, logo e ícones de veículo).
-- **Publicado neste deploy:** o mascote virou boneco de pano com cabelo de lã,
+- **Último deploy registrado:** `c52bec11-ae1c-407d-932e-0958e0e0ff53`
+  (contato depois do aceite, com telefone formatado).
+- **Publicado nas últimas versões:** o mascote
+  virou boneco de pano com cabelo de lã,
   olhos de botão, boca costurada, macacão indigo e caixa nos braços; o caminhão
   da marca aparece como remendo no peito. O logo, o favicon e o ícone do app
   foram redesenhados no mesmo traço, os emojis de veículo deram lugar a ícones
   de linha (fiorino, van, 3/4, baú e carreta) e o corte lateral do plano mostra
-  dono, motorista e até dois ajudantes ajustando a carga.
+  dono, motorista e até dois ajudantes ajustando a carga. Depois do aceite, o
+  dono e o transportador vencedor veem o nome e o telefone um do outro, com
+  botão “Ligar agora”; perdedores e visitantes não recebem o contato.
 - **Validação:** `npm run typecheck`, `node --check public/js/app.js` e
-  `npm test` passam (81 testes). Home conferida em 360 px e 768 px com emulação
+  `npm test` passam (86 testes). Home conferida em 360 px e 768 px com emulação
   real de viewport: sem rolagem horizontal (`scrollWidth` = `innerWidth`) e sem
-  elementos vazando. O plano foi conferido com 0 e 2 ajudantes.
+  elementos vazando. O plano foi conferido com 0 e 2 ajudantes. O contato foi
+  testado em produção na mudança #1 com quatro sessões: anônimo e outro
+  transportador não recebem nada; dono e vencedor recebem o bloco com o telefone
+  e o link `tel:`. As sessões de teste foram apagadas do D1 depois.
 - **Pendências conhecidas:** domínio próprio, envio real de e-mail (depende de
   domínio na Cloudflare), Kombi como tipo próprio (hoje cadastrada como van ou
-  outro), contato e conclusão depois do aceite (ver
+  outro), conclusão e chat depois do aceite, edição de perfil para completar o
+  telefone (ver
   [decisoes-e-pendencias.md](docs/decisoes-e-pendencias.md#8-depois-do-aceite-))
   e leitura dos textos por alguém de fora do projeto.
 

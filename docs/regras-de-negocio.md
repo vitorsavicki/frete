@@ -177,6 +177,23 @@ Efeitos:
 O aceite é uma operação em lote (`DB.batch`) para marcar vencedor e encerrar o
 frete juntos. Não há transação financeira, contrato ou pagamento no site.
 
+### Contato depois do aceite (`podeLiberarContato`)
+
+Depois que a mudança fica `encerrado`, o detalhe libera o contato entre as duas
+partes:
+
+- o **dono** vê o nome e o telefone do transportador vencedor;
+- o **transportador vencedor** vê o nome e o telefone do dono;
+- visitantes, transportadores que perderam e qualquer outra conta **não**
+  recebem esses dados. A consulta do contato só roda quando o visitante é uma
+  das duas partes;
+- o telefone vem de `users.telefone`, informado no cadastro. Se estiver vazio,
+  a tela avisa que a pessoa não informou e não inventa outro canal;
+- o botão “Ligar agora” usa `tel:` e só aparece quando há um número válido.
+
+O contato vale apenas para a mudança encerrada. Em `aberto`, `em_escolha`,
+`sem_lances`, `expirado` ou `cancelado` ele não é liberado.
+
 ## 6. Cancelamento ✅
 
 Rota: `POST /fretes/:id/cancelar`.

@@ -75,3 +75,16 @@ export function podeAceitarLance(
 export function podeCancelarFrete(donoDoFrete: boolean, situacaoFrete: string): boolean {
   return donoDoFrete && (situacaoFrete === 'aberto' || situacaoFrete === 'em_escolha');
 }
+
+/**
+ * O telefone das partes só é liberado depois do aceite, e apenas para o dono
+ * da mudança e para o transportador vencedor. Visitantes e transportadores
+ * que perderam nunca recebem o contato.
+ */
+export function podeLiberarContato(
+  situacaoFrete: string,
+  donoDoFrete: boolean,
+  transportadorVencedor: boolean,
+): boolean {
+  return situacaoFrete === 'encerrado' && (donoDoFrete || transportadorVencedor);
+}
