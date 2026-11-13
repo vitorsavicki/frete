@@ -17,7 +17,7 @@
     "audit": "npm audit --audit-level=high"
   },
   "dependencies": {
-    "hono": "^4.9.0",
+    "hono": "^4.13.16",
     "leaflet": "^1.9.4",
     "zod": "^4.6.7"
   },
